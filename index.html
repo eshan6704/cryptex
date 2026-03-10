@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -503,52 +504,41 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
     <span id="hdr-chg" class="change-tag up">+0.00%</span>
     <i class="fa-solid fa-chevron-down" style="font-size:10px;color:var(--text3);"></i>
   </button>
+  <!-- Group size selector -->
+  <div style="display:flex;flex-direction:column;align-items:center;padding:0 10px;border-left:1px solid var(--border);flex-shrink:0;">
+    <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Group</span>
+    <select id="group-inp" style="background:var(--bg2);border:1px solid var(--border2);border-radius:5px;padding:2px 18px 2px 6px;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%239ca3af'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;" onchange="app.setGroupingFromSelect(this.value)">
+      <option value="auto">Auto</option>
+      <option value="0.01">0.01</option>
+      <option value="0.5">0.5</option>
+      <option value="1">1</option>
+      <option value="5">5</option>
+      <option value="10">10</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+      <option value="250">250</option>
+      <option value="500">500</option>
+    </select>
+  </div>
   <div class="header-stats">
     <div class="hstat"><span class="hstat-label">Price</span><span class="hstat-val price" id="hdr-price">--</span></div>
     <div class="hstat"><span class="hstat-label">24h High</span><span class="hstat-val up" id="hdr-high">--</span></div>
     <div class="hstat"><span class="hstat-label">24h Low</span><span class="hstat-val dn" id="hdr-low">--</span></div>
+    <div class="hstat"><span class="hstat-label">1m Vol</span><span class="hstat-val blue" id="hdr-1m-vol">--</span></div>
     <div class="hstat"><span class="hstat-label">24h Vol</span><span class="hstat-val blue" id="hdr-vol">--</span></div>
-    <div class="hstat"><span class="hstat-label">Spread</span><span class="hstat-val" id="hdr-spread" style="color:var(--warn)">--</span></div>
-    <div class="depth-stat">
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;"><span>BID</span><span>ASK</span></div>
-      <div class="depth-bar-wrap"><div class="depth-bar-fill" id="hdr-depth-bar" style="width:50%;background:linear-gradient(90deg,var(--up) 0%,var(--dn) 100%);"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:9px;margin-top:2px;">
-        <span style="color:var(--up);font-family:var(--mono);font-weight:700;" id="hdr-bid-qty">--</span>
-        <span style="color:var(--dn);font-family:var(--mono);font-weight:700;" id="hdr-ask-qty">--</span>
+    <!-- QTY Sparkline with inline values -->
+    <div style="display:flex;flex-direction:column;padding:0 12px;border-left:1px solid var(--border);flex-shrink:0;">
+      <div style="display:flex;justify-content:space-between;font-size:9px;font-family:var(--mono);font-weight:700;margin-bottom:2px;">
+        <span style="color:var(--up);" id="hdr-bid-qty">--</span>
+        <span style="color:var(--dn);" id="hdr-ask-qty">--</span>
       </div>
+      <canvas id="hdr-qty-spark" style="width:200px;height:24px;display:block;"></canvas>
     </div>
-    <!-- OB Price Range Bar -->
-    <div class="ob-range-bar">
-      <div class="ob-range-label">
-        <span style="color:var(--up);" id="ob-range-bid-price">--</span>
-        <span style="color:var(--text3);">←  MID →</span>
-        <span style="color:var(--dn);" id="ob-range-ask-price">--</span>
-      </div>
-      <div class="ob-range-track">
-        <div class="ob-range-bid-fill" id="ob-range-bid-fill" style="width:40%;"></div>
-        <div class="ob-range-ask-fill" id="ob-range-ask-fill" style="width:40%;"></div>
-        <div class="ob-range-mid-marker" id="ob-range-mid-marker" style="left:50%;"></div>
-      </div>
-      <div class="ob-range-prices">
-        <span style="color:var(--text3);font-family:var(--mono);font-size:8px;" id="ob-range-lo">--</span>
-        <span style="color:var(--accent);font-family:var(--mono);font-size:8px;font-weight:700;" id="ob-range-mid-val">--</span>
-        <span style="color:var(--text3);font-family:var(--mono);font-size:8px;" id="ob-range-hi">--</span>
-      </div>
-    </div>
-    <!-- OB Sparkline depth curve -->
-    <div class="ob-sparkline-wrap">
-      <div class="ob-spark-label">Bid/Ask Range</div>
-      <canvas class="ob-spark-canvas" id="ob-spark-canvas"></canvas>
-    </div>
+
   </div>
-  <div class="ws-badge">
-    <div class="ws-dot conn" id="ws-dot"></div>
-    <span class="ws-txt" id="ws-txt" style="color:var(--warn)">CONNECTING</span>
-  </div>
-  <div style="position:relative">
-    <button onclick="app.setView('orderbook')" style="width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;">
-      <i class="fa-solid fa-bell" style="font-size:13px;"></i>
-    </button>
+  <div style="display:none">
+    <div id="ws-dot"></div>
+    <span id="ws-txt"></span>
   </div>
   <div class="clock">
     <div class="clock-time" id="clock">--:--:--</div>
@@ -566,15 +556,9 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
     <button class="nav-btn" onclick="app.setView('chart')" data-v="chart"><i class="fa-solid fa-chart-candlestick"></i><span>CHART</span></button>
     <button class="nav-btn" onclick="app.setView('heatmap')" data-v="heatmap"><i class="fa-solid fa-border-all"></i><span>HEAT</span></button>
     <div class="nav-divider"></div>
-    <button class="nav-btn" onclick="app.setView('analysis')" data-v="analysis"><i class="fa-solid fa-chart-pie"></i><span>ANLY</span></button>
     <button class="nav-btn" onclick="app.setView('trend')" data-v="trend"><i class="fa-solid fa-diagram-project"></i><span>TREND</span></button>
     <button class="nav-btn" onclick="app.setView('indicators')" data-v="indicators"><i class="fa-solid fa-sliders"></i><span>INDIC</span></button>
-    <div class="nav-divider"></div>
     <button class="nav-btn" onclick="app.setView('tv-overview')" data-v="tv-overview"><i class="fa-solid fa-circle-info"></i><span>INFO</span></button>
-    <button class="nav-btn" onclick="app.setView('tv-technical')" data-v="tv-technical"><i class="fa-solid fa-signal"></i><span>TECH</span></button>
-    <button class="nav-btn" onclick="app.setView('tv-markets')" data-v="tv-markets"><i class="fa-solid fa-building-columns"></i><span>XCHG</span></button>
-    <button class="nav-btn" onclick="app.setView('tv-seasonals')" data-v="tv-seasonals"><i class="fa-solid fa-calendar-days"></i><span>SEAS</span></button>
-    <button class="nav-btn" onclick="app.setView('tv-funds')" data-v="tv-funds"><i class="fa-solid fa-briefcase"></i><span>ETF</span></button>
     <button class="nav-btn" onclick="app.setView('news')" data-v="news" style="margin-top:auto"><i class="fa-solid fa-rss"></i><span>NEWS</span></button>
   </nav>
 
@@ -622,47 +606,17 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
     <!-- ORDER BOOK VIEW -->
     <div class="view hidden" id="view-orderbook" style="display:flex;flex-direction:column;">
 
-      <!-- Controls -->
-      <div class="ob-controls" style="margin:8px 8px 0;">
-        <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text2);">
-          <i class="fa-solid fa-layer-group" style="color:var(--accent);margin-right:6px;"></i>
-          <span id="ob-title">BTC/USDT</span> ORDER BOOK
-        </span>
-        <!-- Spread grouping dropdown -->
-        <div class="ctrl-group">
-          <label>📐 Spread</label>
-          <select class="ctrl-input" id="group-inp" style="width:90px;cursor:pointer;" onchange="app.setGroupingFromSelect(this.value)">
-            <option value="auto">Auto</option>
-            <option value="0.01">0.01</option>
-            <option value="0.5">0.5</option>
-            <option value="1">1</option>
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="250">250</option>
-            <option value="500">500</option>
-          </select>
-        </div>
-        <div style="width:1px;height:24px;background:var(--border);"></div>
-        <!-- Whale threshold -->
-        <div class="ctrl-group">
-          <label>🐳 Whale≥</label>
-          <input class="ctrl-input" id="whale-inp" type="number" value="1" min="0.01" step="0.1">
-          <span class="ctrl-unit" id="whale-unit">BTC</span>
-        </div>
-        <!-- Trade threshold -->
-        <div class="ctrl-group">
-          <label>⚡ Trade≥</label>
-          <input class="ctrl-input" id="trade-inp" type="number" value="0.01" min="0.001" step="0.01">
-          <span class="ctrl-unit" id="trade-unit">BTC</span>
-        </div>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:18px;font-family:var(--mono);font-size:11px;color:var(--text3);">
-          <span>Mid: <b id="ob-mid" style="color:var(--text1);">--</b></span>
-          <span>Spread: <b id="ob-spread" style="color:var(--warn);">--</b> <b id="ob-spreadpct" style="color:var(--text3);font-weight:400;font-size:10px;"></b> <b id="hdr-spread2" style="display:none"></b></span>
-          <span>Group: <b id="ob-grouping-val" style="color:var(--accent);">-- USDT</b></span>
-          <span>Imbalance: <b id="ob-imb">--</b></span>
-        </div>
+      <!-- ob-mid/spread hidden anchors still needed by JS -->
+      <div style="display:none">
+        <span id="ob-mid"></span>
+        <span id="ob-spread"></span>
+        <span id="ob-spreadpct"></span>
+        <span id="hdr-spread2"></span>
+        <span id="ob-grouping-val"></span>
+        <span id="ob-imb"></span>
+        <span id="ob-title"></span>
+        <span id="whale-unit"></span>
+        <span id="trade-unit"></span>
       </div>
 
       <!-- Book body -->
@@ -772,10 +726,10 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
           </div>
         </div>
 
-        <!-- BOTTOM: Volume Trend canvas full width -->
+        <!-- BOTTOM: Traded Qty vs Time HTML bar chart -->
         <div style="flex:1;border-radius:8px;border:1px solid var(--border);background:var(--bg1);overflow:hidden;display:flex;flex-direction:column;min-height:0;">
           <div class="vt-hdr">
-            <span class="vt-title"><i class="fa-solid fa-chart-column" style="color:var(--accent);"></i> LAST TRADED VOLUME TREND · 5s buckets</span>
+            <span class="vt-title"><i class="fa-solid fa-chart-column" style="color:var(--accent);"></i> TRADED VOLUME vs TIME · 10s · 5min window</span>
             <div class="vt-stats">
               <span style="color:var(--up);">▲ Buy <b id="vt-buy-vol">--</b></span>
               <span style="color:var(--dn);">▼ Sell <b id="vt-sell-vol">--</b></span>
@@ -783,8 +737,8 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
               <span style="color:var(--text3);">Buckets <b id="vt-count" style="color:var(--text2);">0</b></span>
             </div>
           </div>
-          <div style="flex:1;position:relative;min-height:0;">
-            <canvas id="vt-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+          <div style="flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;display:flex;align-items:flex-end;" id="vt-chart-wrap">
+            <div id="vt-chart-area" class="vol-chart-inner" style="width:100%;height:100%;align-items:flex-end;padding:16px 8px 4px;gap:2px;"></div>
           </div>
         </div>
 
@@ -1293,16 +1247,17 @@ class CryptoTerminal {
     this.ob = { asks: [], bids: [] };
     this.trades = [];
     this.whales = [];
-    this.whaleThr = 1;
-    this.tradeThr = 0.01;
+    this.whaleThr = 0; // set dynamically based on $50k / price
+    this.tradeThr = 0.0001;
     this.grouping = 1;
     this.volumeBuckets = []; // [{buyVol, sellVol, price, time}] rolling buckets
-    this.vtBucketMs = 5000;  // 5-second buckets
+    this.vtBucketMs = 10000; // 10-second buckets
     this.vtCurrentBucket = null;
     this.supportLevels = [];
     this.resistanceLevels = [];
     // Flow analytics data
     this.cvdHistory   = [];   // [{ts, cvd}] cumulative volume delta
+    this.tradeHistory  = [];   // [{ts, qty}] all trades for 1m volume
     this.imbHistory   = [];   // [{ts, imb}] OB imbalance %
     this.lofEvents    = [];   // [{ts, price, qty, side}] large order flow
     this.cvd          = 0;    // running CVD
@@ -1394,11 +1349,17 @@ class CryptoTerminal {
   }
 
   // ============ PRICE GROUPING ============
+  // Bids: floor (70024 → 70000). Asks: ceil (70026 → 70050).
   groupLevels(levels, groupSize, side, limit=20) {
     if (!levels.length || groupSize <= 0) return [];
     const buckets = {};
     for (const {p, q} of levels) {
-      const key = (Math.floor(p / groupSize) * groupSize).toFixed(10);
+      let key;
+      if (side === 'bid') {
+        key = (Math.floor(p / groupSize) * groupSize).toFixed(10);
+      } else {
+        key = (Math.ceil(p / groupSize) * groupSize).toFixed(10);
+      }
       if (!buckets[key]) buckets[key] = {p: parseFloat(key), q: 0};
       buckets[key].q += q;
     }
@@ -1409,6 +1370,12 @@ class CryptoTerminal {
     let cum = 0;
     for (const row of result) { cum += row.q; row.cum = cum; }
     return result;
+  }
+
+  // Get the grouped bucket price for the recent trade price
+  // Bids: floor to nearest groupSize. Asks: ceil to nearest groupSize.
+  getMidBucket(price, groupSize) {
+    return Math.floor(price / groupSize) * groupSize;
   }
 
   // ============ WEBSOCKET (trades + ticker only) ============
@@ -1556,7 +1523,7 @@ class CryptoTerminal {
     const tot10 = bidQ10 + askQ10;
     document.getElementById('hdr-bid-qty').textContent = fmt(bidQ10);
     document.getElementById('hdr-ask-qty').textContent = fmt(askQ10);
-    if (tot10 > 0) document.getElementById('hdr-depth-bar').style.width = `${(bidQ10/tot10)*100}%`;
+
     document.getElementById('whale-unit').textContent = base;
     document.getElementById('trade-unit').textContent = base;
     document.getElementById('ob-title').textContent = this.sym.replace('USDT','/USDT');
@@ -1567,95 +1534,95 @@ class CryptoTerminal {
     const tt = document.getElementById('trend-title');
     if(tt) tt.textContent = this.sym.replace('USDT','/USDT');
 
-    // === OB PRICE RANGE BAR ===
+    // === QTY SPARKLINE (topbar) ===
     if (bids10.length && asks10.length) {
-      const bestBid = bids10[0].p;
-      const bestAsk = asks10[0].p;
-      const mid = (bestBid + bestAsk) / 2;
-      // Symmetric range: mid ± same offset so bar is balanced
-      const bidSpan = mid - bids10[bids10.length-1].p;
-      const askSpan = asks10[asks10.length-1].p - mid;
-      const halfSpan = Math.max(bidSpan, askSpan);
-      const loPrice = mid - halfSpan;
-      const hiPrice = mid + halfSpan;
-
-      const el = id => document.getElementById(id);
-      if(el('ob-range-lo'))        el('ob-range-lo').textContent        = fmtP(loPrice);
-      if(el('ob-range-hi'))        el('ob-range-hi').textContent        = fmtP(hiPrice);
-      if(el('ob-range-mid-val'))   el('ob-range-mid-val').textContent   = fmtP(mid);
-      if(el('ob-range-bid-price')) el('ob-range-bid-price').textContent = fmtP(bestBid);
-      if(el('ob-range-ask-price')) el('ob-range-ask-price').textContent = fmtP(bestAsk);
-
-      // Draw the symmetric bid/ask qty sparkline bar
-      this.drawOBSparkline(bids10, asks10, mid, loPrice, hiPrice);
+      this.drawQtySparkline(bids10, asks10);
     }
   }
 
-  drawOBSparkline(bids, asks, mid, loPrice, hiPrice) {
-    const canvas = document.getElementById('ob-spark-canvas');
+  drawQtySparkline(bids, asks) {
+    const canvas = document.getElementById('hdr-qty-spark');
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
-    const W = 116, H = 26;
+    const W = 200, H = 28;
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
 
-    const pRange = hiPrice - loPrice || 1;
-    // map price → x pixel
-    const pToX = p => ((p - loPrice) / pRange) * W;
-    const midX = pToX(mid);
-
-    // max qty across all levels for normalizing bar height
+    // Mirror layout: bids on left half (right-to-left from center), asks on right half
+    const midX = W / 2;
     const maxQ = Math.max(...bids.map(b => b.q), ...asks.map(a => a.q), 1);
+    const PAD = 1;
+    const nBids = bids.length || 1;
+    const nAsks = asks.length || 1;
+    const barW = Math.max(2, (midX - PAD) / Math.max(nBids, nAsks) - 1);
 
-    // Draw each BID bucket as a green vertical bar at its price
-    bids.forEach(b => {
-      const x = pToX(b.p);
-      const barH = Math.max(1, (b.q / maxQ) * (H - 2));
-      const distFromMid = Math.abs(b.p - mid) / (mid - loPrice);
-      const alpha = Math.max(0.25, 0.85 - distFromMid * 0.5);
-      ctx.fillStyle = `rgba(5,150,105,${alpha})`;
-      const barW = Math.max(1.5, (W / 2) / bids.length - 0.5);
-      ctx.fillRect(x - barW / 2, H - barH, barW, barH);
-    });
+    // Background
+    ctx.fillStyle = 'rgba(247,248,250,0.6)';
+    ctx.fillRect(0, 0, W, H);
 
-    // Draw each ASK bucket as a red vertical bar at its price
-    asks.forEach(a => {
-      const x = pToX(a.p);
-      const barH = Math.max(1, (a.q / maxQ) * (H - 2));
-      const distFromMid = Math.abs(a.p - mid) / (hiPrice - mid);
-      const alpha = Math.max(0.25, 0.85 - distFromMid * 0.5);
-      ctx.fillStyle = `rgba(220,38,38,${alpha})`;
-      const barW = Math.max(1.5, (W / 2) / asks.length - 0.5);
-      ctx.fillRect(x - barW / 2, H - barH, barW, barH);
-    });
-
-    // Mid price marker line
-    ctx.fillStyle = 'rgba(37,99,235,0.9)';
+    // Center divider
+    ctx.fillStyle = 'rgba(99,102,241,0.7)';
     ctx.fillRect(midX - 0.75, 0, 1.5, H);
+
+    // BID bars — drawn right-to-left from center (index 0 = best bid = closest to center)
+    bids.forEach((b, i) => {
+      const barH = Math.max(2, (b.q / maxQ) * (H - 2));
+      const x = midX - PAD - (i + 1) * (barW + 1);
+      const alpha = Math.max(0.3, 0.9 - i * 0.04);
+      ctx.fillStyle = `rgba(5,150,105,${alpha})`;
+      ctx.fillRect(x, H - barH, barW, barH);
+    });
+
+    // ASK bars — drawn left-to-right from center (index 0 = best ask = closest to center)
+    asks.forEach((a, i) => {
+      const barH = Math.max(2, (a.q / maxQ) * (H - 2));
+      const x = midX + PAD + i * (barW + 1);
+      const alpha = Math.max(0.3, 0.9 - i * 0.04);
+      ctx.fillStyle = `rgba(220,38,38,${alpha})`;
+      ctx.fillRect(x, H - barH, barW, barH);
+    });
   }
 
   renderOB() {
     const {asks:rawAsks, bids:rawBids} = this.ob;
     if (!rawAsks.length || !rawBids.length) return;
 
-    // Apply grouping — 20 rows each side for order book
-    const bids = this.groupLevels(rawBids, this.grouping, 'bid', 20);
-    const asks = this.groupLevels(rawAsks, this.grouping, 'ask', 20);
+    // Use recent trade price as mid (not (bestBid+bestAsk)/2)
+    const recentPrice = this.lastPrice || ((this.ob.bids[0]?.p || 0 + this.ob.asks[0]?.p || 0) / 2);
+    const midBucket = this.getMidBucket(recentPrice, this.grouping);
+    // midBucket = floor(recentPrice/grouping)*grouping
+    // e.g. recentPrice=70001, grouping=50 → midBucket=70000
+    // Highest bid = midBucket (70000), Lowest ask = midBucket (70000)
+    // Remove bids > midBucket (already handled since bids floor to midBucket or below)
+    // Remove asks < midBucket (already handled since asks ceil to midBucket+grouping or above, but midBucket itself is valid for asks too)
 
+    // Apply grouping — 20 rows each side for order book
+    let bids = this.groupLevels(rawBids, this.grouping, 'bid', 40);
+    let asks = this.groupLevels(rawAsks, this.grouping, 'ask', 40);
+
+    // Filter: remove bids strictly above midBucket, remove asks strictly below midBucket
+    bids = bids.filter(b => b.p <= midBucket).slice(0, 20);
+    asks = asks.filter(a => a.p >= midBucket).slice(0, 20);
+
+    // Recompute cumulative after filtering
+    let cumB = 0; for (const r of bids) { cumB += r.q; r.cum = cumB; }
+    let cumA = 0; for (const r of asks) { cumA += r.q; r.cum = cumA; }
+
+    const mid = recentPrice;
     const bestBid = bids[0]?.p || 0;
     const bestAsk = asks[0]?.p || 0;
-    const mid = (bestBid + bestAsk) / 2;
-    const spread = bestAsk - bestBid;
+    const spread = bestAsk > 0 && bestBid > 0 ? bestAsk - bestBid : 0;
     const spreadPct = mid > 0 ? (spread/mid)*100 : 0;
 
-    // Store mid/spread on instance so other parts can read it
-    this.lastMid = mid;
+    // Store spread on instance
+    this.lastMid = this.lastPrice;
     this.lastSpread = spread;
     const el = (id) => document.getElementById(id);
-    if(el('ob-mid'))          el('ob-mid').textContent = mid.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const dispPrice = this.lastPrice || mid;
+    if(el('ob-mid'))          el('ob-mid').textContent = dispPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     if(el('ob-spread'))       el('ob-spread').textContent = spread.toFixed(2);
     if(el('ob-spreadpct'))    el('ob-spreadpct').textContent = spreadPct.toFixed(3)+'%';
     if(el('hdr-spread'))      el('hdr-spread').textContent = spread.toFixed(2);
@@ -1800,8 +1767,8 @@ class CryptoTerminal {
     if(el('depth-ask-tot')) el('depth-ask-tot').textContent = fmtQ(askTot);
     if(el('depth-imb')) { el('depth-imb').textContent=(parseFloat(imb)>0?'+':'')+imb+'%'; el('depth-imb').style.color=imbColor; }
     // Sync mid/spread labels
-    if(this.lastMid) {
-      if(el('depth-mid')) el('depth-mid').textContent = this.lastMid.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(this.lastPrice) {
+      if(el('depth-mid')) el('depth-mid').textContent = this.lastPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
       if(el('depth-spread')) el('depth-spread').textContent = (this.lastSpread||0).toFixed(2);
     }
     if(el('depth-grouping-val')) el('depth-grouping-val').textContent = `${this.grouping} USDT`;
@@ -1842,6 +1809,20 @@ class CryptoTerminal {
     // Feed volume trend buckets (all trades regardless of threshold)
     this.feedVolBucket(ts, price, qty, isBuy);
 
+    // Track all trades for rolling 1m / 5m volume windows
+    const nowVol = Date.now();
+    this.tradeHistory.push({ts: nowVol, qty});
+    // Prune older than 5 min
+    while (this.tradeHistory.length && nowVol - this.tradeHistory[0].ts > 300000) this.tradeHistory.shift();
+    // Compute windows
+    const fv = v => v >= 1000 ? (v/1000).toFixed(2) + 'K' : v.toFixed(2);
+    const vol1m = this.tradeHistory.filter(t => nowVol - t.ts <= 60000).reduce((s,t) => s + t.qty, 0);
+    const vol5m = this.tradeHistory.reduce((s,t) => s + t.qty, 0);
+    const el1m = document.getElementById('hdr-1m-vol');
+    const el5m = document.getElementById('hdr-5m-vol');
+    if (el1m) el1m.textContent = fv(vol1m);
+    if (el5m) el5m.textContent = fv(vol5m);
+
     // CVD tracking
     this.cvd += isBuy ? qty : -qty;
     const now = Date.now();
@@ -1878,10 +1859,15 @@ class CryptoTerminal {
       if (this.view==='orderbook') this.renderWhales();
       this.flashAlert(trade);
     }
+    const prevBucket = this.lastPrice ? Math.floor(this.lastPrice / this.grouping) * this.grouping : null;
     this.lastPrice = price;
+    if (price > 0) this.whaleThr = 50000 / price; // $50k in coin qty
+    const newBucket = Math.floor(price / this.grouping) * this.grouping;
     if (this.view==='orderbook') {
       const el = document.getElementById('ob-mid');
       if(el){el.classList.remove('flash-buy','flash-sell');void el.offsetWidth;el.classList.add(isBuy?'flash-buy':'flash-sell');}
+      // Re-render OB whenever mid bucket shifts (aggTrade is fastest price source)
+      if (prevBucket === null || newBucket !== prevBucket) { this.renderOB(); }
     }
     if (this.view==='depth') { this.renderVolTrend(); }
     if (this.view==='flow')  { this.renderFlow(); }
@@ -1892,7 +1878,7 @@ class CryptoTerminal {
     if (!this.vtCurrentBucket || this.vtCurrentBucket.ts !== bucketKey) {
       if (this.vtCurrentBucket) {
         this.volumeBuckets.push(this.vtCurrentBucket);
-        if (this.volumeBuckets.length > 80) this.volumeBuckets.shift();
+        if (this.volumeBuckets.length > 30) this.volumeBuckets.shift();
       }
       this.vtCurrentBucket = {ts: bucketKey, buyVol: 0, sellVol: 0, price, high: price, low: price};
     }
@@ -2194,146 +2180,88 @@ class CryptoTerminal {
   }
 
   renderVolTrend() {
-    const canvas = document.getElementById('vt-canvas');
-    if (!canvas) return;
-    const wrap = canvas.parentElement;
-    const W = wrap.clientWidth, H = wrap.clientHeight;
-    if (W === 0 || H === 0) return;
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, W, H);
+    const wrap = document.getElementById('vt-chart-wrap');
+    const area = document.getElementById('vt-chart-area');
+    if (!wrap || !area) return;
 
-    // Combine committed buckets + current live bucket
     const buckets = [...this.volumeBuckets];
     if (this.vtCurrentBucket) buckets.push(this.vtCurrentBucket);
-    if (buckets.length < 2) return;
 
-    const N = Math.min(buckets.length, 60);
-    const visible = buckets.slice(-N);
+    // Always show exactly 30 slots (pad with nulls on left if fewer)
+    const SLOTS = 30;
+    const padded = Array(Math.max(0, SLOTS - buckets.length)).fill(null).concat(buckets.slice(-SLOTS));
 
-    // Stats
-    const totalBuy = visible.reduce((s,b)=>s+b.buyVol,0);
-    const totalSell = visible.reduce((s,b)=>s+b.sellVol,0);
+    // Update header stats from real buckets only
+    const real = padded.filter(Boolean);
+    const totalBuy  = real.reduce((s,b) => s + b.buyVol,  0);
+    const totalSell = real.reduce((s,b) => s + b.sellVol, 0);
+    const tot = totalBuy + totalSell;
     const fmtV = v => v>=1000?`${(v/1000).toFixed(2)}K`:v>=1?v.toFixed(2):v.toFixed(4);
-    const ratio = (totalBuy+totalSell)>0 ? (totalBuy/(totalBuy+totalSell)*100).toFixed(1) : '--';
-    const ratioEl = document.getElementById('vt-ratio');
-    const ratioColor = parseFloat(ratio)>=50 ? 'var(--up)' : 'var(--dn)';
-    if(document.getElementById('vt-buy-vol')) document.getElementById('vt-buy-vol').textContent = fmtV(totalBuy);
-    if(document.getElementById('vt-sell-vol')) document.getElementById('vt-sell-vol').textContent = fmtV(totalSell);
-    if(ratioEl){ratioEl.textContent=ratio+'%';ratioEl.style.color=ratioColor;}
-    if(document.getElementById('vt-count')) document.getElementById('vt-count').textContent = visible.length;
+    const ratio = tot > 0 ? (totalBuy / tot * 100).toFixed(1) : '--';
+    const ratioColor = parseFloat(ratio) >= 50 ? 'var(--up)' : 'var(--dn)';
+    const el = id => document.getElementById(id);
+    if(el('vt-buy-vol'))  el('vt-buy-vol').textContent  = fmtV(totalBuy);
+    if(el('vt-sell-vol')) el('vt-sell-vol').textContent = fmtV(totalSell);
+    if(el('vt-ratio'))    { el('vt-ratio').textContent = ratio + '%'; el('vt-ratio').style.color = ratioColor; }
+    if(el('vt-count'))    el('vt-count').textContent = real.length;
 
-    const BAR_GAP = 1;
-    const barW = Math.max(2, (W / N) - BAR_GAP);
-    const PRICE_H = Math.round(H * 0.28); // top 28% for price line
-    const BAR_H = H - PRICE_H - 2;
-    const maxVol = Math.max(...visible.map(b=>b.buyVol+b.sellVol), 0.0001);
+    const availH  = wrap.clientHeight || 160;
+    const LABEL_H = 18; // qty label above bar
+    const TIME_H  = 16; // time label below bar
+    const maxBarH = Math.max(20, availH - LABEL_H - TIME_H - 4);
+    const maxVol  = Math.max(...real.map(b => b.buyVol + b.sellVol), 0.0001);
 
-    // Price range for sparkline
-    const prices = visible.map(b=>b.price);
-    const minP = Math.min(...prices), maxP = Math.max(...prices);
-    const pRange = maxP - minP || 1;
+    // Format: round to xx.yy (2 decimal places), K suffix if >= 1000
+    const fmtQ = v => {
+      if (v === 0) return '0.00';
+      if (v >= 1000) return (v/1000).toFixed(2) + 'K';
+      return v.toFixed(2);
+    };
+    // Time as MM:SS
+    const fmtT = ts => {
+      const d = new Date(ts);
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      const ss = String(d.getSeconds()).padStart(2,'0');
+      return mm + ':' + ss;
+    };
 
-    // Draw bars
-    visible.forEach((b, i) => {
-      const x = i * (barW + BAR_GAP);
-      const totalVol = b.buyVol + b.sellVol;
-      const barTotalH = Math.max(2, (totalVol / maxVol) * BAR_H);
-      const buyH = totalVol > 0 ? (b.buyVol / totalVol) * barTotalH : 0;
-      const sellH = barTotalH - buyH;
-      const yBase = H;
-
-      // Sell (top of bar, red)
-      if (sellH > 0) {
-        ctx.fillStyle = 'rgba(220,38,38,0.75)';
-        ctx.fillRect(x, yBase - barTotalH, barW, sellH);
+    let html = '';
+    padded.forEach(b => {
+      if (!b) {
+        // Empty placeholder slot
+        html += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
+          <div style="height:${LABEL_H}px;"></div>
+          <div style="height:${maxBarH}px;width:100%;display:flex;flex-direction:column;justify-content:flex-end;">
+            <div style="width:70%;margin:0 auto;height:2px;background:var(--bg4);border-radius:1px;"></div>
+          </div>
+          <div style="height:${TIME_H}px;"></div>
+        </div>`;
+        return;
       }
-      // Buy (bottom of bar, green)
-      if (buyH > 0) {
-        ctx.fillStyle = 'rgba(5,150,105,0.75)';
-        ctx.fillRect(x, yBase - buyH, barW, buyH);
-      }
+
+      const total  = b.buyVol + b.sellVol;
+      const totalH = total > 0 ? Math.max(3, (total / maxVol) * maxBarH) : 2;
+      const buyH   = total > 0 ? (b.buyVol  / total) * totalH : 0;
+      const sellH  = totalH - buyH;
+      const isCur  = b === this.vtCurrentBucket;
+      const barBorder = isCur ? 'outline:2px solid var(--accent);outline-offset:-1px;' : '';
+
+      html += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
+        <div style="height:${LABEL_H}px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:1px;">
+          <span style="font-family:var(--mono);font-size:8px;font-weight:800;color:var(--text1);white-space:nowrap;letter-spacing:-0.3px;">${fmtQ(total)}</span>
+        </div>
+        <div style="height:${maxBarH}px;display:flex;flex-direction:column;justify-content:flex-end;width:85%;">
+          <div style="width:100%;border-radius:3px 3px 0 0;overflow:hidden;${barBorder}">
+            ${sellH>0?`<div style="height:${sellH.toFixed(1)}px;background:linear-gradient(180deg,rgba(220,38,38,.9),rgba(185,28,28,.9));width:100%;"></div>`:''}
+            ${buyH >0?`<div style="height:${buyH.toFixed(1)}px;background:linear-gradient(180deg,rgba(5,150,105,.9),rgba(4,120,87,.9));width:100%;"></div>`:''}
+          </div>
+        </div>
+        <div style="height:${TIME_H}px;display:flex;align-items:center;justify-content:center;">
+          <span style="font-family:var(--mono);font-size:7.5px;font-weight:700;color:var(--text2);white-space:nowrap;">${fmtT(b.ts)}</span>
+        </div>
+      </div>`;
     });
-
-    // Draw price sparkline
-    ctx.beginPath();
-    ctx.strokeStyle = '#6366f1';
-    ctx.lineWidth = 1.5;
-    ctx.lineJoin = 'round';
-    visible.forEach((b, i) => {
-      const x = i * (barW + BAR_GAP) + barW / 2;
-      const y = PRICE_H - 4 - ((b.price - minP) / pRange) * (PRICE_H - 10);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // ── Support & Resistance lines ──────────────────────────────────
-    const priceToY = p => PRICE_H - 4 - ((p - minP) / pRange) * (PRICE_H - 10);
-    const fmtP = p => p>=10000?p.toFixed(0):p>=1?p.toFixed(2):p.toFixed(4);
-
-    const srLevels = [
-      ...(this.supportLevels||[]).map((l,i)=>({...l, rank:i+1, side:'S'})),
-      ...(this.resistanceLevels||[]).map((l,i)=>({...l, rank:i+1, side:'R'}))
-    ].filter(l => l.p >= minP && l.p <= maxP); // only draw if in visible price range
-
-    const rankAlpha = [1, 0.72, 0.48]; // S1/R1 brightest, S3/R3 faintest
-
-    srLevels.forEach(lvl => {
-      const y = priceToY(lvl.p);
-      const alpha = rankAlpha[lvl.rank - 1];
-      const isS = lvl.side === 'S';
-      const baseColor = isS ? `rgba(5,150,105,${alpha})` : `rgba(220,38,38,${alpha})`;
-      const label = `${lvl.side}${lvl.rank}`;
-
-      // Dashed horizontal line across full sparkline zone
-      ctx.save();
-      ctx.beginPath();
-      ctx.strokeStyle = baseColor;
-      ctx.lineWidth = lvl.rank === 1 ? 1.5 : 1;
-      ctx.setLineDash(lvl.rank === 1 ? [5,3] : [3,4]);
-      ctx.moveTo(0, y);
-      ctx.lineTo(W - 52, y); // leave room for label on right
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Badge pill background
-      const labelX = W - 50;
-      const badgeW = 48, badgeH = 13;
-      const badgeY = y - badgeH / 2;
-      ctx.fillStyle = isS ? `rgba(5,150,105,${alpha * 0.18})` : `rgba(220,38,38,${alpha * 0.18})`;
-      ctx.beginPath();
-      ctx.roundRect(labelX, badgeY, badgeW, badgeH, 3);
-      ctx.fill();
-      ctx.strokeStyle = baseColor;
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-
-      // Label text: "S1 94,210"
-      ctx.fillStyle = isS ? `rgba(4,120,87,${Math.min(1,alpha+0.2)})` : `rgba(185,28,28,${Math.min(1,alpha+0.2)})`;
-      ctx.font = `bold 7.5px monospace`;
-      ctx.textAlign = 'left';
-      ctx.fillText(`${label} ${fmtP(lvl.p)}`, labelX + 3, y + 3);
-
-      ctx.restore();
-    });
-
-    // Price range labels
-    ctx.fillStyle = 'rgba(156,163,175,0.85)';
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(fmtP(maxP), W - 2, 9);
-    ctx.fillText(fmtP(minP), W - 2, PRICE_H - 2);
-
-    // Divider line
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(209,213,219,0.4)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3,3]);
-    ctx.moveTo(0, PRICE_H);
-    ctx.lineTo(W, PRICE_H);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    area.innerHTML = html;
   }
 
   renderTrades() {
@@ -2420,7 +2348,11 @@ class CryptoTerminal {
     const gv=document.getElementById('g-vwap'); if(gv) gv.textContent=(price*(0.998+Math.random()*.004)).toFixed(2);
     const gs=document.getElementById('g-spread');
     if(gs&&this.ob.asks.length&&this.ob.bids.length){const sp=this.ob.asks[0].p-this.ob.bids[0].p;if(sp)gs.textContent=sp.toFixed(2);}
+    const prevBucketT = this.lastPrice ? Math.floor(this.lastPrice / this.grouping) * this.grouping : null;
     this.lastPrice=price;
+    if (price > 0) this.whaleThr = 50000 / price; // $50k in coin qty
+    const newBucketT = Math.floor(price / this.grouping) * this.grouping;
+    if (this.view==='orderbook' && (prevBucketT === null || newBucketT !== prevBucketT)) { this.renderOB(); }
   }
 
   // ============ GAUGES ============
@@ -2747,7 +2679,7 @@ class CryptoTerminal {
     this.bidQtyTotal=0; this.askQtyTotal=0;
     this.volumeBuckets=[]; this.vtCurrentBucket=null;
     this.supportLevels=[]; this.resistanceLevels=[];
-    this.cvdHistory=[]; this.imbHistory=[]; this.lofEvents=[]; this.cvd=0;
+    this.cvdHistory=[]; this.imbHistory=[]; this.lofEvents=[]; this.cvd=0; this.tradeHistory=[];
     this.tvLoaded=false; this.anaLoaded=false;
     document.getElementById('hdr-pair').textContent=sym.replace('USDT','/USDT');
     document.getElementById('hdr-name').textContent=name;
@@ -4093,31 +4025,7 @@ class CryptoTerminal {
     document.getElementById('cmd-input').addEventListener('input',e=>this.renderCmd(e.target.value));
     document.addEventListener('keydown',e=>{if(e.key==='Escape')this.closeCmd();});
 
-    document.getElementById('whale-inp').addEventListener('change',e=>{
-      this.whaleThr=parseFloat(e.target.value)||1;
-      document.getElementById('whale-range').value=this.whaleThr;
-      document.getElementById('whale-range-val').textContent=this.whaleThr;
-      this.renderWhales();
-    });
-    document.getElementById('whale-range').addEventListener('input',e=>{
-      this.whaleThr=parseFloat(e.target.value);
-      document.getElementById('whale-range-val').textContent=this.whaleThr.toFixed(1);
-      document.getElementById('whale-inp').value=this.whaleThr;
-      this.renderWhales();
-    });
 
-    document.getElementById('trade-inp').addEventListener('change',e=>{
-      this.tradeThr=parseFloat(e.target.value)||0.01;
-      document.getElementById('trade-range').value=this.tradeThr;
-      document.getElementById('trade-range-val').textContent=this.tradeThr;
-      this.renderTrades();
-    });
-    document.getElementById('trade-range').addEventListener('input',e=>{
-      this.tradeThr=parseFloat(e.target.value);
-      document.getElementById('trade-range-val').textContent=this.tradeThr.toFixed(3);
-      document.getElementById('trade-inp').value=this.tradeThr;
-      this.renderTrades();
-    });
   }
 }
 
