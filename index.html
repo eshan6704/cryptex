@@ -1,7 +1,4 @@
 
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6793,8 +6790,8 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       c1.width = W; c1.height = H;
       const pad = {l:52,r:16,t:16,b:38};
       const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
-      const minP = Math.min(price*0.75, critLiq*0.95);
-      const maxP = Math.max(price*1.35, ATH*1.03);
+      const minP = Math.min(price*0.8, critLiq*0.95);
+      const maxP = Math.max(price*1.05, price*1.1);
       const steps = 100;
       const pts = [];
       for(let i=0;i<=steps;i++) {
@@ -6867,7 +6864,7 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
         const xLiqLabel = toX(critLiq);
         ctx.fillStyle='rgba(220,38,38,.9)'; ctx.font='bold 9px monospace'; ctx.textAlign='center';
         ctx.fillText('LIQ', xLiqLabel, H-14);
-        ctx.fillStyle='rgba(220,38,38,.75)'; ctx.font='7px monospace';
+        ctx.fillStyle='rgba(220,38,38,.75)'; ctx.font='12px monospace';
         ctx.fillText('$'+(critLiq/1000).toFixed(1)+'k', xLiqLabel, H-4);
         // Triangle marker pointing up from bottom
         ctx.beginPath(); ctx.fillStyle='rgba(220,38,38,.8)';
@@ -6886,7 +6883,7 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       c2.width = W; c2.height = H;
       const pad = {l:48,r:14,t:16,b:28};
       const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
-      const mults = [-0.20,-0.15,-0.10,-0.05,-0.03,-0.01,0,+0.01,+0.03,+0.05,+0.10,+0.15,+0.20,+0.30];
+      const mults = [-0.20,-0.15,-0.10,-0.05,-0.03,-0.01,0,+0.01,+0.03,+0.05];
       const simPrices = [...new Set([...mults.map(m=>Math.round(price*(1+m))),ATH])].sort((a,b)=>a-b);
       const bars = simPrices.map(sp => {
         let pnl = 0;
