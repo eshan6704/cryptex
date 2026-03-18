@@ -1,5 +1,8 @@
 
 
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -509,6 +512,14 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
 .ai-tf,.ai-risk{padding:4px 10px;border-radius:5px;font-family:var(--mono);font-size:10px;font-weight:700;border:none;background:transparent;color:var(--text3);cursor:pointer;transition:all .12s;letter-spacing:.3px;}
 .ai-tf.active,.ai-risk.active{background:var(--bg1);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08);}
 .ai-tf:not(.active):hover,.ai-risk:not(.active):hover{color:var(--text2);}
+/* method tabs */
+.ai-method-bar{display:flex;gap:0;overflow-x:auto;flex-shrink:0;background:var(--bg1);border-bottom:2px solid var(--border);padding:0 14px;scrollbar-width:none;}
+.ai-method-bar::-webkit-scrollbar{display:none;}
+.ai-method-tab{display:flex;align-items:center;gap:6px;padding:9px 14px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.4px;color:var(--text3);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;}
+.ai-method-tab:hover{color:var(--text2);}
+.ai-method-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.ai-method-tab i{font-size:11px;}
+.ai-method-hint{padding:6px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;color:var(--text3);display:flex;align-items:center;gap:6px;flex-shrink:0;min-height:28px;}
 .ai-sig-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);}
 .ai-sig-row:last-child{border-bottom:none;}
 .ai-sig-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
@@ -669,24 +680,53 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
     <!-- ORDER BOOK VIEW -->
     <div class="view hidden" id="view-orderbook" style="display:flex;flex-direction:column;">
 
-      <!-- ob-mid/spread hidden anchors still needed by JS -->
-      <div style="display:none">
-        <span id="ob-mid"></span>
-        <span id="ob-spread"></span>
-        <span id="ob-spreadpct"></span>
-        <span id="hdr-spread2"></span>
-        <span id="ob-grouping-val"></span>
-        <span id="ob-imb"></span>
-        <span id="ob-title"></span>
-        <span id="whale-unit"></span>
-        <span id="trade-unit"></span>
+      <!-- Controls bar -->
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--bg1);border-bottom:1px solid var(--border);flex-shrink:0;overflow:hidden;">
+        <!-- Title -->
+        <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-layer-group" style="color:var(--accent);"></i>
+          <span id="ob-title">BTC/USDT</span> ORDER BOOK
+        </span>
+        <!-- Mid price -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0 10px;border-left:1px solid var(--border);">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Mid Price</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text1);" id="ob-mid">--</span>
+        </div>
+        <!-- Spread -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0 10px;border-left:1px solid var(--border);">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Spread</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--warn);" id="ob-spread">--</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0 10px;border-left:1px solid var(--border);">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Spread %</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--warn);" id="ob-spreadpct">--</span>
+        </div>
+        <!-- Imbalance -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0 10px;border-left:1px solid var(--border);">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Bid/Ask Imb.</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;" id="ob-imb">--</span>
+        </div>
+        <!-- Grouping -->
+        <div style="display:flex;align-items:center;gap:6px;padding:0 10px;border-left:1px solid var(--border);">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Group</span>
+          <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);" id="ob-grouping-val">--</span>
+        </div>
+        <!-- Volume train — fills remaining width -->
+        <div style="flex:1;min-width:0;border-left:1px solid var(--border);padding:3px 10px;display:flex;flex-direction:column;gap:2px;overflow:hidden;">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;">Traded Vol · 1m · 15min</span>
+          <div id="ob-vol-train" style="display:flex;align-items:flex-end;gap:6px;overflow:hidden;"></div>
+        </div>
+        <!-- hidden anchors still needed -->
+        <span id="hdr-spread2" style="display:none;"></span>
+        <span id="whale-unit" style="display:none;"></span>
+        <span id="trade-unit" style="display:none;"></span>
       </div>
 
       <!-- Book body -->
-      <div class="ob-body" style="padding:8px;flex:1;">
+      <div class="ob-body" style="padding:8px;flex:1;min-height:0;">
 
-        <!-- LEFT: order book only, full height -->
-        <div class="ob-book-col" style="min-height:0;">
+        <!-- LEFT: order book (65%) -->
+        <div style="flex:0 0 calc(65% - 4px);display:flex;flex-direction:column;gap:8px;min-height:0;">
 
           <!-- Split two-column book -->
           <div class="ob-split" style="flex:1;">
@@ -721,9 +761,27 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
           </div>
         </div>
 
-        <!-- RIGHT: whale only (full height) -->
-        <div class="ob-side-col">
-          <div class="side-panel" style="flex:1;">
+        <!-- RIGHT panels: trades + whale (35%) -->
+        <div style="flex:0 0 calc(35% - 4px);display:flex;flex-direction:column;gap:8px;min-height:0;">
+
+          <!-- RECENT TRADES -->
+          <div class="side-panel" style="flex:1;min-height:0;">
+            <div class="side-panel-hdr">
+              <span class="side-panel-title"><i class="fa-solid fa-bolt" style="color:var(--accent);"></i> RECENT TRADES</span>
+              <span class="badge" id="trade-cnt">0</span>
+            </div>
+            <div class="range-wrap">
+              <div class="range-label"><span>Min Qty</span><span id="trade-range-val" style="color:var(--accent);font-family:var(--mono);">0</span></div>
+              <input type="range" id="trade-range" min="0" max="10" step="0.1" value="0" oninput="app.setTradeThr(this.value)">
+            </div>
+            <div style="display:grid;grid-template-columns:52px 1fr 1fr;padding:4px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);border-bottom:1px solid var(--border);flex-shrink:0;">
+              <span>Time</span><span style="text-align:right;">Price</span><span style="text-align:right;">Qty</span>
+            </div>
+            <div class="scroll-list" id="trade-list"></div>
+          </div>
+
+          <!-- WHALE ORDERS -->
+          <div class="side-panel" style="flex:1;min-height:0;">
             <div class="side-panel-hdr">
               <span class="side-panel-title"><i class="fa-solid fa-fish-fins" style="color:var(--gold);"></i> WHALE ORDERS</span>
               <span class="badge gold" id="whale-cnt">0</span>
@@ -748,6 +806,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
             </div>
             <div class="scroll-list" id="whale-list"></div>
           </div>
+
         </div>
       </div>
     </div>
@@ -1621,6 +1680,23 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
         </div>
       </div>
 
+      <!-- Method tab bar -->
+      <div class="ai-method-bar" id="ai-method-bar">
+        <button class="ai-method-tab active" data-method="combined" onclick="app.setAIMethod(this,'combined')"><i class="fa-solid fa-layer-group"></i> COMBINED</button>
+        <button class="ai-method-tab" data-method="fibonacci" onclick="app.setAIMethod(this,'fibonacci')"><i class="fa-solid fa-spiral"></i> FIBONACCI</button>
+        <button class="ai-method-tab" data-method="swinghl" onclick="app.setAIMethod(this,'swinghl')"><i class="fa-solid fa-chart-line"></i> SWING H/L</button>
+        <button class="ai-method-tab" data-method="macd" onclick="app.setAIMethod(this,'macd')"><i class="fa-solid fa-wave-square"></i> MACD</button>
+        <button class="ai-method-tab" data-method="rsi" onclick="app.setAIMethod(this,'rsi')"><i class="fa-solid fa-gauge-high"></i> RSI</button>
+        <button class="ai-method-tab" data-method="vwap" onclick="app.setAIMethod(this,'vwap')"><i class="fa-solid fa-chart-area"></i> VWAP</button>
+        <button class="ai-method-tab" data-method="ema" onclick="app.setAIMethod(this,'ema')"><i class="fa-solid fa-right-left"></i> EMA CROSS</button>
+        <button class="ai-method-tab" data-method="bb" onclick="app.setAIMethod(this,'bb')"><i class="fa-solid fa-arrows-left-right"></i> BOLLINGER</button>
+        <button class="ai-method-tab" data-method="volume" onclick="app.setAIMethod(this,'volume')"><i class="fa-solid fa-bars-progress"></i> VOLUME PROFILE</button>
+        <button class="ai-method-tab" data-method="sr" onclick="app.setAIMethod(this,'sr')"><i class="fa-solid fa-table-columns"></i> S/R BREAKOUT</button>
+        <button class="ai-method-tab" data-method="orderflow" onclick="app.setAIMethod(this,'orderflow')"><i class="fa-solid fa-arrows-to-dot"></i> ORDER FLOW</button>
+      </div>
+      <!-- Method hint -->
+      <div class="ai-method-hint" id="ai-method-hint"><i class="fa-solid fa-circle-info" style="color:var(--accent);font-size:10px;"></i> <span id="ai-method-hint-txt">Multi-factor: combines all signals — Fibonacci, MACD, RSI, VWAP, Swing H/L, Volume, S/R and order book depth.</span></div>
+
       <!-- Main scroll body -->
       <div style="flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px;min-height:0;" id="ai-body">
 
@@ -1753,7 +1829,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
           <div style="border-radius:10px;border:1px solid rgba(99,102,241,.2);background:linear-gradient(135deg,rgba(99,102,241,.03),rgba(79,142,247,.02));overflow:hidden;">
             <div class="vt-hdr" style="background:rgba(99,102,241,.06);border-bottom:1px solid rgba(99,102,241,.15);">
               <span class="vt-title"><i class="fa-solid fa-robot" style="color:#6366f1;"></i> DETAILED AI ANALYSIS</span>
-              <div class="vt-stats"><span style="font-size:9px;color:var(--text3);font-family:var(--mono);">Powered by Claude</span></div>
+              <div class="vt-stats"><span style="font-size:9px;color:var(--text3);font-family:var(--mono);">Powered by Claude · <span id="ai-result-method">Combined</span></span></div>
             </div>
             <div style="padding:16px 18px;font-size:12px;color:var(--text1);line-height:1.75;white-space:pre-wrap;font-family:var(--sans);" id="ai-analysis-text">—</div>
           </div>
@@ -2125,14 +2201,9 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
   <div class="ticker-label">LIVE</div>
   <div style="flex:1;overflow:hidden;"><div class="ticker-scroll" id="ticker-scroll"></div></div>
 </div>
-<!-- Hidden legacy trade elements to prevent JS errors -->
+<!-- Hidden legacy elements to prevent JS errors for elements that no longer exist in hidden form -->
 <div style="display:none">
-  <span id="trade-cnt"></span>
-  <div id="trade-list"></div>
-  <input id="trade-range" type="range">
-  <span id="trade-range-val"></span>
-  <input id="trade-inp" type="number">
-  <span id="trade-unit"></span>
+  <span id="trade-inp-hidden"></span>
 </div>
 
 <script>
@@ -2153,6 +2224,8 @@ class CryptoTerminal {
     this.volumeBuckets = []; // [{buyVol, sellVol, price, time}] rolling buckets
     this.vtBucketMs = 10000; // 10-second buckets
     this.vtCurrentBucket = null;
+    this.obVolBuckets = [];        // locked 1-min snapshots, max 14
+    this.obVolCurrentMin = null;   // {minKey, qty} — live accumulator
     this.supportLevels = [];
     this.resistanceLevels = [];
     // Flow analytics data
@@ -2264,31 +2337,35 @@ class CryptoTerminal {
   }
 
   // ============ PRICE GROUPING ============
-  // Bids: floor (70024 → 70000). Asks: ceil (70026 → 70050).
+  // Grid is always clean multiples of groupSize (floor for bids, ceil for asks).
+  // e.g. groupSize=5, price=70001 → grid: …,69990,69995,70000,70005,70010,…
+  // Bids floor down:  70001 → 70000,  69998 → 69995
+  // Asks ceil up:     70002 → 70005,  70006 → 70010
   groupLevels(levels, groupSize, side, limit=20) {
     if (!levels.length || groupSize <= 0) return [];
     const buckets = {};
     for (const {p, q} of levels) {
-      let key;
+      let bucket;
       if (side === 'bid') {
-        key = (Math.floor(p / groupSize) * groupSize).toFixed(10);
+        bucket = Math.floor(p / groupSize) * groupSize;
       } else {
-        key = (Math.ceil(p / groupSize) * groupSize).toFixed(10);
+        bucket = Math.ceil(p / groupSize) * groupSize;
       }
-      if (!buckets[key]) buckets[key] = {p: parseFloat(key), q: 0};
+      const key = bucket.toFixed(10);
+      if (!buckets[key]) buckets[key] = { p: bucket, q: 0 };
       buckets[key].q += q;
     }
     let result = Object.values(buckets);
     result = side === 'bid'
-      ? result.sort((a,b) => b.p - a.p).slice(0, limit)
-      : result.sort((a,b) => a.p - b.p).slice(0, limit);
+      ? result.sort((a, b) => b.p - a.p).slice(0, limit)
+      : result.sort((a, b) => a.p - b.p).slice(0, limit);
     let cum = 0;
     for (const row of result) { cum += row.q; row.cum = cum; }
     return result;
   }
 
-  // Get the grouped bucket price for the recent trade price
-  // Bids: floor to nearest groupSize. Asks: ceil to nearest groupSize.
+  // Mid split: floor(livePrice/groupSize)*groupSize
+  // e.g. price=70001, g=5 → 70000. Bids ≤ 70000, Asks > 70000 (i.e. 70005+)
   getMidBucket(price, groupSize) {
     return Math.floor(price / groupSize) * groupSize;
   }
@@ -2419,6 +2496,7 @@ class CryptoTerminal {
     this.bidQtyTotal = this.ob.bids.reduce((s,b) => s+b.q, 0);
     this.askQtyTotal = this.ob.asks.reduce((s,a) => s+a.q, 0);
     this.updateHeaderDepth();
+    this._updateOBTopbar();
     if (this.view === 'orderbook') { this.renderOB(); }
     if (this.view === 'depth') { this.renderVolChart(); this.renderDepthStats(); }
     this.updateGauges();
@@ -2500,26 +2578,57 @@ class CryptoTerminal {
     });
   }
 
+  // Update OB topbar stats independently of renderOB — called from rebuildOB
+  // so stats are always live even before the user opens the BOOK view.
+  _updateOBTopbar() {
+    const bids = this.ob.bids;
+    const asks = this.ob.asks;
+    if (!bids.length || !asks.length) return;
+
+    const price  = this.lastPrice || 0;
+    const bestBid = bids[0]?.p || 0;
+    const bestAsk = asks[0]?.p || 0;
+    const spread  = bestAsk > 0 && bestBid > 0 ? bestAsk - bestBid : 0;
+    const spreadPct = price > 0 ? (spread / price * 100) : 0;
+
+    const bidsG = this.groupLevels(bids, this.grouping, 'bid', 20);
+    const asksG = this.groupLevels(asks, this.grouping, 'ask', 20);
+    const bidTot = bidsG.reduce((s,b)=>s+b.q, 0);
+    const askTot = asksG.reduce((s,a)=>s+a.q, 0);
+    const tot    = bidTot + askTot;
+    const imb    = tot > 0 ? ((bidTot - askTot) / tot * 100).toFixed(1) : '0.0';
+    const imbColor = parseFloat(imb) >= 0 ? 'var(--up)' : 'var(--dn)';
+
+    const fmtP = p => p >= 10000
+      ? p.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1})
+      : p >= 1 ? p.toFixed(2) : p.toFixed(6);
+    const fmtSpread = s => s >= 1 ? s.toFixed(2) : s.toFixed(4);
+
+    const el = id => document.getElementById(id);
+    if (el('ob-mid'))          el('ob-mid').textContent          = price > 0 ? fmtP(price) : fmtP((bestBid+bestAsk)/2);
+    if (el('ob-spread'))       el('ob-spread').textContent       = fmtSpread(spread);
+    if (el('ob-spreadpct'))    el('ob-spreadpct').textContent    = spreadPct.toFixed(3) + '%';
+    if (el('ob-imb'))          el('ob-imb').innerHTML            = `<span style="color:${imbColor}">${parseFloat(imb)>0?'+':''}${imb}%</span>`;
+    if (el('ob-grouping-val')) el('ob-grouping-val').textContent = `${this.grouping} USDT`;
+    if (el('ob-title'))        el('ob-title').textContent        = this.sym.replace('USDT', '/USDT');
+  }
+
   renderOB() {
     const {asks:rawAsks, bids:rawBids} = this.ob;
     if (!rawAsks.length || !rawBids.length) return;
 
-    // Use recent trade price as mid (not (bestBid+bestAsk)/2)
-    const recentPrice = this.lastPrice || ((this.ob.bids[0]?.p || 0 + this.ob.asks[0]?.p || 0) / 2);
+    // Mid is floor(livePrice/groupSize)*groupSize — gives clean round bucket numbers.
+    // e.g. livePrice=70001, g=5 → midBucket=70000
+    // Bids: …,69990,69995,70000   |   Asks: 70005,70010,…
+    const recentPrice = this.lastPrice || (this.ob.bids[0]?.p || 0 + this.ob.asks[0]?.p || 0) / 2;
     const midBucket = this.getMidBucket(recentPrice, this.grouping);
-    // midBucket = floor(recentPrice/grouping)*grouping
-    // e.g. recentPrice=70001, grouping=50 → midBucket=70000
-    // Highest bid = midBucket (70000), Lowest ask = midBucket (70000)
-    // Remove bids > midBucket (already handled since bids floor to midBucket or below)
-    // Remove asks < midBucket (already handled since asks ceil to midBucket+grouping or above, but midBucket itself is valid for asks too)
 
-    // Apply grouping — 20 rows each side for order book
     let bids = this.groupLevels(rawBids, this.grouping, 'bid', 40);
     let asks = this.groupLevels(rawAsks, this.grouping, 'ask', 40);
 
-    // Filter: remove bids strictly above midBucket, remove asks strictly below midBucket
+    // Keep bids at or below midBucket, asks strictly above midBucket
     bids = bids.filter(b => b.p <= midBucket).slice(0, 20);
-    asks = asks.filter(a => a.p >= midBucket).slice(0, 20);
+    asks = asks.filter(a => a.p > midBucket).slice(0, 20);
 
     // Recompute cumulative after filtering
     let cumB = 0; for (const r of bids) { cumB += r.q; r.cum = cumB; }
@@ -2535,13 +2644,10 @@ class CryptoTerminal {
     this.lastMid = this.lastPrice;
     this.lastSpread = spread;
     const el = (id) => document.getElementById(id);
-    const dispPrice = this.lastPrice || mid;
-    if(el('ob-mid'))          el('ob-mid').textContent = dispPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    if(el('ob-spread'))       el('ob-spread').textContent = spread.toFixed(2);
-    if(el('ob-spreadpct'))    el('ob-spreadpct').textContent = spreadPct.toFixed(3)+'%';
-    if(el('hdr-spread'))      el('hdr-spread').textContent = spread.toFixed(2);
-    if(el('hdr-spread2'))     el('hdr-spread2').textContent = spread.toFixed(2);
-    if(el('ob-grouping-val')) el('ob-grouping-val').textContent = `${this.grouping} USDT`;
+    // Topbar stats are kept live by _updateOBTopbar() called from rebuildOB.
+    // Only keep the hdr-spread here for the global topbar.
+    if(el('hdr-spread'))  el('hdr-spread').textContent  = spread.toFixed(2);
+    if(el('hdr-spread2')) el('hdr-spread2').textContent = spread.toFixed(2);
 
     const bidTot = bids.reduce((s,b)=>s+b.q, 0);
     const askTot = asks.reduce((s,a)=>s+a.q, 0);
@@ -2723,19 +2829,23 @@ class CryptoTerminal {
     // Feed volume trend buckets (all trades regardless of threshold)
     this.feedVolBucket(ts, price, qty, isBuy);
 
-    // Track all trades for rolling 1m / 5m volume windows
+    // Track all trades for rolling 1m / 5m / 15m volume windows
     const nowVol = Date.now();
-    this.tradeHistory.push({ts: nowVol, qty});
-    // Prune older than 5 min
-    while (this.tradeHistory.length && nowVol - this.tradeHistory[0].ts > 300000) this.tradeHistory.shift();
+    this.tradeHistory.push({ts: nowVol, qty, isBuy});
+    // Prune older than 15 min
+    while (this.tradeHistory.length && nowVol - this.tradeHistory[0].ts > 900000) this.tradeHistory.shift();
     // Compute windows
     const fv = v => v >= 1000 ? (v/1000).toFixed(2) + 'K' : v.toFixed(2);
     const vol1m = this.tradeHistory.filter(t => nowVol - t.ts <= 60000).reduce((s,t) => s + t.qty, 0);
-    const vol5m = this.tradeHistory.reduce((s,t) => s + t.qty, 0);
+    const vol5m = this.tradeHistory.filter(t => nowVol - t.ts <= 300000).reduce((s,t) => s + t.qty, 0);
     const el1m = document.getElementById('hdr-1m-vol');
     const el5m = document.getElementById('hdr-5m-vol');
     if (el1m) el1m.textContent = fv(vol1m);
     if (el5m) el5m.textContent = fv(vol5m);
+
+    // OB vol train — feed locked 1-min bucket
+    this.feedObVolBucket(nowVol, qty);
+    this.renderObVolChart();
 
     // CVD tracking
     this.cvd += isBuy ? qty : -qty;
@@ -2802,6 +2912,41 @@ class CryptoTerminal {
     this.vtCurrentBucket.price = price;
     if (price > this.vtCurrentBucket.high) this.vtCurrentBucket.high = price;
     if (price < this.vtCurrentBucket.low) this.vtCurrentBucket.low = price;
+  }
+
+  // ===== OB TOP BAR VOLUME TRAIN =====
+  feedObVolBucket(ts, qty) {
+    const minKey = Math.floor(ts / 60000);
+    if (!this.obVolCurrentMin || this.obVolCurrentMin.minKey !== minKey) {
+      // minute rolled — lock the completed one
+      if (this.obVolCurrentMin) {
+        this.obVolBuckets.push(this.obVolCurrentMin.qty);
+        if (this.obVolBuckets.length > 14) this.obVolBuckets.shift();
+      }
+      this.obVolCurrentMin = { minKey, qty };
+    } else {
+      this.obVolCurrentMin.qty += qty;
+    }
+  }
+
+  renderObVolChart() {
+    const wrap = document.getElementById('ob-vol-train');
+    if (!wrap) return;
+    const fv = v => v >= 1000 ? (v/1000).toFixed(1)+'K' : v >= 1 ? v.toFixed(1) : v.toFixed(2);
+
+    // locked past buckets (up to 14) + live current
+    const liveQty = this.obVolCurrentMin ? this.obVolCurrentMin.qty : 0;
+    const past = this.obVolBuckets; // already locked, never changes mid-minute
+    const all  = [...past, liveQty]; // oldest → current
+
+    const maxV = Math.max(...all, 0.0001);
+    wrap.innerHTML = all.map((v, i) => {
+      const isCurrent = i === all.length - 1;
+      const opacity = v > 0 ? (0.35 + 0.65 * (v / maxV)).toFixed(2) : '0.18';
+      const col = isCurrent ? 'var(--accent)' : (v >= maxV * 0.75 ? 'var(--warn)' : 'var(--text2)');
+      const label = v > 0 ? fv(v) : '·';
+      return `<span style="font-family:var(--mono);font-size:10px;font-weight:${isCurrent?'700':'500'};color:${col};opacity:${opacity};white-space:nowrap;flex-shrink:0;">${label}</span>`;
+    }).join(`<span style="color:var(--border);font-size:9px;flex-shrink:0;opacity:0.4;">|</span>`);
   }
 
   // ===== FLOW PAGE RENDERS =====
@@ -3181,12 +3326,16 @@ class CryptoTerminal {
 
   renderTrades() {
     const list = this.trades.filter(t=>t.qty>=this.tradeThr).slice(0,200);
-    document.getElementById('trade-cnt').textContent = list.length;
-    document.getElementById('trade-list').innerHTML = list.map(t=>`
+    const el = document.getElementById('trade-cnt');
+    if (el) el.textContent = list.length;
+    const fmtP = p => p>=10000?p.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}):p>=1?p.toFixed(2):p.toFixed(6);
+    const fmtQ = q => q>=1000?(q/1000).toFixed(2)+'K':q>=1?q.toFixed(3):q.toFixed(5);
+    const listEl = document.getElementById('trade-list');
+    if (listEl) listEl.innerHTML = list.map(t=>`
       <div class="trade-row ${t.isBuy?'buy':'sell'}">
         <span class="ttime">${t.time.slice(-8)}</span>
-        <span class="tp ${t.isBuy?'buy':'sell'}" style="text-align:right">${t.price.toFixed(2)}</span>
-        <span class="tval">${t.qty.toFixed(4)}</span>
+        <span class="tp ${t.isBuy?'buy':'sell'}" style="text-align:right">${fmtP(t.price)}</span>
+        <span class="tval">${fmtQ(t.qty)}</span>
       </div>`).join('') || '<div style="padding:16px;text-align:center;color:var(--text3);font-size:11px;">No trades above threshold</div>';
   }
 
@@ -3213,10 +3362,11 @@ class CryptoTerminal {
     const ip=document.getElementById('whale-imb-pct');
     if(ip){ip.innerHTML=total>0?`<span style="color:${diffColor}">${cntDiffStr} cnt</span> &nbsp; <span style="color:${qtyColor}">${qtyDiff>=0?'+':''+ ''}${qtyDiffStr} qty</span>`:'--';}
     const bar=document.getElementById('whale-imb-bar'); if(bar) bar.style.width=buyQtyPct+'%';
+    const fmtWP = p => p>=10000?p.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}):p>=1?p.toFixed(2):p.toFixed(6);
     document.getElementById('whale-list').innerHTML = list.map(w=>`
       <div class="whale-row ${w.isBuy?'buy':'sell'}">
         <span class="whale-time">${w.time.slice(-8)}</span>
-        <span class="whale-price ${w.isBuy?'buy':'sell'}">${w.price.toFixed(2)}</span>
+        <span class="whale-price ${w.isBuy?'buy':'sell'}">${fmtWP(w.price)}</span>
         <span class="whale-qty" style="text-align:right">${w.qty.toFixed(4)}</span>
       </div>`).join('') || '<div style="padding:16px;text-align:center;color:var(--text3);font-size:11px;">No whale orders detected</div>';
   }
@@ -3520,7 +3670,7 @@ class CryptoTerminal {
     if(v==='chart'&&!this.tvLoaded){this.loadTV();this.tvLoaded=true;}
     if(v==='analysis'&&!this.anaLoaded){this.loadAnalysis();this.anaLoaded=true;}
     if(v==='news') this.renderNews();
-    if(v==='orderbook'){if(!this.ob.bids.length&&!this.obReady){this.startDepthPolling();}this.renderOB();this.renderTrades();this.renderWhales();}
+    if(v==='orderbook'){if(!this.ob.bids.length&&!this.obReady){this.startDepthPolling();}this._updateOBTopbar();this.renderOB();this.renderTrades();this.renderWhales();}
     if(v==='depth'){this.renderVolChart();this.renderVolTrend();this.renderDepthStats();}
     if(v==='flow'){this.renderFlow();}
     if(v==='trend'){this.renderTrend();}
@@ -5386,6 +5536,191 @@ class CryptoTerminal {
     this._aiRisk = risk;
   }
 
+  setAIMethod(btn, method) {
+    document.querySelectorAll('.ai-method-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    this._aiMethod = method;
+    const hints = {
+      combined:   'Multi-factor: combines all signals — Fibonacci, MACD, RSI, VWAP, Swing H/L, Volume, S/R and order book depth.',
+      fibonacci:  'Fibonacci retracement & extension: key 23.6 / 38.2 / 50 / 61.8 / 78.6 % levels from recent swing high/low.',
+      swinghl:    'Swing High / Swing Low: structure-based entries at broken swing points, trend continuation & reversal setups.',
+      macd:       'MACD crossover & divergence: histogram momentum, signal-line cross, bullish/bearish divergence detection.',
+      rsi:        'RSI overbought/oversold & divergence: 14-period RSI zones, hidden divergence, trend strength confirmation.',
+      vwap:       'VWAP deviation bands: institutional mean-reversion / breakout plays anchored to daily/weekly VWAP.',
+      ema:        'EMA crossover system: 9/21/50/200 EMA alignment, golden/death cross, price-relative-to-EMA pullbacks.',
+      bb:         'Bollinger Bands: squeeze breakout, %B position, mean-reversion within bands, band-walk continuation.',
+      volume:     'Volume Profile & OBV: Point of Control, value area high/low, high-volume nodes as S/R, OBV divergence.',
+      sr:         'Support/Resistance breakout: order book S/R walls, retest-and-hold, false breakout detection.',
+      orderflow:  'Order Flow: CVD trend, large-order absorption, bid/ask imbalance, whale print direction bias.',
+    };
+    const el = document.getElementById('ai-method-hint-txt');
+    if (el) el.textContent = hints[method] || hints.combined;
+    // Reset results so user reruns for new method
+    const results = document.getElementById('ai-results');
+    const idle = document.getElementById('ai-idle');
+    if (results) results.style.display = 'none';
+    if (idle) idle.style.display = 'flex';
+  }
+
+  _getMethodPromptSection() {
+    const method = this._aiMethod || 'combined';
+    const sections = {
+      combined: `
+═══════════════════════════════════════
+ANALYSIS METHOD: COMBINED MULTI-FACTOR
+═══════════════════════════════════════
+Use ALL available signals together: Fibonacci retracements & extensions from the recent swing range, MACD momentum & divergence, RSI overbought/oversold & hidden divergence, VWAP deviation mean-reversion or breakout, EMA alignment (9/21/50), Bollinger Band position & squeeze, Volume Profile high-volume nodes, Support/Resistance breakout/retest, and Order Book depth imbalance. Synthesise all signals into a high-conviction confluence score.`,
+
+      fibonacci: `
+═══════════════════════════════════════
+ANALYSIS METHOD: FIBONACCI RETRACEMENT & EXTENSION
+═══════════════════════════════════════
+PRIMARY FOCUS — Fibonacci analysis:
+1. Identify the most recent significant Swing High and Swing Low from the price context.
+2. Calculate and clearly state the key Fibonacci retracement levels: 23.6%, 38.2%, 50%, 61.8%, 78.6%.
+3. Calculate Fibonacci extension levels for targets: 100%, 127.2%, 161.8%, 261.8%.
+4. Determine whether price is currently at a critical fib confluence zone.
+5. Align entry with the deepest valid retracement (preferably 38.2%–61.8% golden zone).
+6. Set targets at Fibonacci extension levels (1.272, 1.618, 2.618).
+7. Place stop loss just below the 78.6% retracement (invalidates the wave count).
+State the exact Swing High and Swing Low prices used for calculations. Base ALL entry/SL/TP on Fibonacci math.`,
+
+      swinghl: `
+═══════════════════════════════════════
+ANALYSIS METHOD: SWING HIGH / SWING LOW STRUCTURE
+═══════════════════════════════════════
+PRIMARY FOCUS — Market structure via swing pivots:
+1. Map the last 5–8 significant Swing Highs (SH) and Swing Lows (SL) from price data.
+2. Determine current market structure: Higher Highs + Higher Lows (uptrend), Lower Highs + Lower Lows (downtrend), or ranging.
+3. Identify the most recent Break of Structure (BOS) or Change of Character (CHoCH).
+4. Entry long: price retests a broken SH (now support) or forms a higher SL.
+5. Entry short: price retests a broken SL (now resistance) or forms a lower SH.
+6. Stop loss below the last SL (long) or above the last SH (short) — beyond the swing point.
+7. Targets: next SH (long) or next SL (short) from the structure map.
+State each identified swing level with approximate prices.`,
+
+      macd: `
+═══════════════════════════════════════
+ANALYSIS METHOD: MACD MOMENTUM & DIVERGENCE
+═══════════════════════════════════════
+PRIMARY FOCUS — MACD-driven momentum analysis:
+1. Standard MACD settings: Fast EMA 12, Slow EMA 26, Signal Line 9.
+2. Identify the current MACD state: bullish crossover, bearish crossover, above/below zero line.
+3. Detect histogram momentum: expanding (accelerating) vs contracting (decelerating).
+4. Identify any Regular Divergence (price vs MACD peaks/troughs) — most powerful signal.
+5. Identify any Hidden Divergence for trend continuation confirmation.
+6. Zero-line crossovers signal trend change — weight highly.
+7. Entry: after confirmed crossover + histogram turning positive/negative.
+8. Avoid entries when MACD is extended far from zero — risk of mean reversion.
+Estimate MACD values based on price action context. Be explicit about which MACD signal drives this setup.`,
+
+      rsi: `
+═══════════════════════════════════════
+ANALYSIS METHOD: RSI OVERBOUGHT / OVERSOLD & DIVERGENCE
+═══════════════════════════════════════
+PRIMARY FOCUS — RSI 14-period analysis:
+1. Estimate current RSI value from price momentum context (high if recent strong rally, low if dump).
+2. Key zones: Oversold < 30 (strong long signal), 30–50 (bearish territory / recovery), 50–70 (bullish), Overbought > 70 (caution for longs).
+3. RSI 50 midline: bullish above, bearish below — critical for trend bias.
+4. Regular Bullish Divergence: price makes lower low, RSI makes higher low → strong long setup.
+5. Regular Bearish Divergence: price makes higher high, RSI makes lower high → strong short setup.
+6. Hidden Bullish Divergence: price higher low, RSI lower low → trend continuation long.
+7. RSI failure swings (break of prior RSI swing high/low) as early warning signals.
+8. Combine with support/resistance: RSI oversold AT support = very high conviction long.
+Be explicit about the estimated RSI value and which RSI pattern drives this setup.`,
+
+      vwap: `
+═══════════════════════════════════════
+ANALYSIS METHOD: VWAP DEVIATION & INSTITUTIONAL ANCHORING
+═══════════════════════════════════════
+PRIMARY FOCUS — VWAP-based institutional analysis:
+1. Daily VWAP: primary intraday institutional reference price.
+2. Weekly VWAP: medium-term institutional fair value.
+3. VWAP Standard Deviation Bands: ±1σ, ±2σ, ±3σ from VWAP.
+4. Mean-reversion setup: price > +2σ → fade short to VWAP; price < -2σ → buy long to VWAP.
+5. Breakout setup: price crosses VWAP with expanding volume → momentum trade in direction of cross.
+6. VWAP as S/R: price returning to VWAP after breakout = high-probability retest entry.
+7. Anchored VWAP from major swing lows (for longs) or swing highs (for shorts) as dynamic support/resistance.
+8. Institutions typically accumulate below VWAP and distribute above — bias entry accordingly.
+Estimate VWAP relative to current price (above/below) and define the trade using VWAP deviation bands.`,
+
+      ema: `
+═══════════════════════════════════════
+ANALYSIS METHOD: EMA CROSSOVER & ALIGNMENT
+═══════════════════════════════════════
+PRIMARY FOCUS — Exponential Moving Average system:
+1. Key EMAs: 9 (fast), 21 (short-term trend), 50 (medium trend), 200 (long-term trend / institutional).
+2. EMA alignment: all EMAs stacked (9>21>50>200) = strong uptrend; inverted = strong downtrend.
+3. Golden Cross (50 EMA crosses above 200 EMA) = major bullish signal.
+4. Death Cross (50 EMA crosses below 200 EMA) = major bearish signal.
+5. Price pullback to 21 EMA in uptrend = high-probability entry zone.
+6. Price rejection at 21 EMA from below in downtrend = short entry.
+7. 9/21 EMA cross for short-term momentum entries.
+8. Distance from 200 EMA: extreme deviation = mean-reversion risk; close to 200 = strong S/R.
+Estimate where each EMA sits relative to current price based on trend context. Make the EMA alignment the centrepiece of the trade rationale.`,
+
+      bb: `
+═══════════════════════════════════════
+ANALYSIS METHOD: BOLLINGER BANDS
+═══════════════════════════════════════
+PRIMARY FOCUS — Bollinger Band volatility analysis (20 SMA, ±2σ):
+1. BB Squeeze (bands narrowing): low volatility compression → imminent breakout. Direction: bias from the squeeze direction / volume.
+2. BB Expansion (bands widening): trending phase — trade in breakout direction, avoid mean-reversion.
+3. %B position: >1.0 = above upper band (overbought), <0.0 = below lower band (oversold).
+4. Upper band walk: price hugging upper band = strong bullish momentum, do not short.
+5. Lower band walk: price hugging lower band = strong bearish momentum, do not long.
+6. Mean reversion: after spike to upper/lower band without trend, expect return to 20 SMA middle band.
+7. W-bottom pattern at lower band = high-conviction long reversal.
+8. M-top pattern at upper band = high-conviction short reversal.
+State the band position and whether this is a squeeze breakout, band-walk, or mean-reversion setup.`,
+
+      volume: `
+═══════════════════════════════════════
+ANALYSIS METHOD: VOLUME PROFILE & OBV
+═══════════════════════════════════════
+PRIMARY FOCUS — Volume-based analysis:
+1. Volume Profile concepts: Point of Control (POC) = highest volume price → strongest S/R.
+2. Value Area High (VAH) and Value Area Low (VAL): 70% of volume traded — breakouts beyond these are significant.
+3. High Volume Nodes (HVN): strong S/R zones — price consolidates here.
+4. Low Volume Nodes (LVN): price moves quickly through these — air pockets for fast moves.
+5. OBV (On-Balance Volume): rising OBV with rising price = confirmed trend; divergence = warning.
+6. Volume spikes at support/resistance = accumulation/distribution signals.
+7. Breakout on HIGH volume = valid; breakout on LOW volume = likely fake.
+8. Climax volume (extreme spike) often marks reversals.
+Use order book depth data as a proxy for volume profile nodes. Identify which price levels have the highest liquidity concentration and make those the S/R backbone of the trade.`,
+
+      sr: `
+═══════════════════════════════════════
+ANALYSIS METHOD: SUPPORT / RESISTANCE BREAKOUT & RETEST
+═══════════════════════════════════════
+PRIMARY FOCUS — Key S/R level trading:
+1. Identify the 3 most significant support levels and 3 resistance levels from order book walls and price history.
+2. Breakout trade: price closes convincingly above resistance (or below support) with volume → trade the breakout direction.
+3. Retest trade (higher probability): after breakout, wait for price to retest the broken level (former resistance becomes support, vice versa) → enter on successful retest.
+4. False breakout (fakeout): price breaks level then immediately reverses → trade the fade back.
+5. Confluence: horizontal S/R + round numbers + order book walls + psychological levels (previous highs/lows) = highest-strength zones.
+6. Stop loss: just beyond the S/R level (invalidation if it breaks back through).
+7. Target: next major S/R level above (long) or below (short).
+Use the order book bid/ask walls provided as the primary S/R map. Prioritise the largest quantity walls.`,
+
+      orderflow: `
+═══════════════════════════════════════
+ANALYSIS METHOD: ORDER FLOW & MARKET MICROSTRUCTURE
+═══════════════════════════════════════
+PRIMARY FOCUS — Real-time order flow & microstructure:
+1. CVD (Cumulative Volume Delta): rising CVD = net buying pressure; falling = net selling. Divergence from price = warning signal.
+2. Order book imbalance: bid/ask ratio. >60% bids = strong buying intent; <40% bids = selling pressure.
+3. Large order walls: bid walls = support (will be defended or swept); ask walls = resistance (will be defended or swept).
+4. Whale orders (large prints): determine if whales are buying dips or selling into rallies.
+5. Absorption: large orders at a level being absorbed without price moving = accumulation/distribution.
+6. Sweeping liquidity: price briefly breaks a level then reverses = stop hunt, expect reversal.
+7. Buy/Sell pressure (last 2 min): >55% buy = short-term bullish; <45% buy = bearish.
+8. Spread widening = uncertainty / low liquidity; tight spread = confidence.
+Treat the CVD trend, order book imbalance, and recent whale prints as the PRIMARY signals. Technical price levels are secondary confirmation.`,
+    };
+    return sections[method] || sections.combined;
+  }
+
   _buildMarketContext() {
     const fmtP = p => p >= 1000 ? '$' + p.toLocaleString('en-US', {maximumFractionDigits: 2}) : '$' + (p||0).toFixed(p >= 1 ? 2 : 6);
     const fmtQ = q => q >= 1000 ? (q/1000).toFixed(2)+'K' : q >= 1 ? q.toFixed(2) : q.toFixed(4);
@@ -5485,6 +5820,7 @@ TRADER REQUEST
 Timeframe: ${tf}
 Risk Profile: ${riskProfile}
 Goal: Complete swing trade plan with entry, 3 targets (conservative/base/bull), stop loss, and R:R ratios.
+${this._getMethodPromptSection()}
 
 ═══════════════════════════════════════
 REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
@@ -5531,12 +5867,25 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     if(runBtn) runBtn.disabled = true;
     if(statusBadge) statusBadge.style.display = 'flex';
 
+    const methodStepNames = {
+      fibonacci: 'Computing Fibonacci levels…',
+      swinghl:   'Mapping swing highs & lows…',
+      macd:      'Calculating MACD signals…',
+      rsi:       'Analysing RSI divergence…',
+      vwap:      'Computing VWAP bands…',
+      ema:       'Checking EMA alignment…',
+      bb:        'Measuring Bollinger squeeze…',
+      volume:    'Profiling volume nodes…',
+      sr:        'Mapping S/R breakout zones…',
+      orderflow: 'Reading order flow data…',
+      combined:  'Sending to Claude AI…',
+    };
     const steps = [
       [0, 'Gathering live price data…'],
       [15, 'Reading order book depth…'],
       [30, 'Analysing CVD & flow…'],
-      [45, 'Mapping support & resistance…'],
-      [60, 'Sending to Claude AI…'],
+      [45, methodStepNames[this._aiMethod||'combined'] || 'Mapping support & resistance…'],
+      [60, 'Scoring signals…'],
       [80, 'Generating trade plan…'],
       [95, 'Formatting results…'],
     ];
@@ -5608,9 +5957,12 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       el('ai-verdict-badge').style.color = v.color;
       el('ai-verdict-badge').style.border = '1px solid ' + v.border;
     }
-    if(el('ai-verdict-coin')) el('ai-verdict-coin').textContent = this.sym.replace('USDT','/USDT') + ' · ' + (this._aiTF==='swing-short'?'1–3D':this._aiTF==='swing-mid'?'1–2W':'1M+') + ' · ' + (this._aiRisk||'moderate');
+    if(el('ai-verdict-coin')) el('ai-verdict-coin').textContent = this.sym.replace('USDT','/USDT') + ' · ' + (this._aiTF==='swing-short'?'1–3D':this._aiTF==='swing-mid'?'1–2W':'1M+') + ' · ' + (this._aiRisk||'moderate') + ' · ' + (methodLabels[this._aiMethod||'combined']||'Combined');
     if(el('ai-verdict-summary')) el('ai-verdict-summary').textContent = plan.summary || '';
     if(el('ai-verdict-ts')) el('ai-verdict-ts').textContent = new Date().toLocaleTimeString('en-US',{hour12:false});
+    // Method label
+    const methodLabels = {combined:'Combined',fibonacci:'Fibonacci',swinghl:'Swing H/L',macd:'MACD',rsi:'RSI',vwap:'VWAP',ema:'EMA Cross',bb:'Bollinger',volume:'Vol Profile',sr:'S/R Break',orderflow:'Order Flow'};
+    if(el('ai-result-method')) el('ai-result-method').textContent = methodLabels[this._aiMethod||'combined'] || 'Combined';
 
     // Entry
     if(el('ai-entry-val')) el('ai-entry-val').textContent = plan.entry?.zone || fmtP(plan.entry?.price);
@@ -5885,51 +6237,132 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     const volExpand = vol5 > vol5prev * 1.15;
     const volShrink = vol5 < vol5prev * 0.85;
 
-    // ── 4. Score signals ──
-    // Each signal: +1 bull, -1 bear, 0 neutral; weighted
-    let score = 0; // net bull score
-
-    // RSI
-    const rsiSig  = rsiV < 35 ? 2 : rsiV < 45 ? 1 : rsiV > 70 ? -2 : rsiV > 60 ? -1 : 0;
-    score += rsiSig;
-
-    // MACD
-    const macdBull = macdV > macdSig && macdHist > 0 && macdHistP <= 0; // fresh cross
+    // ── 4. Method-aware scoring ──
+    const method = this._aiMethod || 'combined';
+    const macdBull = macdV > macdSig && macdHist > 0 && macdHistP <= 0;
     const macdBear = macdV < macdSig && macdHist < 0 && macdHistP >= 0;
-    const macdSigScore = macdBull ? 2 : (macdV > macdSig ? 1 : macdBear ? -2 : -1);
-    score += macdSigScore;
-
-    // EMA alignment
     const emaBull  = last > ema9V && ema9V > ema21V;
     const emaBear  = last < ema9V && ema9V < ema21V;
-    score += emaBull ? 2 : emaBear ? -2 : (last > ema21V ? 1 : -1);
 
-    // BB squeeze / expansion
-    score += last < bbL ? 2 : last > bbU ? -2 : (last < bbM ? 1 : -1);
+    // Swing H/L detection: find local pivots (3-bar)
+    const swingHighs = [], swingLows = [];
+    for (let i = 2; i < n - 1; i++) {
+      if (highs[i] > highs[i-1] && highs[i] > highs[i-2] && highs[i] > highs[i+1]) swingHighs.push({ i, p: highs[i] });
+      if (lows[i]  < lows[i-1]  && lows[i]  < lows[i-2]  && lows[i]  < lows[i+1])  swingLows.push({ i, p: lows[i] });
+    }
+    const lastSH = swingHighs[swingHighs.length-1]?.p || swingHi;
+    const lastSL = swingLows[swingLows.length-1]?.p   || swingLo;
+    const prevSH = swingHighs[swingHighs.length-2]?.p || swingHi;
+    const prevSL = swingLows[swingLows.length-2]?.p   || swingLo;
+    const isHHHL = lastSH > prevSH && lastSL > prevSL;  // uptrend structure
+    const isLHLL = lastSH < prevSH && lastSL < prevSL;  // downtrend structure
+    const bosBull = last > lastSH * 0.998;  // breaking swing high
+    const bosBear = last < lastSL * 1.002;  // breaking swing low
 
-    // OB imbalance
-    score += obImb > 20 ? 2 : obImb > 5 ? 1 : obImb < -20 ? -2 : obImb < -5 ? -1 : 0;
+    // VWAP approximation (volume-weighted mean of recent candles)
+    const vwapRaw = candles.slice(-20).reduce((s,c)=>s+((c.h+c.l+c.c)/3)*c.v,0) / candles.slice(-20).reduce((s,c)=>s+c.v,0);
+    const vwapDev = (last - vwapRaw) / vwapRaw * 100;
 
-    // CVD
-    score += cvdDelta > 0 ? 1 : cvdDelta < 0 ? -1 : 0;
+    // OBV (simplified)
+    let obv = 0;
+    for (let i = 1; i < n; i++) obv += closes[i] > closes[i-1] ? volumes[i] : closes[i] < closes[i-1] ? -volumes[i] : 0;
+    const obvPrev5 = (() => { let o=0; for(let i=n-6;i<n-1;i++) o+=closes[i]>closes[i-1]?volumes[i]:-volumes[i]; return o; })();
+    const obvBull = obv > 0 && obvPrev5 > 0;
 
-    // Volume
-    score += volExpand ? 1 : volShrink ? -1 : 0;
+    // BB %B
+    const bbPctB = (bbU - bbL) > 0 ? (last - bbL) / (bbU - bbL) : 0.5;
 
-    // Stochastic
-    score += stochKV < 20 ? 2 : stochKV < 35 ? 1 : stochKV > 80 ? -2 : stochKV > 65 ? -1 : 0;
+    let score = 0, maxScore = 0;
 
-    // EMA200
-    score += last > ema200V ? 1 : -1;
+    if (method === 'fibonacci') {
+      // Primary: where is price relative to key fibs?
+      const nearGolden = last >= fib618 * 0.99 && last <= fib382 * 1.01;
+      score += nearGolden ? 3 : 0;
+      score += last < fib618 && last > fib786 ? 2 : 0;   // deep retracement = bounce zone
+      score += last > fib236 ? -1 : 1;                   // above 23.6 = near top
+      score += last > swingHi ? -3 : last < swingLo ? 3 : 0;
+      score += last > ema200V ? 1 : -1;
+      score += cvdDelta > 0 ? 1 : -1;
+      maxScore = 9;
+    } else if (method === 'swinghl') {
+      score += isHHHL ? 3 : isLHLL ? -3 : 0;
+      score += bosBull ? 2 : bosBear ? -2 : 0;
+      score += last > lastSH * 0.998 ? 1 : last < lastSL * 1.002 ? -1 : 0;
+      score += last > ema200V ? 1 : -1;
+      score += cvdDelta > 0 ? 1 : -1;
+      maxScore = 8;
+    } else if (method === 'macd') {
+      score += macdBull ? 4 : macdBear ? -4 : macdV > macdSig ? 2 : -2;
+      score += macdHist > macdHistP ? 1 : -1;             // histogram expanding
+      score += macdV > 0 ? 1 : -1;                        // above zero line
+      score += last > ema200V ? 1 : -1;
+      maxScore = 7;
+    } else if (method === 'rsi') {
+      score += rsiV < 30 ? 4 : rsiV < 40 ? 2 : rsiV < 45 ? 1 : rsiV > 70 ? -4 : rsiV > 60 ? -2 : 0;
+      score += rsiV > 50 ? 1 : -1;                        // above midline
+      score += rsi7V < rsiV ? 1 : -1;                     // RSI7 above RSI14 = momentum
+      score += last > ema200V ? 1 : -1;
+      maxScore = 7;
+    } else if (method === 'vwap') {
+      score += vwapDev < -3 ? 3 : vwapDev < -1 ? 1 : vwapDev > 3 ? -3 : vwapDev > 1 ? -1 : 0;
+      score += last > vwapRaw && obImb > 5 ? 2 : last < vwapRaw && obImb < -5 ? -2 : 0;
+      score += obvBull ? 1 : -1;
+      score += last > ema200V ? 1 : -1;
+      maxScore = 7;
+    } else if (method === 'ema') {
+      const ema50bull = last > ema50V && ema50V > ema200V;
+      const goldenX   = ema50V > ema200V * 0.999;
+      score += emaBull ? 3 : emaBear ? -3 : last > ema21V ? 1 : -1;
+      score += ema50bull ? 2 : -2;
+      score += goldenX ? 2 : -2;
+      score += last > ema200V ? 1 : -1;
+      maxScore = 8;
+    } else if (method === 'bb') {
+      score += bbPctB < 0.1 ? 4 : bbPctB < 0.25 ? 2 : bbPctB > 0.9 ? -4 : bbPctB > 0.75 ? -2 : 0;
+      score += bbW < 3 ? 2 : 0;                           // squeeze = breakout coming (neutral direction)
+      score += last > bbM ? -1 : 1;                        // below mid = mean reversion up
+      score += last > ema200V ? 1 : -1;
+      maxScore = 8;
+    } else if (method === 'volume') {
+      score += obvBull ? 3 : -3;
+      score += volExpand && last > closes[n-2] ? 2 : volExpand && last < closes[n-2] ? -2 : 0;
+      score += obImb > 15 ? 2 : obImb < -15 ? -2 : 0;
+      score += last > ema200V ? 1 : -1;
+      maxScore = 8;
+    } else if (method === 'sr') {
+      const aboveR1 = last > r1_pp;
+      const belowS1 = last < s1_pp;
+      const atR1    = Math.abs(last - r1_pp) / last < 0.005;
+      const atS1    = Math.abs(last - s1_pp) / last < 0.005;
+      score += belowS1 ? 3 : atS1 ? 2 : aboveR1 ? -1 : atR1 ? -2 : 0;
+      score += obImb > 15 ? 2 : obImb < -15 ? -2 : 0;
+      score += last > topBid?.p * 1.001 ? 1 : -1;
+      score += last > ema200V ? 1 : -1;
+      maxScore = 8;
+    } else if (method === 'orderflow') {
+      score += obImb > 25 ? 4 : obImb > 10 ? 2 : obImb < -25 ? -4 : obImb < -10 ? -2 : 0;
+      score += cvdDelta > 0 ? 3 : -3;
+      score += volExpand ? 1 : -1;
+      score += last > ema200V ? 1 : -1;
+      maxScore = 9;
+    } else {
+      // combined — original full scoring
+      score += rsiV < 35 ? 2 : rsiV < 45 ? 1 : rsiV > 70 ? -2 : rsiV > 60 ? -1 : 0;
+      score += macdBull ? 2 : (macdV > macdSig ? 1 : macdBear ? -2 : -1);
+      score += emaBull ? 2 : emaBear ? -2 : (last > ema21V ? 1 : -1);
+      score += last < bbL ? 2 : last > bbU ? -2 : (last < bbM ? 1 : -1);
+      score += obImb > 20 ? 2 : obImb > 5 ? 1 : obImb < -20 ? -2 : obImb < -5 ? -1 : 0;
+      score += cvdDelta > 0 ? 1 : -1;
+      score += volExpand ? 1 : volShrink ? -1 : 0;
+      score += stochKV < 20 ? 2 : stochKV < 35 ? 1 : stochKV > 80 ? -2 : stochKV > 65 ? -1 : 0;
+      score += last > ema200V ? 1 : -1;
+      maxScore = 16;
+    }
 
-    const maxScore = 16;
-    const normScore = score / maxScore; // -1 to +1
-
-    // Conviction
-    const absNorm = Math.abs(normScore);
+    const normScore = maxScore > 0 ? score / maxScore : 0;
+    const absNorm   = Math.abs(normScore);
     const conviction = absNorm > 0.55 ? 'High' : absNorm > 0.30 ? 'Medium' : 'Low';
 
-    // Verdict
     let verdict;
     if (normScore > 0.18) verdict = 'LONG';
     else if (normScore < -0.18) verdict = 'SHORT';
@@ -5938,83 +6371,356 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     // ── 5. Risk multipliers by profile ──
     const riskMult = { conservative: 0.6, moderate: 1.0, aggressive: 1.5 }[risk] || 1.0;
     const tfMult   = { 'swing-short': 1.0, 'swing-mid': 1.6, 'swing-long': 2.8 }[tf] || 1.0;
+    const atrM     = atrV * riskMult;
 
-    // ATR-based levels
-    const atrM = atrV * riskMult;
-
+    // ── 5b. Method-specific entry / SL logic ──
     let entryPrice, slPrice, tp1Price, tp2Price, tp3Price;
+    const dp = last >= 1000 ? 0 : 2;
+    const snap = v => parseFloat(v.toFixed(dp));
 
     if (verdict === 'LONG') {
-      // Entry: slightly below current (on pullback to nearest support or EMA9)
-      const entryRef = Math.min(last, ema9V * 1.002, topBid?.p || last);
-      entryPrice = parseFloat((entryRef * 0.999).toFixed(last >= 1000 ? 0 : 2));
-      slPrice    = parseFloat((entryPrice - atrM * 1.2).toFixed(last >= 1000 ? 0 : 2));
-      tp1Price   = parseFloat((entryPrice + atrM * 1.5 * tfMult).toFixed(last >= 1000 ? 0 : 2));
-      tp2Price   = parseFloat((entryPrice + atrM * 2.8 * tfMult).toFixed(last >= 1000 ? 0 : 2));
-      tp3Price   = parseFloat((entryPrice + atrM * 4.5 * tfMult).toFixed(last >= 1000 ? 0 : 2));
-      // Snap to nearby fibs / resistance
-      const upFibs = [fib236, fib382, r1_pp, r2_pp, r3_pp].filter(f => f > entryPrice).sort((a,b)=>a-b);
-      if (upFibs[0] && Math.abs(upFibs[0]-tp1Price)/tp1Price < 0.05) tp1Price = parseFloat(upFibs[0].toFixed(last >= 1000 ? 0 : 2));
-      if (upFibs[1] && Math.abs(upFibs[1]-tp2Price)/tp2Price < 0.07) tp2Price = parseFloat(upFibs[1].toFixed(last >= 1000 ? 0 : 2));
+      if (method === 'fibonacci') {
+        // Entry at golden zone (61.8%), SL below 78.6%, targets at extensions
+        const entFib = last < fib618 ? last : fib618;
+        entryPrice = snap(entFib * 0.999);
+        slPrice    = snap(fib786 * 0.998);
+        const range = swingHi - swingLo;
+        tp1Price   = snap(swingHi + range * 0.272 * tfMult);
+        tp2Price   = snap(swingHi + range * 0.618 * tfMult);
+        tp3Price   = snap(swingHi + range * 1.000 * tfMult);
+      } else if (method === 'swinghl') {
+        entryPrice = snap(lastSL * 1.003);
+        slPrice    = snap(prevSL * 0.997);
+        tp1Price   = snap(lastSH * 0.998);
+        tp2Price   = snap(lastSH + (lastSH - lastSL) * 0.5 * tfMult);
+        tp3Price   = snap(lastSH + (lastSH - lastSL) * 1.0 * tfMult);
+      } else if (method === 'macd') {
+        entryPrice = snap(last * 0.999);
+        slPrice    = snap(entryPrice - atrM * 1.5);
+        tp1Price   = snap(entryPrice + atrM * 1.8 * tfMult);
+        tp2Price   = snap(entryPrice + atrM * 3.2 * tfMult);
+        tp3Price   = snap(entryPrice + atrM * 5.0 * tfMult);
+      } else if (method === 'rsi') {
+        entryPrice = snap(last * 0.9985);
+        slPrice    = snap(entryPrice - atrM * 1.3);
+        tp1Price   = snap(entryPrice + atrM * 1.6 * tfMult);
+        tp2Price   = snap(entryPrice + atrM * 2.8 * tfMult);
+        tp3Price   = snap(entryPrice + atrM * 4.2 * tfMult);
+      } else if (method === 'vwap') {
+        entryPrice = snap(vwapRaw * 1.001);
+        slPrice    = snap(vwapRaw - atrM * 1.2);
+        tp1Price   = snap(vwapRaw + (last - vwapRaw) * 0.5 + atrM * tfMult);
+        tp2Price   = snap(vwapRaw + atrM * 2.5 * tfMult);
+        tp3Price   = snap(vwapRaw + atrM * 4.0 * tfMult);
+      } else if (method === 'ema') {
+        entryPrice = snap(ema21V * 1.002);
+        slPrice    = snap(ema50V * 0.997);
+        tp1Price   = snap(entryPrice + atrM * 1.5 * tfMult);
+        tp2Price   = snap(entryPrice + (ema200V > entryPrice ? (ema200V - entryPrice)*2 : atrM*3) * tfMult);
+        tp3Price   = snap(entryPrice + atrM * 4.5 * tfMult);
+      } else if (method === 'bb') {
+        entryPrice = snap(bbL * 1.002);
+        slPrice    = snap(bbL - atrM * 0.8);
+        tp1Price   = snap(bbM);
+        tp2Price   = snap(bbU * 0.998);
+        tp3Price   = snap(bbU + (bbU - bbL) * 0.3 * tfMult);
+      } else if (method === 'volume') {
+        entryPrice = snap(topBid ? topBid.p * 1.002 : last * 0.999);
+        slPrice    = snap(entryPrice - atrM * 1.2);
+        tp1Price   = snap(entryPrice + atrM * 1.6 * tfMult);
+        tp2Price   = snap(entryPrice + atrM * 2.9 * tfMult);
+        tp3Price   = snap(entryPrice + atrM * 4.5 * tfMult);
+      } else if (method === 'sr') {
+        entryPrice = snap(s1_pp * 1.003);
+        slPrice    = snap(s2_pp * 0.998);
+        tp1Price   = snap(pivot);
+        tp2Price   = snap(r1_pp);
+        tp3Price   = snap(r2_pp * tfMult > r1_pp ? r2_pp : r1_pp + (r1_pp - s1_pp) * tfMult);
+      } else if (method === 'orderflow') {
+        entryPrice = snap(topBid ? topBid.p * 1.001 : last * 0.999);
+        slPrice    = snap(entryPrice - atrM * 1.0);
+        tp1Price   = snap(entryPrice + atrM * 1.5 * tfMult);
+        tp2Price   = snap(entryPrice + atrM * 2.8 * tfMult);
+        tp3Price   = snap(entryPrice + atrM * 4.2 * tfMult);
+      } else {
+        // combined
+        const entryRef = Math.min(last, ema9V * 1.002, topBid?.p || last);
+        entryPrice = snap(entryRef * 0.999);
+        slPrice    = snap(entryPrice - atrM * 1.2);
+        tp1Price   = snap(entryPrice + atrM * 1.5 * tfMult);
+        tp2Price   = snap(entryPrice + atrM * 2.8 * tfMult);
+        tp3Price   = snap(entryPrice + atrM * 4.5 * tfMult);
+        const upFibs = [fib236, fib382, r1_pp, r2_pp, r3_pp].filter(f=>f>entryPrice).sort((a,b)=>a-b);
+        if (upFibs[0] && Math.abs(upFibs[0]-tp1Price)/tp1Price<0.05) tp1Price = snap(upFibs[0]);
+        if (upFibs[1] && Math.abs(upFibs[1]-tp2Price)/tp2Price<0.07) tp2Price = snap(upFibs[1]);
+      }
     } else if (verdict === 'SHORT') {
-      entryPrice = parseFloat((Math.max(last, ema9V * 0.999, topAsk?.p || last) * 1.001).toFixed(last >= 1000 ? 0 : 2));
-      slPrice    = parseFloat((entryPrice + atrM * 1.2).toFixed(last >= 1000 ? 0 : 2));
-      tp1Price   = parseFloat((entryPrice - atrM * 1.5 * tfMult).toFixed(last >= 1000 ? 0 : 2));
-      tp2Price   = parseFloat((entryPrice - atrM * 2.8 * tfMult).toFixed(last >= 1000 ? 0 : 2));
-      tp3Price   = parseFloat((entryPrice - atrM * 4.5 * tfMult).toFixed(last >= 1000 ? 0 : 2));
+      if (method === 'fibonacci') {
+        const entFib = last > fib382 ? last : fib382;
+        entryPrice = snap(entFib * 1.001);
+        slPrice    = snap(swingHi * 1.003);
+        const range = swingHi - swingLo;
+        tp1Price   = snap(swingLo - range * 0.272 * tfMult);
+        tp2Price   = snap(swingLo - range * 0.618 * tfMult);
+        tp3Price   = snap(swingLo - range * 1.000 * tfMult);
+      } else if (method === 'swinghl') {
+        entryPrice = snap(lastSH * 0.997);
+        slPrice    = snap(prevSH * 1.003);
+        tp1Price   = snap(lastSL * 1.002);
+        tp2Price   = snap(lastSL - (lastSH - lastSL) * 0.5 * tfMult);
+        tp3Price   = snap(lastSL - (lastSH - lastSL) * 1.0 * tfMult);
+      } else if (method === 'vwap') {
+        entryPrice = snap(vwapRaw * 0.999);
+        slPrice    = snap(vwapRaw + atrM * 1.2);
+        tp1Price   = snap(vwapRaw - atrM * tfMult);
+        tp2Price   = snap(vwapRaw - atrM * 2.5 * tfMult);
+        tp3Price   = snap(vwapRaw - atrM * 4.0 * tfMult);
+      } else if (method === 'ema') {
+        entryPrice = snap(ema21V * 0.998);
+        slPrice    = snap(ema50V * 1.003);
+        tp1Price   = snap(entryPrice - atrM * 1.5 * tfMult);
+        tp2Price   = snap(entryPrice - atrM * 3.0 * tfMult);
+        tp3Price   = snap(entryPrice - atrM * 4.5 * tfMult);
+      } else if (method === 'bb') {
+        entryPrice = snap(bbU * 0.998);
+        slPrice    = snap(bbU + atrM * 0.8);
+        tp1Price   = snap(bbM);
+        tp2Price   = snap(bbL * 1.002);
+        tp3Price   = snap(bbL - (bbU - bbL) * 0.3 * tfMult);
+      } else if (method === 'sr') {
+        entryPrice = snap(r1_pp * 0.997);
+        slPrice    = snap(r2_pp * 1.002);
+        tp1Price   = snap(pivot);
+        tp2Price   = snap(s1_pp);
+        tp3Price   = snap(s2_pp);
+      } else {
+        entryPrice = snap(Math.max(last, ema9V * 0.999, topAsk?.p || last) * 1.001);
+        slPrice    = snap(entryPrice + atrM * 1.2);
+        tp1Price   = snap(entryPrice - atrM * 1.5 * tfMult);
+        tp2Price   = snap(entryPrice - atrM * 2.8 * tfMult);
+        tp3Price   = snap(entryPrice - atrM * 4.5 * tfMult);
+      }
     } else {
-      // WAIT — show neutral levels anyway
       entryPrice = last;
-      slPrice    = parseFloat((last - atrM * 1.2).toFixed(last >= 1000 ? 0 : 2));
-      tp1Price   = parseFloat((last + atrM * 1.5).toFixed(last >= 1000 ? 0 : 2));
-      tp2Price   = parseFloat((last + atrM * 2.5).toFixed(last >= 1000 ? 0 : 2));
-      tp3Price   = parseFloat((last + atrM * 4.0).toFixed(last >= 1000 ? 0 : 2));
+      slPrice    = snap(last - atrM * 1.2);
+      tp1Price   = snap(last + atrM * 1.5);
+      tp2Price   = snap(last + atrM * 2.5);
+      tp3Price   = snap(last + atrM * 4.0);
     }
 
     // ── 6. R:R ──
-    const riskAmt   = Math.abs(entryPrice - slPrice);
-    const rew1      = Math.abs(tp1Price - entryPrice);
-    const rew2      = Math.abs(tp2Price - entryPrice);
-    const rew3      = Math.abs(tp3Price - entryPrice);
-    const rr1       = riskAmt > 0 ? (rew1/riskAmt).toFixed(1) : '—';
-    const rr2       = riskAmt > 0 ? (rew2/riskAmt).toFixed(1) : '—';
-    const rr3       = riskAmt > 0 ? (rew3/riskAmt).toFixed(1) : '—';
-    const riskPct   = entryPrice > 0 ? (riskAmt/entryPrice*100) : 0;
-    const tp1Pct    = entryPrice > 0 ? ((tp1Price-entryPrice)/entryPrice*100) : 0;
-    const tp2Pct    = entryPrice > 0 ? ((tp2Price-entryPrice)/entryPrice*100) : 0;
-    const tp3Pct    = entryPrice > 0 ? ((tp3Price-entryPrice)/entryPrice*100) : 0;
+    const riskAmt = Math.abs(entryPrice - slPrice);
+    const rew1    = Math.abs(tp1Price - entryPrice);
+    const rew2    = Math.abs(tp2Price - entryPrice);
+    const rew3    = Math.abs(tp3Price - entryPrice);
+    const rr1     = riskAmt > 0 ? (rew1/riskAmt).toFixed(1) : '—';
+    const rr2     = riskAmt > 0 ? (rew2/riskAmt).toFixed(1) : '—';
+    const rr3     = riskAmt > 0 ? (rew3/riskAmt).toFixed(1) : '—';
+    const riskPct = entryPrice > 0 ? (riskAmt/entryPrice*100) : 0;
+    const tp1Pct  = entryPrice > 0 ? ((tp1Price-entryPrice)/entryPrice*100) : 0;
+    const tp2Pct  = entryPrice > 0 ? ((tp2Price-entryPrice)/entryPrice*100) : 0;
+    const tp3Pct  = entryPrice > 0 ? ((tp3Price-entryPrice)/entryPrice*100) : 0;
+    const sign    = verdict==='SHORT' ? -1 : 1;
 
-    const sign = verdict==='SHORT' ? -1 : 1;
+    // ── 7. Method-specific key levels ──
+    let keyLevels = [];
+    if (method === 'fibonacci') {
+      keyLevels = [
+        { type:'support',    price:fib786, strength:'Strong', note:'Fibonacci 78.6% — deep retracement / SL zone' },
+        { type:'support',    price:fib618, strength:'Strong', note:'Fibonacci 61.8% — golden ratio support' },
+        { type:'support',    price:fib500, strength:'Medium', note:'Fibonacci 50% — psychological midpoint' },
+        { type:'resistance', price:fib382, strength:'Medium', note:'Fibonacci 38.2% — first retracement resistance' },
+        { type:'resistance', price:fib236, strength:'Weak',   note:'Fibonacci 23.6% — minor retracement level' },
+        { type:'resistance', price:swingHi, strength:'Strong', note:`Swing High — 100% retracement / extension origin` },
+        { type:'support',    price:swingLo, strength:'Strong', note:`Swing Low — 0% retracement` },
+      ];
+    } else if (method === 'swinghl') {
+      keyLevels = [
+        { type: lastSH > last ? 'resistance' : 'support', price:lastSH, strength:'Strong', note:'Most recent Swing High — structural pivot' },
+        { type: lastSL < last ? 'support' : 'resistance', price:lastSL, strength:'Strong', note:'Most recent Swing Low — structural pivot' },
+        { type:'resistance', price:prevSH, strength:'Medium', note:'Previous Swing High — prior pivot level' },
+        { type:'support',    price:prevSL, strength:'Medium', note:'Previous Swing Low — prior pivot level' },
+        topBid ? { type:'support',    price:topBid.p, strength:'Strong', note:'Largest bid wall (Order Book)' } : null,
+        topAsk ? { type:'resistance', price:topAsk.p, strength:'Strong', note:'Largest ask wall (Order Book)' } : null,
+      ].filter(Boolean);
+    } else if (method === 'vwap') {
+      const v1up = vwapRaw * 1.01, v1dn = vwapRaw * 0.99;
+      const v2up = vwapRaw * 1.025, v2dn = vwapRaw * 0.975;
+      keyLevels = [
+        { type:'support',    price:vwapRaw, strength:'Strong', note:'VWAP — institutional fair value benchmark' },
+        { type:'resistance', price:v1up,    strength:'Medium', note:'VWAP +1σ deviation band' },
+        { type:'support',    price:v1dn,    strength:'Medium', note:'VWAP −1σ deviation band' },
+        { type:'resistance', price:v2up,    strength:'Weak',   note:'VWAP +2σ — potential mean-reversion short zone' },
+        { type:'support',    price:v2dn,    strength:'Weak',   note:'VWAP −2σ — potential mean-reversion long zone' },
+        topBid ? { type:'support',    price:topBid.p, strength:'Strong', note:'Bid wall support' } : null,
+        topAsk ? { type:'resistance', price:topAsk.p, strength:'Strong', note:'Ask wall resistance' } : null,
+      ].filter(Boolean);
+    } else if (method === 'ema') {
+      keyLevels = [
+        { type: last > ema9V  ? 'support' : 'resistance', price:ema9V,   strength:'Medium', note:'EMA 9 — fast dynamic S/R' },
+        { type: last > ema21V ? 'support' : 'resistance', price:ema21V,  strength:'Medium', note:'EMA 21 — short-term trend' },
+        { type: last > ema50V ? 'support' : 'resistance', price:ema50V,  strength:'Strong', note:'EMA 50 — medium-term trend' },
+        { type: last > ema200V? 'support' : 'resistance', price:ema200V, strength:'Strong', note:'EMA 200 — long-term institutional trend' },
+      ];
+    } else if (method === 'bb') {
+      keyLevels = [
+        { type:'support',    price:bbL, strength:'Strong', note:'Bollinger Lower Band — dynamic oversold zone' },
+        { type:'support',    price:bbM, strength:'Medium', note:'Bollinger Middle Band (20 SMA) — mean' },
+        { type:'resistance', price:bbU, strength:'Strong', note:'Bollinger Upper Band — dynamic overbought zone' },
+        topBid ? { type:'support',    price:topBid.p, strength:'Strong', note:'Bid wall support' } : null,
+        topAsk ? { type:'resistance', price:topAsk.p, strength:'Strong', note:'Ask wall resistance' } : null,
+      ].filter(Boolean);
+    } else if (method === 'sr' || method === 'orderflow') {
+      keyLevels = [
+        { type:'support',    price:s1_pp,  strength:'Strong', note:'Pivot S1 — nearest classic floor' },
+        { type:'support',    price:s2_pp,  strength:'Medium', note:'Pivot S2' },
+        { type:'support',    price:pivot,  strength:'Medium', note:'Pivot Point (P) — neutral level' },
+        { type:'resistance', price:r1_pp,  strength:'Strong', note:'Pivot R1 — key hurdle' },
+        { type:'resistance', price:r2_pp,  strength:'Medium', note:'Pivot R2' },
+        topBid ? { type:'support',    price:topBid.p, strength:'Strong', note:'Largest bid wall (Order Book)' } : null,
+        topAsk ? { type:'resistance', price:topAsk.p, strength:'Strong', note:'Largest ask wall (Order Book)' } : null,
+      ].filter(Boolean);
+    } else {
+      // combined / macd / rsi / volume
+      keyLevels = [
+        { type:'support',    price:s1_pp,  strength:'Strong', note:'Pivot S1' },
+        { type:'support',    price:s2_pp,  strength:'Medium', note:'Pivot S2' },
+        { type:'support',    price:fib618, strength:'Strong', note:'Fibonacci 61.8%' },
+        { type:'support',    price:fib382, strength:'Medium', note:'Fibonacci 38.2%' },
+        { type:'resistance', price:r1_pp,  strength:'Strong', note:'Pivot R1' },
+        { type:'resistance', price:r2_pp,  strength:'Medium', note:'Pivot R2' },
+        { type:'resistance', price:fib236, strength:'Medium', note:'Fibonacci 23.6%' },
+        { type:'resistance', price:bbU,    strength:'Weak',   note:'Bollinger Upper Band' },
+        topBid ? { type:'support',    price:topBid.p, strength:'Strong', note:'Largest bid wall' } : null,
+        topAsk ? { type:'resistance', price:topAsk.p, strength:'Strong', note:'Largest ask wall' } : null,
+      ].filter(Boolean);
+    }
+    keyLevels = keyLevels.sort((a,b)=>a.price-b.price);
 
-    // ── 7. Key levels ──
-    const keyLevels = [
-      { type:'support',    price:s1_pp,   strength:'Strong', note:'Pivot S1 — nearest floor' },
-      { type:'support',    price:s2_pp,   strength:'Medium', note:'Pivot S2' },
-      { type:'support',    price:fib618,  strength:'Strong', note:'Fibonacci 61.8% retracement' },
-      { type:'support',    price:fib382,  strength:'Medium', note:'Fibonacci 38.2% retracement' },
-      { type:'resistance', price:r1_pp,   strength:'Strong', note:'Pivot R1 — key hurdle' },
-      { type:'resistance', price:r2_pp,   strength:'Medium', note:'Pivot R2' },
-      { type:'resistance', price:fib236,  strength:'Medium', note:'Fibonacci 23.6% — first resistance' },
-      { type:'resistance', price:bbU,     strength:'Weak',   note:'Bollinger Band upper — dynamic resist.' },
-      topBid ? { type:'support',    price:topBid.p, strength:'Strong', note:`Largest bid wall (OB)` } : null,
-      topAsk ? { type:'resistance', price:topAsk.p, strength:'Strong', note:`Largest ask wall (OB)` } : null,
-    ].filter(Boolean).sort((a,b)=>a.price-b.price);
+    // ── 8. Method-specific signal scorecard ──
+    let signals = [];
+    if (method === 'fibonacci') {
+      signals = [
+        { name:'Price vs 61.8%',  value: fmtP(fib618), signal: last<=fib618*1.01&&last>=fib618*0.99?'Bullish':last<fib618?'Bullish':'Bearish', weight:'High' },
+        { name:'Price vs 50%',    value: fmtP(fib500), signal: Math.abs(last-fib500)/last<0.01?'Neutral':last>fib500?'Bullish':'Bearish', weight:'Medium' },
+        { name:'Price vs 38.2%',  value: fmtP(fib382), signal: last<fib382?'Bullish':'Bearish', weight:'Medium' },
+        { name:'Swing Range',     value: `${fmtP(swingLo)} – ${fmtP(swingHi)}`, signal:'Neutral', weight:'High' },
+        { name:'Ext 1.272 Target',value: fmtP(swingHi+(swingHi-swingLo)*0.272), signal: verdict==='LONG'?'Bullish':'Neutral', weight:'Medium' },
+        { name:'Ext 1.618 Target',value: fmtP(swingHi+(swingHi-swingLo)*0.618), signal: verdict==='LONG'?'Bullish':'Neutral', weight:'Medium' },
+        { name:'CVD Flow',        value: cvdDelta>=0?'Net buying':'Net selling', signal: cvdDelta>0?'Bullish':'Bearish', weight:'Medium' },
+      ];
+    } else if (method === 'swinghl') {
+      signals = [
+        { name:'Market Structure', value: isHHHL?'HH·HL (Uptrend)':isLHLL?'LH·LL (Downtrend)':'Ranging', signal: isHHHL?'Bullish':isLHLL?'Bearish':'Neutral', weight:'High' },
+        { name:'Last Swing High',  value: fmtP(lastSH), signal: last>lastSH?'Bullish':'Neutral', weight:'High' },
+        { name:'Last Swing Low',   value: fmtP(lastSL), signal: last>lastSL?'Bullish':'Bearish', weight:'High' },
+        { name:'BOS / CHoCH',      value: bosBull?'Bullish BOS':bosBear?'Bearish BOS':'No Break', signal: bosBull?'Bullish':bosBear?'Bearish':'Neutral', weight:'High' },
+        { name:'CVD Flow',         value: cvdDelta>=0?'+'+cvdDelta.toFixed(0):cvdDelta.toFixed(0), signal: cvdDelta>0?'Bullish':'Bearish', weight:'Medium' },
+        { name:'OB Imbalance',     value: `${obImb>=0?'+':''}${obImb.toFixed(1)}%`, signal: obImb>10?'Bullish':obImb<-10?'Bearish':'Neutral', weight:'Medium' },
+      ];
+    } else if (method === 'macd') {
+      signals = [
+        { name:'MACD Line',    value: `${macdV>=0?'+':''}${macdV.toFixed(4)}`, signal: macdV>0?'Bullish':'Bearish', weight:'High' },
+        { name:'Signal Line',  value: `${macdSig>=0?'+':''}${macdSig.toFixed(4)}`, signal: macdV>macdSig?'Bullish':'Bearish', weight:'High' },
+        { name:'Histogram',    value: `${macdHist>=0?'+':''}${macdHist.toFixed(4)}`, signal: macdHist>0?'Bullish':'Bearish', weight:'High' },
+        { name:'Cross Signal', value: macdBull?'Fresh bullish cross':macdBear?'Fresh bearish cross':macdV>macdSig?'Above signal':'Below signal', signal: macdBull||macdV>macdSig?'Bullish':'Bearish', weight:'High' },
+        { name:'Zero Line',    value: macdV>0?'Above zero':'Below zero', signal: macdV>0?'Bullish':'Bearish', weight:'Medium' },
+        { name:'Hist Momentum',value: macdHist>macdHistP?'Expanding':'Contracting', signal: macdHist>macdHistP?'Bullish':'Bearish', weight:'Medium' },
+        { name:'EMA 200 Bias', value: `Price ${last>ema200V?'above':'below'} ${fmtP(ema200V)}`, signal: last>ema200V?'Bullish':'Bearish', weight:'Medium' },
+      ];
+    } else if (method === 'rsi') {
+      const rsiDiv = rsiV < 50 && last > closes[n-10] ? 'Bearish divergence possible' : rsiV > 50 && last < closes[n-10] ? 'Bullish divergence possible' : 'No clear divergence';
+      signals = [
+        { name:'RSI (14)',      value: rsiV.toFixed(1), signal: rsiV<30?'Bullish':rsiV<40?'Bullish':rsiV>70?'Bearish':rsiV>60?'Bearish':'Neutral', weight:'High' },
+        { name:'RSI (7)',       value: rsi7V.toFixed(1), signal: rsi7V<30?'Bullish':rsi7V>70?'Bearish':'Neutral', weight:'Medium' },
+        { name:'RSI Zone',      value: rsiV<30?'Oversold (<30)':rsiV<40?'Near oversold':rsiV>70?'Overbought (>70)':rsiV>60?'Near overbought':'Neutral 40–60', signal: rsiV<40?'Bullish':rsiV>60?'Bearish':'Neutral', weight:'High' },
+        { name:'RSI 50 Level',  value: rsiV>50?'Above 50 (bullish bias)':'Below 50 (bearish bias)', signal: rsiV>50?'Bullish':'Bearish', weight:'High' },
+        { name:'Divergence',    value: rsiDiv, signal: rsiDiv.includes('Bullish')?'Bullish':rsiDiv.includes('Bearish')?'Bearish':'Neutral', weight:'Medium' },
+        { name:'RSI Momentum',  value: rsi7V>rsiV?'RSI7 > RSI14 (accelerating)':'RSI7 < RSI14 (decelerating)', signal: rsi7V>rsiV?'Bullish':'Bearish', weight:'Medium' },
+        { name:'EMA 200 Bias',  value: `${last>ema200V?'Above':'Below'} ${fmtP(ema200V)}`, signal: last>ema200V?'Bullish':'Bearish', weight:'Medium' },
+      ];
+    } else if (method === 'vwap') {
+      signals = [
+        { name:'Price vs VWAP',   value: `${vwapDev>=0?'+':''}${vwapDev.toFixed(2)}% from VWAP`, signal: vwapDev>0?'Bearish':'Bullish', weight:'High' },
+        { name:'VWAP Level',      value: fmtP(vwapRaw), signal: last>vwapRaw?'Bullish':'Bearish', weight:'High' },
+        { name:'VWAP Band (+1σ)', value: fmtP(vwapRaw*1.01), signal: last>vwapRaw*1.01?'Bearish':'Neutral', weight:'Medium' },
+        { name:'VWAP Band (−1σ)', value: fmtP(vwapRaw*0.99), signal: last<vwapRaw*0.99?'Bullish':'Neutral', weight:'Medium' },
+        { name:'OBV Direction',   value: obvBull?'Rising (buying)':'Falling (selling)', signal: obvBull?'Bullish':'Bearish', weight:'High' },
+        { name:'OB Imbalance',    value: `${obImb>=0?'+':''}${obImb.toFixed(1)}%`, signal: obImb>10?'Bullish':obImb<-10?'Bearish':'Neutral', weight:'Medium' },
+        { name:'CVD Flow',        value: cvdDelta>=0?'+'+cvdDelta.toFixed(0):cvdDelta.toFixed(0), signal: cvdDelta>0?'Bullish':'Bearish', weight:'Medium' },
+      ];
+    } else if (method === 'ema') {
+      const gcross = ema50V > ema200V;
+      signals = [
+        { name:'EMA 9',         value: fmtP(ema9V),   signal: last>ema9V?'Bullish':'Bearish',   weight:'Medium' },
+        { name:'EMA 21',        value: fmtP(ema21V),  signal: last>ema21V?'Bullish':'Bearish',  weight:'High' },
+        { name:'EMA 50',        value: fmtP(ema50V),  signal: last>ema50V?'Bullish':'Bearish',  weight:'High' },
+        { name:'EMA 200',       value: fmtP(ema200V), signal: last>ema200V?'Bullish':'Bearish', weight:'High' },
+        { name:'EMA Alignment', value: emaBull?'Bullish stack (9>21)':emaBear?'Bearish stack':'Mixed', signal: emaBull?'Bullish':emaBear?'Bearish':'Neutral', weight:'High' },
+        { name:'Golden/Death X',value: gcross?'Golden Cross (50>200)':'Death Cross (50<200)', signal: gcross?'Bullish':'Bearish', weight:'High' },
+        { name:'CVD Flow',      value: cvdDelta>=0?'+'+cvdDelta.toFixed(0):cvdDelta.toFixed(0), signal: cvdDelta>0?'Bullish':'Bearish', weight:'Low' },
+      ];
+    } else if (method === 'bb') {
+      const bbSqueeze = bbW < 3;
+      signals = [
+        { name:'BB Width (%)',    value: `${bbW.toFixed(2)}%`,  signal: bbSqueeze?'Neutral':bbW>8?'Bearish':'Neutral', weight:'High' },
+        { name:'BB Squeeze',      value: bbSqueeze?'Squeezing — breakout imminent':'Normal volatility', signal: bbSqueeze?'Neutral':'Neutral', weight:'High' },
+        { name:'%B Position',     value: `${(bbPctB*100).toFixed(0)}%`, signal: bbPctB<0.2?'Bullish':bbPctB>0.8?'Bearish':'Neutral', weight:'High' },
+        { name:'Upper Band',      value: fmtP(bbU), signal: last>bbU?'Bearish':'Neutral', weight:'Medium' },
+        { name:'Lower Band',      value: fmtP(bbL), signal: last<bbL?'Bullish':'Neutral', weight:'Medium' },
+        { name:'Middle Band(SMA)',value: fmtP(bbM), signal: last>bbM?'Bullish':'Bearish', weight:'Medium' },
+        { name:'Volume Confirm',  value: volExpand?'Expanding':'Contracting', signal: volExpand?'Bullish':'Neutral', weight:'Low' },
+      ];
+    } else if (method === 'volume') {
+      signals = [
+        { name:'OBV Direction',  value: obvBull?'Rising (net buying)':'Falling (net selling)', signal: obvBull?'Bullish':'Bearish', weight:'High' },
+        { name:'Volume Trend',   value: volExpand?'Expanding (+'+((vol5/vol5prev-1)*100).toFixed(0)+'%)':volShrink?'Contracting':'Normal', signal: volExpand?'Bullish':'Neutral', weight:'High' },
+        { name:'OB Imbalance',   value: `${obImb>=0?'+':''}${obImb.toFixed(1)}%`, signal: obImb>10?'Bullish':obImb<-10?'Bearish':'Neutral', weight:'High' },
+        { name:'CVD Trend',      value: `${cvdDelta>=0?'+':''}${cvdDelta.toFixed(0)}`, signal: cvdDelta>0?'Bullish':'Bearish', weight:'High' },
+        { name:'Vol × Price',    value: (vol5>vol5prev&&last>closes[n-2])?'Buying climax signal':(vol5>vol5prev&&last<closes[n-2])?'Selling pressure':'Normal', signal: (vol5>vol5prev&&last>closes[n-2])?'Bullish':(vol5>vol5prev&&last<closes[n-2])?'Bearish':'Neutral', weight:'High' },
+        { name:'EMA 200 Bias',   value: `${last>ema200V?'Above':'Below'} ${fmtP(ema200V)}`, signal: last>ema200V?'Bullish':'Bearish', weight:'Medium' },
+      ];
+    } else if (method === 'sr') {
+      signals = [
+        { name:'Price vs Pivot P', value: fmtP(pivot), signal: last>pivot?'Bullish':'Bearish', weight:'High' },
+        { name:'Pivot R1',         value: fmtP(r1_pp), signal: last>r1_pp?'Bullish':Math.abs(last-r1_pp)/last<0.005?'Neutral':'Bearish', weight:'High' },
+        { name:'Pivot S1',         value: fmtP(s1_pp), signal: last>s1_pp?'Bullish':Math.abs(last-s1_pp)/last<0.005?'Neutral':'Bearish', weight:'High' },
+        { name:'Bid Wall',         value: topBid?fmtP(topBid.p):'—', signal: topBid&&last>topBid.p?'Bullish':'Neutral', weight:'Medium' },
+        { name:'Ask Wall',         value: topAsk?fmtP(topAsk.p):'—', signal: topAsk&&last<topAsk.p?'Bearish':'Neutral', weight:'Medium' },
+        { name:'OB Imbalance',     value: `${obImb>=0?'+':''}${obImb.toFixed(1)}%`, signal: obImb>10?'Bullish':obImb<-10?'Bearish':'Neutral', weight:'High' },
+        { name:'CVD Trend',        value: `${cvdDelta>=0?'+':''}${cvdDelta.toFixed(0)}`, signal: cvdDelta>0?'Bullish':'Bearish', weight:'Medium' },
+      ];
+    } else if (method === 'orderflow') {
+      const recentTrades = this.lofEvents.filter(e => Date.now()-e.ts < 120000);
+      const buyVol  = recentTrades.filter(e=>e.isBuy).reduce((s,e)=>s+e.qty,0);
+      const sellVol = recentTrades.filter(e=>!e.isBuy).reduce((s,e)=>s+e.qty,0);
+      const flowBias = buyVol+sellVol>0 ? (buyVol/(buyVol+sellVol)*100).toFixed(1) : '50.0';
+      signals = [
+        { name:'OB Imbalance',  value: `${obImb>=0?'+':''}${obImb.toFixed(1)}%`, signal: obImb>15?'Bullish':obImb<-15?'Bearish':'Neutral', weight:'High' },
+        { name:'CVD Trend',     value: `${cvdDelta>=0?'+':''}${cvdDelta.toFixed(0)}`, signal: cvdDelta>0?'Bullish':'Bearish', weight:'High' },
+        { name:'Buy Pressure',  value: `${flowBias}% buys`, signal: parseFloat(flowBias)>55?'Bullish':parseFloat(flowBias)<45?'Bearish':'Neutral', weight:'High' },
+        { name:'Largest Bid',   value: topBid?fmtP(topBid.p):'—', signal: topBid&&last>topBid.p?'Bullish':'Neutral', weight:'High' },
+        { name:'Largest Ask',   value: topAsk?fmtP(topAsk.p):'—', signal: topAsk&&last<topAsk.p?'Bearish':'Neutral', weight:'High' },
+        { name:'Volume Trend',  value: volExpand?'Expanding':volShrink?'Contracting':'Normal', signal: volExpand?'Bullish':'Neutral', weight:'Medium' },
+        { name:'EMA 200 Bias',  value: `${last>ema200V?'Above':'Below'} ${fmtP(ema200V)}`, signal: last>ema200V?'Bullish':'Bearish', weight:'Low' },
+      ];
+    } else {
+      // combined
+      signals = [
+        { name:'RSI (14)',       value:`${rsiV.toFixed(1)}`,    signal: rsiV<35?'Bullish':rsiV>65?'Bearish':'Neutral',  weight:'High' },
+        { name:'RSI (7)',        value:`${rsi7V.toFixed(1)}`,   signal: rsi7V<30?'Bullish':rsi7V>70?'Bearish':'Neutral', weight:'Medium' },
+        { name:'MACD',           value:`Hist: ${macdHist>=0?'+':''}${macdHist.toFixed(2)}`, signal: macdV>macdSig?'Bullish':'Bearish', weight:'High' },
+        { name:'EMA 9/21 Align', value: emaBull?'Bullish stack':emaBear?'Bearish stack':'Mixed', signal: emaBull?'Bullish':emaBear?'Bearish':'Neutral', weight:'High' },
+        { name:'EMA 200',        value:`Price ${last>ema200V?'above':'below'} ${fmtP(ema200V)}`, signal: last>ema200V?'Bullish':'Bearish', weight:'High' },
+        { name:'Bollinger Bands',value:`Width ${bbW.toFixed(1)}% · Price ${last>bbM?'upper':'lower'} half`, signal: last<bbL?'Bullish':last>bbU?'Bearish':'Neutral', weight:'Medium' },
+        { name:'Stochastic %K',  value:`${stochKV.toFixed(1)}`, signal: stochKV<20?'Bullish':stochKV>80?'Bearish':'Neutral', weight:'Medium' },
+        { name:'OB Imbalance',   value:`${obImb>=0?'+':''}${obImb.toFixed(1)}%`, signal: obImb>10?'Bullish':obImb<-10?'Bearish':'Neutral', weight:'High' },
+        { name:'CVD Trend',      value:`${cvdDelta>=0?'+':''}${cvdDelta.toFixed(0)}`, signal: cvdDelta>0?'Bullish':'Bearish', weight:'Medium' },
+        { name:'Volume',         value:volExpand?'Expanding':volShrink?'Contracting':'Normal', signal: volExpand?(verdict==='LONG'?'Bullish':'Bearish'):'Neutral', weight:'Medium' },
+      ];
+    }
 
-    // ── 8. Signal scorecard ──
-    const signals = [
-      { name:'RSI (14)',       value:`${rsiV.toFixed(1)}`,    signal: rsiV<35?'Bullish':rsiV>65?'Bearish':'Neutral',  weight:'High' },
-      { name:'RSI (7)',        value:`${rsi7V.toFixed(1)}`,   signal: rsi7V<30?'Bullish':rsi7V>70?'Bearish':'Neutral', weight:'Medium' },
-      { name:'MACD',           value:`Hist: ${macdHist>=0?'+':''}${macdHist.toFixed(2)}`, signal: macdV>macdSig?'Bullish':'Bearish', weight:'High' },
-      { name:'EMA 9/21 Align', value: emaBull?'Bullish stack':emaBear?'Bearish stack':'Mixed', signal: emaBull?'Bullish':emaBear?'Bearish':'Neutral', weight:'High' },
-      { name:'EMA 200',        value:`Price ${last>ema200V?'above':'below'} $${ema200V.toFixed(0)}`, signal: last>ema200V?'Bullish':'Bearish', weight:'High' },
-      { name:'Bollinger Bands',value:`Width ${bbW.toFixed(1)}% · Price ${last>bbM?'upper':'lower'} half`, signal: last<bbL?'Bullish':last>bbU?'Bearish':'Neutral', weight:'Medium' },
-      { name:'Stochastic %K',  value:`${stochKV.toFixed(1)}`, signal: stochKV<20?'Bullish':stochKV>80?'Bearish':'Neutral', weight:'Medium' },
-      { name:'OB Imbalance',   value:`${obImb>=0?'+':''}${obImb.toFixed(1)}%`, signal: obImb>10?'Bullish':obImb<-10?'Bearish':'Neutral', weight:'High' },
-      { name:'CVD Trend',      value:`${cvdDelta>=0?'+':''}${cvdDelta.toFixed(0)}`, signal: cvdDelta>0?'Bullish':cvdDelta<0?'Bearish':'Neutral', weight:'Medium' },
-      { name:'Volume',         value:volExpand?'Expanding':volShrink?'Contracting':'Normal', signal: volExpand?(verdict==='LONG'?'Bullish':'Bearish'):'Neutral', weight:'Medium' },
-    ];
-
-    // ── 9. Narrative analysis ──
+    // ── 9. Method-aware narrative analysis ──
     const tfLabel   = {'swing-short':'1–3 day','swing-mid':'1–2 week','swing-long':'1+ month'}[tf];
     const riskLabel = {'conservative':'conservative (tight stops)','moderate':'moderate (balanced R:R)','aggressive':'aggressive (wider targets)'}[risk];
     const mktStruct = last > ema200V ? 'above the 200 EMA, indicating a long-term bullish macro structure' : 'below the 200 EMA, suggesting macro caution is warranted';
@@ -6025,26 +6731,52 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     const obFeel    = obImb > 15 ? `The order book shows heavy bid-side pressure (+${obImb.toFixed(1)}%), indicating strong buyer interest around current levels.` : obImb < -15 ? `The order book shows significant ask-side pressure (${obImb.toFixed(1)}%), suggesting sellers are dominating near-term.` : 'Order book depth is roughly balanced with no extreme walls dominating price.';
     const cvdFeel   = cvdDelta > 0 ? 'Cumulative Volume Delta is rising, confirming buy-side aggression in recent trades.' : cvdDelta < 0 ? 'CVD is declining, indicating sellers are hitting bids aggressively.' : 'CVD is flat — neither bulls nor bears are showing conviction in recent flow.';
 
+    const methodAnalysisPara = {
+      fibonacci: `FIBONACCI ANALYSIS\nUsing the recent swing range (Low: ${fmtP(swingLo)} → High: ${fmtP(swingHi)}, range: ${fmtP(swingHi-swingLo)}), key retracement levels are: 23.6% at ${fmtP(fib236)}, 38.2% at ${fmtP(fib382)}, 50% at ${fmtP(fib500)}, 61.8% at ${fmtP(fib618)}, and 78.6% at ${fmtP(fib786)}. The golden zone (38.2%–61.8%) between ${fmtP(fib382)} and ${fmtP(fib618)} represents the highest-probability bounce area. Price is currently ${last > fib618 ? 'above the 61.8% level — the retracement is shallow, suggesting strength' : last > fib500 ? 'between the 50% and 61.8% levels — within the golden zone' : last > fib382 ? 'between 38.2% and 50% — nearing completion of a healthy retracement' : 'below 38.2%, testing deeper retracement levels that indicate more bearish pressure'}. Extension targets above: 1.272 at ${fmtP(swingHi+(swingHi-swingLo)*0.272)}, 1.618 at ${fmtP(swingHi+(swingHi-swingLo)*0.618)}.`,
+
+      swinghl: `SWING HIGH / LOW STRUCTURE\nMarket structure analysis reveals ${isHHHL ? 'a bullish Higher High / Higher Low pattern — the trend is intact and entries on pullbacks to prior swing lows are favoured' : isLHLL ? 'a bearish Lower High / Lower Low pattern — the downtrend is intact and rallies to prior swing highs offer short entries' : 'a ranging structure without clear directional bias — wait for a confirmed break of structure'}. The most recent Swing High is at ${fmtP(lastSH)} and Swing Low at ${fmtP(lastSL)}. ${bosBull ? `A Break of Structure to the upside has occurred as price approached ${fmtP(lastSH)} — this confirms bullish intent.` : bosBear ? `A Break of Structure to the downside has occurred as price approached ${fmtP(lastSL)} — this confirms bearish intent.` : 'No confirmed Break of Structure yet — patience is required for a high-conviction entry.'} Previous pivot levels: prior SH at ${fmtP(prevSH)}, prior SL at ${fmtP(prevSL)}.`,
+
+      macd: `MACD MOMENTUM ANALYSIS\n${macdFeel}. The MACD line reads ${macdV >= 0 ? '+' : ''}${macdV.toFixed(4)} and the signal line is at ${macdSig >= 0 ? '+' : ''}${macdSig.toFixed(4)}, giving a histogram value of ${macdHist >= 0 ? '+' : ''}${macdHist.toFixed(4)}. ${macdHist > macdHistP ? 'The histogram is expanding — momentum is accelerating in the current direction.' : 'The histogram is contracting — momentum is decelerating, which may precede a reversal or consolidation.'} The MACD line is ${macdV > 0 ? 'above zero, confirming a bullish macro bias' : 'below zero, confirming a bearish macro bias'}. ${macdBull ? '⚡ A fresh bullish crossover just occurred — this is one of the highest-conviction entry signals in MACD analysis.' : macdBear ? '⚡ A fresh bearish crossover just occurred — caution for longs.' : ''}`,
+
+      rsi: `RSI ANALYSIS\nThe RSI(14) reads ${rsiV.toFixed(1)}, placing price in ${rsiV < 30 ? 'deeply oversold territory (below 30) — statistically, this is where the highest-probability bounces occur' : rsiV < 40 ? 'near-oversold territory (30–40) — selling exhaustion may be approaching' : rsiV > 70 ? 'overbought territory (above 70) — risk of reversal is elevated' : rsiV > 60 ? 'elevated territory (60–70) — momentum is strong but watch for divergence' : 'neutral territory (40–60) — no extreme reading'}. The RSI(7) reads ${rsi7V.toFixed(1)}, ${rsi7V > rsiV ? 'running hotter than RSI14 — short-term momentum is accelerating' : 'lagging RSI14 — short-term momentum is decelerating'}. RSI ${rsiV > 50 ? 'is above the 50 midline, confirming bullish trend bias' : 'is below the 50 midline, confirming bearish trend bias'}. ATR(14) at ${fmtP(atrV)} (${(atrV/last*100).toFixed(2)}% of price) calibrates the stop loss distance.`,
+
+      vwap: `VWAP ANALYSIS\nThe 20-candle VWAP is estimated at ${fmtP(vwapRaw)}, with price currently ${vwapDev >= 0 ? '+' : ''}${vwapDev.toFixed(2)}% ${vwapDev > 0 ? 'above' : 'below'} the VWAP. ${Math.abs(vwapDev) > 3 ? `This is a significant ${vwapDev > 0 ? 'premium' : 'discount'} to VWAP — institutions typically fade extreme deviations, suggesting a ${vwapDev > 0 ? 'mean-reversion short' : 'mean-reversion long'} opportunity.` : Math.abs(vwapDev) > 1 ? `Price is moderately ${vwapDev > 0 ? 'above' : 'below'} VWAP — a breakout continuation ${vwapDev > 0 ? 'long' : 'short'} favours the current direction.` : 'Price is near VWAP — this is the institutional equilibrium level. A directional break with volume from here is the highest-quality entry.'} VWAP deviation bands: +1σ at ${fmtP(vwapRaw*1.01)}, −1σ at ${fmtP(vwapRaw*0.99)}, +2σ at ${fmtP(vwapRaw*1.025)}, −2σ at ${fmtP(vwapRaw*0.975)}. ${obvBull ? 'OBV is rising, confirming institutional accumulation.' : 'OBV is declining, suggesting distribution pressure.'}`,
+
+      ema: `EMA ALIGNMENT ANALYSIS\nEMA structure: EMA9 at ${fmtP(ema9V)}, EMA21 at ${fmtP(ema21V)}, EMA50 at ${fmtP(ema50V)}, EMA200 at ${fmtP(ema200V)}. ${emaBull ? '✅ EMAs are in a bullish stack (9 > 21) — trend is up and pullbacks to the 21 EMA are buy-the-dip opportunities.' : emaBear ? '⚠️ EMAs are in a bearish stack (9 < 21) — trend is down and rallies to the 21 EMA are short opportunities.' : 'EMAs are mixed/flat — a transitional or ranging phase is in progress.'} ${ema50V > ema200V ? '✅ Golden Cross in effect (EMA50 > EMA200) — the macro trend is bullish.' : '⚠️ Death Cross in effect (EMA50 < EMA200) — the macro trend is bearish.'} Price is ${last > ema200V ? 'above' : 'below'} the 200 EMA at ${fmtP(ema200V)}, which is the primary institutional trend filter. Distance from EMA200: ${((last-ema200V)/ema200V*100).toFixed(2)}%.`,
+
+      bb: `BOLLINGER BANDS ANALYSIS\nBollinger Bands (20, ±2σ): Upper at ${fmtP(bbU)}, Middle (20 SMA) at ${fmtP(bbM)}, Lower at ${fmtP(bbL)}. Band width is ${bbW.toFixed(2)}% — ${bbW < 3 ? '⚡ SQUEEZE detected: bands are very tight, signalling an imminent volatility breakout. Direction of the breakout will define the next major trade.' : bbW > 8 ? 'bands are wide — a trending/expansionary phase is underway.' : 'moderate volatility.'}. %B position: ${(bbPctB*100).toFixed(0)}% — ${bbPctB < 0.1 ? 'price is near/below the lower band (oversold)' : bbPctB > 0.9 ? 'price is near/above the upper band (overbought)' : bbPctB < 0.4 ? 'price is in the lower half (bearish bias)' : 'price is in the upper half (bullish bias)'}. ${bbState}`,
+
+      volume: `VOLUME PROFILE ANALYSIS\nVolume comparison: recent 5-candle average ${volExpand ? `is expanding (+${((vol5/vol5prev-1)*100).toFixed(0)}% vs prior period) — confirms the current ${verdict === 'LONG' ? 'bullish' : verdict === 'SHORT' ? 'bearish' : 'directional'} move` : volShrink ? `is contracting (−${((1-vol5/vol5prev)*100).toFixed(0)}% vs prior period) — the current move lacks conviction` : 'is normal'}. OBV is ${obvBull ? 'trending higher — accumulation is occurring' : 'declining — distribution pressure is present'}. ${obFeel} Order book walls — largest bid at ${fmtP(topBid?.p || 0)} (${topBid ? topBid.q.toFixed(2) + ' units' : 'none detected'}) and largest ask at ${fmtP(topAsk?.p || 0)} — act as high-volume node proxies for institutional interest. ${cvdFeel}`,
+
+      sr: `SUPPORT & RESISTANCE ANALYSIS\nClassic pivot levels from the previous candle: P=${fmtP(pivot)}, R1=${fmtP(r1_pp)}, R2=${fmtP(r2_pp)}, R3=${fmtP(r3_pp)}, S1=${fmtP(s1_pp)}, S2=${fmtP(s2_pp)}, S3=${fmtP(s3_pp)}. Price is currently ${last > r1_pp ? 'above R1 — bullish breakout zone' : last > pivot ? 'between P and R1 — neutral to bullish' : last > s1_pp ? 'between S1 and P — neutral to bearish' : 'below S1 — bearish breakdown zone'}. ${obFeel} The largest bid wall at ${fmtP(topBid?.p || 0)} acts as near-term dynamic support; the largest ask wall at ${fmtP(topAsk?.p || 0)} as dynamic resistance. Breakout trades require a decisive candle close beyond the level with expanding volume. Retest setups (former resistance → support) offer the cleanest risk/reward entries.`,
+
+      orderflow: `ORDER FLOW ANALYSIS\n${obFeel} Bid/ask imbalance: ${obImb >= 0 ? '+' : ''}${obImb.toFixed(1)}% — ${Math.abs(obImb) > 20 ? 'extreme ' : ''}${obImb > 0 ? 'bid dominance' : 'ask dominance'}. Largest bid wall: ${fmtP(topBid?.p || 0)} (${topBid ? topBid.q.toFixed(2) + ' units' : 'none'}); largest ask wall: ${fmtP(topAsk?.p || 0)} (${topAsk ? topAsk.q.toFixed(2) + ' units' : 'none'}). ${cvdFeel} These CVD and imbalance readings are the primary signal source for this method — price will tend to follow the side with dominant flow. Macro context: price is ${last > ema200V ? 'above' : 'below'} the 200 EMA at ${fmtP(ema200V)}, which provides the directional bias filter.`,
+
+      combined: '',
+    };
+
+    const methodPara = methodAnalysisPara[method] || '';
+
     const summary = verdict === 'WAIT'
       ? `${this.coinName} (${sym.replace('USDT','/USDT')}) is showing mixed signals across timeframes. With an RSI of ${rsiV.toFixed(1)} (${rsiFeel}) and ${emaStack.toLowerCase()}, the setup does not yet offer a high-probability entry. Patience is recommended.`
       : verdict === 'LONG'
-        ? `${this.coinName} shows a ${conviction.toLowerCase()}-conviction LONG setup on the ${tfLabel} timeframe. RSI is ${rsiFeel} at ${rsiV.toFixed(1)}, ${macdFeel}. Entry is targeted near ${fmtP(entryPrice)} with a stop at ${fmtP(slPrice)}.`
-        : `${this.coinName} shows a ${conviction.toLowerCase()}-conviction SHORT setup on the ${tfLabel} timeframe. RSI is ${rsiFeel} at ${rsiV.toFixed(1)}, ${macdFeel}. Entry is near ${fmtP(entryPrice)} with a stop at ${fmtP(slPrice)}.`;
+        ? `${this.coinName} shows a ${conviction.toLowerCase()}-conviction LONG setup on the ${tfLabel} timeframe [${method.toUpperCase()} method]. RSI is ${rsiFeel} at ${rsiV.toFixed(1)}, ${macdFeel}. Entry is targeted near ${fmtP(entryPrice)} with a stop at ${fmtP(slPrice)}.`
+        : `${this.coinName} shows a ${conviction.toLowerCase()}-conviction SHORT setup on the ${tfLabel} timeframe [${method.toUpperCase()} method]. RSI is ${rsiFeel} at ${rsiV.toFixed(1)}, ${macdFeel}. Entry is near ${fmtP(entryPrice)} with a stop at ${fmtP(slPrice)}.`;
 
     const analysis = [
-      `MARKET STRUCTURE\n${this.coinName} (${sym.replace('USDT','/USDT')}) is currently trading at ${fmtP(last)}, ${mktStruct}. The ${interval} chart is used for this ${tfLabel} swing trade analysis with a ${riskLabel} risk profile.`,
+      `MARKET STRUCTURE\n${this.coinName} (${sym.replace('USDT','/USDT')}) is currently trading at ${fmtP(last)}, ${mktStruct}. The ${interval} chart is used for this ${tfLabel} swing trade analysis with a ${riskLabel} risk profile. Method: ${method.toUpperCase()}.`,
 
-      `TREND & MOMENTUM\n${emaStack}. The RSI(14) reads ${rsiV.toFixed(1)} — ${rsiFeel} — while RSI(7) is at ${rsi7V.toFixed(1)}, giving an early read on short-term momentum. ${macdFeel}. The MACD histogram is ${macdHist >= 0 ? 'positive' : 'negative'} at ${macdHist.toFixed(4)}.`,
+      methodPara || `TREND & MOMENTUM\n${emaStack}. The RSI(14) reads ${rsiV.toFixed(1)} — ${rsiFeel} — while RSI(7) is at ${rsi7V.toFixed(1)}, giving an early read on short-term momentum. ${macdFeel}. The MACD histogram is ${macdHist >= 0 ? 'positive' : 'negative'} at ${macdHist.toFixed(4)}.`,
 
-      `BOLLINGER BANDS & VOLATILITY\n${bbState} ATR(14) is at ${fmtP(atrV)}, representing ${(atrV/last*100).toFixed(2)}% of price. This defines the natural noise range and is used to calibrate stop-loss and target distances. Stochastic %K is ${stochKV.toFixed(1)} — ${stochKV < 20 ? 'in oversold territory, consistent with bounce setups' : stochKV > 80 ? 'in overbought territory, watch for exhaustion' : 'in neutral territory'}.`,
+      `BOLLINGER BANDS & VOLATILITY\n${bbState} ATR(14) is at ${fmtP(atrV)}, representing ${(atrV/last*100).toFixed(2)}% of price. Stochastic %K is ${stochKV.toFixed(1)} — ${stochKV < 20 ? 'in oversold territory' : stochKV > 80 ? 'in overbought territory' : 'in neutral territory'}.`,
 
-      `ORDER BOOK ANALYSIS\n${obFeel} The largest bid wall sits at ${fmtP(topBid?.p || 0)} and the largest ask wall at ${fmtP(topAsk?.p || 0)}. These act as near-term magnets and key decision levels. The bid/ask ratio implies ${obImb > 0 ? 'more demand than supply' : 'more supply than demand'} at current prices.`,
+      `ORDER BOOK ANALYSIS\n${obFeel} Largest bid wall: ${fmtP(topBid?.p || 0)} | Largest ask wall: ${fmtP(topAsk?.p || 0)}.`,
 
-      `ORDER FLOW & CVD\n${cvdFeel} ${volExpand ? `Volume is expanding on recent candles (+${((vol5/vol5prev-1)*100).toFixed(0)}% vs prior period), which ${verdict==='LONG'?'adds conviction to bullish momentum':'confirms bearish distribution pressure'}.` : volShrink ? 'Volume is contracting, suggesting the current move may lack follow-through. Wait for volume confirmation before committing full size.' : 'Volume is normal and does not significantly strengthen or weaken the current signal.'}`,
+      `ORDER FLOW & CVD\n${cvdFeel} ${volExpand ? `Volume is expanding (+${((vol5/vol5prev-1)*100).toFixed(0)}% vs prior period), ${verdict==='LONG'?'adding conviction to bullish momentum':'confirming bearish distribution pressure'}.` : volShrink ? 'Volume is contracting — wait for volume confirmation before committing full size.' : 'Volume is normal.'}`,
 
-      `FIBONACCI & PIVOT LEVELS\nKey Fibonacci retracement levels from the recent swing (High: ${fmtP(swingHi)}, Low: ${fmtP(swingLo)}): 23.6% at ${fmtP(fib236)}, 38.2% at ${fmtP(fib382)}, 50% at ${fmtP(fib500)}, 61.8% at ${fmtP(fib618)}, 78.6% at ${fmtP(fib786)}. Classic pivot levels: P=${fmtP(pivot)}, R1=${fmtP(r1_pp)}, R2=${fmtP(r2_pp)}, S1=${fmtP(s1_pp)}, S2=${fmtP(s2_pp)}.`,
+      `FIBONACCI & PIVOT LEVELS\nKey Fibonacci retracements (High: ${fmtP(swingHi)}, Low: ${fmtP(swingLo)}): 23.6% at ${fmtP(fib236)}, 38.2% at ${fmtP(fib382)}, 50% at ${fmtP(fib500)}, 61.8% at ${fmtP(fib618)}, 78.6% at ${fmtP(fib786)}. Classic pivots: P=${fmtP(pivot)}, R1=${fmtP(r1_pp)}, R2=${fmtP(r2_pp)}, S1=${fmtP(s1_pp)}, S2=${fmtP(s2_pp)}.`,
 
-      `TRADE PLAN RATIONALE\n${verdict === 'WAIT' ? `With an overall signal score of ${score}/${maxScore} (${(normScore*100).toFixed(0)}%), conditions are not yet favourable for a directional trade. Key levels to monitor: resistance at ${fmtP(r1_pp)} and support at ${fmtP(s1_pp)}. Wait for a clear breakout above/below these with expanding volume.` : verdict === 'LONG' ? `With a bullish signal score of ${score}/${maxScore} (${(normScore*100).toFixed(0)}%), the risk/reward favours a long position. Entry near ${fmtP(entryPrice)} on a pullback offers ${rr1}:1 R:R to the first target. Stop is placed ${riskPct.toFixed(2)}% below entry, below key support. Scale out: take 40% at T1 (${fmtP(tp1Price)}), 35% at T2 (${fmtP(tp2Price)}), trail remainder to T3 (${fmtP(tp3Price)}).` : `With a bearish signal score of ${score}/${maxScore} (${(normScore*100).toFixed(0)}%), the risk/reward favours a short position. Entry near ${fmtP(entryPrice)} on a rally/retest offers ${rr1}:1 R:R to the first target. Stop is placed ${riskPct.toFixed(2)}% above entry. Scale out: 40% at T1, 35% at T2, trail remainder to T3.`}`,
+      `TRADE PLAN RATIONALE\n${verdict === 'WAIT' ? `Signal score ${score}/${maxScore} (${(normScore*100).toFixed(0)}%) — conditions not yet favourable. Monitor ${fmtP(r1_pp)} resistance and ${fmtP(s1_pp)} support.` : verdict === 'LONG' ? `Bullish score ${score}/${maxScore} (${(normScore*100).toFixed(0)}%). Entry near ${fmtP(entryPrice)} offers ${rr1}:1 R:R to T1. Stop ${riskPct.toFixed(2)}% below entry. Scale: 40% at T1 (${fmtP(tp1Price)}), 35% at T2 (${fmtP(tp2Price)}), trail to T3 (${fmtP(tp3Price)}).` : `Bearish score ${score}/${maxScore} (${(normScore*100).toFixed(0)}%). Short entry near ${fmtP(entryPrice)} offers ${rr1}:1 R:R to T1. Stop ${riskPct.toFixed(2)}% above entry. Scale: 40% at T1 (${fmtP(tp1Price)}), 35% at T2 (${fmtP(tp2Price)}), trail to T3 (${fmtP(tp3Price)}).`}`,
     ].join('\n\n');
 
     // ── 10. Risk rules ──
@@ -6058,18 +6790,44 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       { rule: `Avoid trading within 30 minutes of major macro events (CPI, FOMC, BTC ETF news). Widen stop by 50% or stand aside entirely.`, type:'management' },
     ];
 
-    // ── 11. Catalysts & Invalidation ──
-    const catalysts = verdict === 'LONG'
+    // ── 11. Method-aware Catalysts & Invalidation ──
+    const methodCatalysts = {
+      fibonacci: verdict==='LONG' ? `- Price holds above 61.8% fib (${fmtP(fib618)}) and bounces\n- Break above 38.2% fib (${fmtP(fib382)}) with volume confirms wave 3\n- Extension target 1.272 at ${fmtP(swingHi+(swingHi-swingLo)*0.272)} becomes first objective\n- CVD rising confirms accumulation at golden zone\n- Order book bid wall builds at/above 61.8%` : `- Rejection at 38.2% fib (${fmtP(fib382)}) — bears defending resistance\n- MACD turning negative at key fib level\n- Break below 50% (${fmtP(fib500)}) opens path to 61.8%\n- Extension short target at ${fmtP(swingLo-(swingHi-swingLo)*0.272)}\n- Volume expands on down-candle at fib resistance`,
+      swinghl:   verdict==='LONG' ? `- Confirmed Higher Low above ${fmtP(lastSL)} holds on retest\n- Break and close above Swing High ${fmtP(lastSH)} (BOS)\n- Market structure shifts to clear HH·HL pattern\n- CVD rising on retest of prior swing low\n- OB imbalance > +20% signals institutional buying` : `- Confirmed Lower High below ${fmtP(lastSH)} — downtrend structure\n- Break below Swing Low ${fmtP(lastSL)} (BOS to downside)\n- MACD crosses below signal on the break\n- CVD declining on rally to swing high\n- Volume expands on down-move`,
+      macd:      verdict==='LONG' ? `- MACD histogram continues expanding positively\n- MACD line crosses above zero (zero-line bullish cross)\n- Histogram makes higher high vs prior swing\n- Volume expanding confirms MACD signal strength\n- RSI crosses back above 50 simultaneously` : `- MACD histogram expands negatively below zero\n- Fresh death cross: MACD crosses below signal line\n- Zero-line rejection — MACD fails to reclaim above zero\n- Volume confirms selling on the MACD signal\n- RSI breaks below 50 confirming momentum shift`,
+      rsi:       verdict==='LONG' ? `- RSI bounces from oversold and crosses back above 40\n- RSI reclaims 50 midline — bullish bias confirmed\n- Bullish divergence: price makes lower low, RSI makes higher low\n- RSI failure swing: prior RSI high broken to upside\n- Volume expands as RSI crosses 50` : `- RSI fails at 50 midline after bounce — bearish\n- Bearish divergence: price higher high, RSI lower high\n- RSI drops below 40, signalling momentum breakdown\n- RSI failure swing: prior RSI low broken to downside\n- Overbought RSI (>70) rejecting at resistance`,
+      vwap:      verdict==='LONG' ? `- Price reclaims VWAP (${fmtP(vwapRaw)}) with volume — bullish VWAP cross\n- VWAP holds as support on retest\n- Move from −2σ to +1σ VWAP band is the target path\n- OBV rising confirms institutional accumulation\n- OB imbalance > +20% at VWAP support` : `- Price fails at VWAP resistance — distribution\n- VWAP rejection candle: close below VWAP after test\n- Extension to −1σ (${fmtP(vwapRaw*0.99)}) then −2σ (${fmtP(vwapRaw*0.975)})\n- OBV declining confirms distribution\n- OB imbalance flips negative at VWAP`,
+      ema:       verdict==='LONG' ? `- Price bounces off 21 EMA (${fmtP(ema21V)}) and holds\n- EMA9 crosses above EMA21 — short-term trend turns up\n- Price reclaims 50 EMA (${fmtP(ema50V)}) with expanding volume\n- Golden Cross: EMA50 > EMA200 in effect or approaching\n- CVD rising on EMA pullback bounce` : `- Rejection at 21 EMA (${fmtP(ema21V)}) from below\n- EMA9 crosses below EMA21 — momentum turns negative\n- Price breaks 50 EMA (${fmtP(ema50V)}) — trend weakening\n- Death Cross: EMA50 < EMA200 confirming downtrend\n- CVD declining on EMA rejection`,
+      bb:        verdict==='LONG' ? `- Bollinger squeeze resolves to the upside with volume\n- Price bounces off lower band (${fmtP(bbL)}) and closes above middle (${fmtP(bbM)})\n- W-bottom pattern at lower band confirms reversal\n- %B crosses back above 0.5 after oversold reading\n- Band expansion confirms breakout direction is up` : `- Squeeze resolves to downside with volume\n- Price rejects at upper band (${fmtP(bbU)}) — M-top pattern forming\n- %B drops below 0.5 after overbought reading\n- Band walk along lower band continues — bearish\n- Middle band (${fmtP(bbM)}) fails as support`,
+      volume:    verdict==='LONG' ? `- OBV breaks to new high — institutional accumulation confirmed\n- High-volume candle at support (HVN) holds price\n- Expanding volume on up-candles confirms buying\n- OB imbalance shifts to > +25% — bid-side dominance\n- CVD rising confirms net buying aggression` : `- OBV breaks to new low — distribution confirmed\n- High-volume candle at resistance (HVN) rejects price\n- Expanding volume on down-candles confirms selling\n- OB imbalance shifts to < −25% — ask-side dominance\n- CVD declining confirms net selling aggression`,
+      sr:        verdict==='LONG' ? `- Price retests broken resistance as support (R→S flip)\n- S1 (${fmtP(s1_pp)}) holds and bounces with volume\n- Break above R1 (${fmtP(r1_pp)}) confirms next leg up\n- OB imbalance > +20% at S/R zone\n- CVD rising at support level` : `- Price retests broken support as resistance (S→R flip)\n- R1 (${fmtP(r1_pp)}) holds as resistance — rejection confirmed\n- Break below S1 (${fmtP(s1_pp)}) opens path to S2 (${fmtP(s2_pp)})\n- OB imbalance < −20% at resistance\n- CVD declining on resistance retest`,
+      orderflow: verdict==='LONG' ? `- OB imbalance sustains above +25% — bid dominance strengthening\n- CVD makes new high — aggressive buying confirms trend\n- Large bid walls absorb selling (no sweep)\n- Buy pressure > 60% on recent trades\n- Volume expanding on bid-side confirms institutional buying` : `- OB imbalance drops below −25% — ask dominance accelerating\n- CVD makes new low — aggressive selling confirms downtrend\n- Large ask walls absorb buying (no sweep)\n- Sell pressure > 60% on recent trades (buy pressure < 40%)\n- Bid walls swept (stop hunt) then price continues lower`,
+    };
+    const catalysts = methodCatalysts[method] ||
+      (verdict === 'LONG'
       ? `- Break and hold above ${fmtP(r1_pp)} (Pivot R1) on strong volume\n- RSI reclaiming 50 level confirms trend resumption\n- Spot ETF net inflows continue — institutional demand floor\n- MACD histogram expanding positively above zero\n- Order book imbalance staying above +15% (strong bid support)`
       : verdict === 'SHORT'
         ? `- Rejection at ${fmtP(r1_pp)} (Pivot R1) with bearish candle close\n- MACD histogram expanding negatively below zero\n- RSI losing 50 level with momentum behind the move\n- Exchange inflows spike — spot selling pressure from holders\n- Breakdown below ${fmtP(s1_pp)} (Pivot S1) with volume`
-        : `- Wait for price to break and close above ${fmtP(r1_pp)} for a long bias\n- Break below ${fmtP(s1_pp)} triggers a short opportunity\n- Watch for OB imbalance to shift decisively above +20% or below -20%\n- A MACD crossover in either direction with expanding volume is the entry trigger`;
+        : `- Wait for price to break and close above ${fmtP(r1_pp)} for a long bias\n- Break below ${fmtP(s1_pp)} triggers a short opportunity\n- Watch for OB imbalance to shift decisively\n- A MACD crossover in either direction with expanding volume is the entry trigger`);
 
-    const invalidation = verdict === 'LONG'
+    const methodInvalidation = {
+      fibonacci: verdict==='LONG' ? `- Daily close below 78.6% fib (${fmtP(fib786)}) — wave structure broken\n- Price sweeps swing low (${fmtP(swingLo)}) — new low established\n- Volume expands to downside through golden zone\n- CVD makes new low at fib support` : `- Close above swing high (${fmtP(swingHi)}) — extension thesis broken\n- Price breaks above 23.6% fib (${fmtP(fib236)}) with momentum\n- Bullish CVD divergence at fib resistance`,
+      swinghl:   verdict==='LONG' ? `- Candle close below last Swing Low ${fmtP(lastSL)} — structure broken\n- Lower Low formation (LH·LL pattern) — trend reversal\n- Volume expands on the breakdown candle\n- CVD declining through swing low` : `- Candle close above last Swing High ${fmtP(lastSH)} — BOS to upside\n- Higher High formation — trend reversal to upside\n- Volume expands on the breakout above SH`,
+      macd:      verdict==='LONG' ? `- MACD histogram turns negative (bears in control)\n- MACD crosses below signal line — bull thesis cancelled\n- Zero line rejection: MACD fails to break above zero\n- Price closes below ATR-based stop ${fmtP(slPrice)}` : `- MACD crosses above signal line — short squeeze risk\n- MACD histogram turns positive\n- Zero line reclaim: MACD breaks above zero`,
+      rsi:       verdict==='LONG' ? `- RSI breaks below 40 — oversold extension, not a bounce\n- Price closes a full candle below stop ${fmtP(slPrice)}\n- Bearish RSI divergence forms on the bounce\n- RSI unable to reclaim 50 midline after 3 attempts` : `- RSI breaks back above 60 — renewed buying pressure\n- Price closes above stop ${fmtP(slPrice)}\n- Bullish RSI divergence: price lower, RSI higher\n- RSI 50 reclaimed with momentum`,
+      vwap:      verdict==='LONG' ? `- VWAP fails as support — close below VWAP\n- OBV begins declining — distribution pattern\n- Price reaches −2σ band (${fmtP(vwapRaw*0.975)}) without bounce\n- CVD makes new low below VWAP` : `- VWAP reclaimed — close above VWAP invalidates short\n- OBV rising — accumulation pattern resumes\n- Price fails to reach −1σ — insufficient selling momentum`,
+      ema:       verdict==='LONG' ? `- Close below 21 EMA (${fmtP(ema21V)}) — trend support lost\n- EMA9 crosses below EMA21 — short-term trend turns down\n- Close below 50 EMA (${fmtP(ema50V)}) — medium trend broken\n- Death Cross confirmation` : `- Close above 21 EMA (${fmtP(ema21V)}) — short squeeze in progress\n- EMA9 crosses above EMA21 — upside momentum resumes\n- Golden Cross forming — do not add to shorts`,
+      bb:        verdict==='LONG' ? `- Close below lower band (${fmtP(bbL)}) — oversold extension, not bounce\n- Squeeze resolves to downside — wrong direction\n- %B fails to recover above 0.3 on 3 consecutive candles` : `- Close above upper band (${fmtP(bbU)}) — upper band walk, not reversal\n- Squeeze resolves to upside — squeeze was bullish\n- %B fails to decline below 0.7 — no mean reversion`,
+      volume:    verdict==='LONG' ? `- OBV makes new low — distribution accelerating\n- High-volume candle breaks below support\n- Buy volume dries up on bounce — no follow-through\n- CVD declining despite price support` : `- OBV breaks to new high — accumulation overwhelming\n- High-volume candle breaks above resistance\n- Sell volume dries up — bears exhausted`,
+      sr:        verdict==='LONG' ? `- Close below S1 (${fmtP(s1_pp)}) with volume — support broken\n- S2 (${fmtP(s2_pp)}) fails as backup support\n- OB imbalance flips negative at prior support\n- R/S flip fails: former support not holding` : `- Close above R1 (${fmtP(r1_pp)}) with volume — resistance broken\n- R2 (${fmtP(r2_pp)}) fails as resistance\n- OB imbalance flips positive at prior resistance`,
+      orderflow: verdict==='LONG' ? `- OB imbalance drops below 0% — asks overwhelm bids\n- CVD makes new low — selling aggression dominant\n- Bid walls swept and not rebuilt\n- Large sell orders (whale prints) > buy orders` : `- OB imbalance recovers above +20% — bids return\n- CVD rises sharply — buying aggression resumes\n- Ask walls absorbed and not rebuilt\n- Large buy orders (whale prints) overwhelm sellers`,
+    };
+    const invalidation = methodInvalidation[method] ||
+      (verdict === 'LONG'
       ? `- Daily candle close below stop ${fmtP(slPrice)} — thesis is broken\n- RSI breaks back below 40 on the entry timeframe\n- Volume expansion on down-candles exceeds up-candle volume\n- OB imbalance flips negative (ask wall builds significantly)`
       : verdict === 'SHORT'
         ? `- Candle close above stop ${fmtP(slPrice)} — short is squeezed\n- RSI breaks back above 60 confirming renewed buying pressure\n- MACD turns bullish crossover above zero\n- Spot ETF inflow surge — removes selling catalyst`
-        : `- Any decisive candle close above ${fmtP(r1_pp)} or below ${fmtP(s1_pp)}\n- Mixed indicator environment resolves — re-run analysis after next 2 candles\n- Macro catalyst (CPI/FOMC/ETF news) shifts the direction decisively`;
+        : `- Any decisive candle close above ${fmtP(r1_pp)} or below ${fmtP(s1_pp)}\n- Mixed indicator environment resolves — re-run analysis after next 2 candles\n- Macro catalyst shifts the direction decisively`);
 
     return {
       verdict, conviction, summary,
@@ -6993,7 +7751,7 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     const d = this._dana; if(!d) return;
     const price = this.lastPrice || 70000;
     const lot   = d.lot || 0.01;
-    const ATH   = 73794;
+    const ATH   = 126000;
     let upnl = 0;
     d.openPos.forEach(pos => {
       const cur = pos.currentPrice || price;
@@ -7016,11 +7774,11 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       const ctx = c1.getContext('2d');
       const W = c1.offsetWidth, H = c1.offsetHeight || 160;
       c1.width = W; c1.height = H;
-      const pad = {l:52,r:16,t:16,b:52};
+      const pad = {l:62,r:16,t:16,b:52};
       const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
-      const minP = Math.min(price*0.8, critLiq*0.95);
-      const maxP = Math.max(price*1.05, price*1.1);
-      const steps = 100;
+      const minP = Math.min(price*0.9, critLiq*0.99);
+      const maxP = Math.max(price*1.025, price*1.05);
+      const steps = 50;
       const pts = [];
       for(let i=0;i<=steps;i++) {
         const p = minP+(maxP-minP)*i/steps;
@@ -7034,21 +7792,23 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       const toX = p  => pad.l+(p-minP)/(maxP-minP)*cW;
       const toY = v  => pad.t+(1-(v-minPnl)/rng)*cH;
       ctx.clearRect(0,0,W,H);
-      // Grid lines
-      for(let i=0;i<=4;i++) {
-        const y=pad.t+i*cH/4;
-        ctx.strokeStyle='rgba(156,163,175,.12)'; ctx.lineWidth=1;
+      // Grid lines + Y axis labels (bold, dark, bigger)
+      for(let i=0;i<=10;i++) {
+        const y=pad.t+i*cH/10;
+        ctx.strokeStyle='rgba(156,163,175,.15)'; ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cW,y); ctx.stroke();
-        const v=maxPnl-i*(rng/4);
-        ctx.fillStyle='rgba(100,116,139,.65)'; ctx.font='8px monospace'; ctx.textAlign='right';
-        ctx.fillText((v>=0?'+':'')+v.toFixed(3),pad.l-3,y+3);
+        const v=maxPnl-i*(rng/10);
+        // Y tick mark
+        ctx.strokeStyle='rgba(80,100,130,.7)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(pad.l-5,y); ctx.lineTo(pad.l,y); ctx.stroke();
+        // Y label
+        ctx.fillStyle='rgba(30,40,60,.9)'; ctx.font='bold 10px monospace'; ctx.textAlign='right';
+        ctx.fillText((v>=0?'+':'')+v.toFixed(3),pad.l-8,y+4);
       }
-      // Zero line
-      const y0=toY(0);
-      if(y0>=pad.t&&y0<=pad.t+cH) {
-        ctx.strokeStyle='rgba(156,163,175,.4)'; ctx.setLineDash([3,3]); ctx.lineWidth=1;
-        ctx.beginPath(); ctx.moveTo(pad.l,y0); ctx.lineTo(pad.l+cW,y0); ctx.stroke(); ctx.setLineDash([]);
-      }
+      // Y axis line
+      ctx.strokeStyle='rgba(80,100,130,.6)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+cH); ctx.stroke();
+ 
       // Liq line
       if(critLiq>minP&&critLiq<maxP) {
         const xL=toX(critLiq);
@@ -7057,20 +7817,8 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
         ctx.fillStyle='rgba(220,38,38,.85)'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
         ctx.fillText('LIQ',xL,pad.t+8);
       }
-      // ATH line
-      if(ATH>minP&&ATH<maxP) {
-        const xA=toX(ATH);
-        ctx.strokeStyle='rgba(245,158,11,.5)'; ctx.setLineDash([2,3]); ctx.lineWidth=1;
-        ctx.beginPath(); ctx.moveTo(xA,pad.t); ctx.lineTo(xA,pad.t+cH); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle='rgba(245,158,11,.9)'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
-        ctx.fillText('ATH',xA,pad.t+cH+10);
-      }
-      // Now line
-      const xN=toX(price);
-      ctx.strokeStyle='rgba(37,99,235,.5)'; ctx.setLineDash([2,3]); ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(xN,pad.t); ctx.lineTo(xN,pad.t+cH); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='#2563eb'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
-      ctx.fillText('NOW',xN,pad.t+cH+10);
+
+
       // Area fill
       ctx.beginPath(); ctx.moveTo(toX(pts[0].p),toY(0));
       pts.forEach(pt=>ctx.lineTo(toX(pt.p),toY(pt.pnl)));
@@ -7082,100 +7830,39 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       // Curve
       ctx.beginPath(); pts.forEach((pt,i)=>i===0?ctx.moveTo(toX(pt.p),toY(pt.pnl)):ctx.lineTo(toX(pt.p),toY(pt.pnl)));
       ctx.strokeStyle='#6366f1'; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.stroke();
-      // X labels
-      ctx.fillStyle='rgba(100,116,139,.65)'; ctx.font='8px monospace'; ctx.textAlign='center';
-      [minP, price, maxP].filter(v=>v>minP&&v<maxP).forEach(v => {
-        ctx.fillText('$'+(v/1000).toFixed(1)+'k', toX(v), H-4);
-      });
-
-      // ── SMC LEVELS ──────────────────────────────────────────────────────────
-      // Support levels (S1 closest, S3 furthest) — green vertical bands
-      const smcSupports    = (this.supportLevels    || []).slice(0, 3);
-      const smcResistances = (this.resistanceLevels || []).slice(0, 3);
-
-      // Draw S/R zone bands (±0.15% width) then label
-      const drawSMCLevel = (px, label, isSupport, strength) => {
-        if(px <= minP || px >= maxP) return;
-        const xPx = toX(px);
-        const alpha = strength === 1 ? 0.55 : strength === 2 ? 0.38 : 0.22;
-        const col = isSupport ? `rgba(5,150,105,${alpha})` : `rgba(220,38,38,${alpha})`;
-        const colLine = isSupport ? `rgba(5,150,105,${alpha+0.2})` : `rgba(220,38,38,${alpha+0.2})`;
-        // Zone band
-        const bandW = Math.max(2, cW * 0.003);
-        ctx.fillStyle = col;
-        ctx.fillRect(xPx - bandW/2, pad.t, bandW, cH);
-        // Vertical line
-        ctx.strokeStyle = colLine;
-        ctx.lineWidth = strength === 1 ? 1.5 : 1;
-        ctx.setLineDash(strength === 1 ? [] : [3,3]);
-        ctx.beginPath(); ctx.moveTo(xPx, pad.t); ctx.lineTo(xPx, pad.t+cH); ctx.stroke();
-        ctx.setLineDash([]);
-        // Label top
-        ctx.fillStyle = isSupport ? 'rgba(5,150,105,.95)' : 'rgba(220,38,38,.95)';
-        ctx.font = `bold ${strength===1?10:9}px monospace`;
-        ctx.textAlign = 'center';
-        const labelY = isSupport ? pad.t + cH - 6 : pad.t + 10;
-        ctx.fillText(label, xPx, labelY);
-        // Price label on x-axis
-        ctx.fillStyle = isSupport ? 'rgba(5,150,105,.8)' : 'rgba(220,38,38,.8)';
-        ctx.font = 'bold 8px monospace';
-        ctx.fillText('$'+(px/1000).toFixed(1)+'k', xPx, H - 4);
-      };
-
-      // S levels — strongest = S1
-      smcSupports.forEach((l, i) => drawSMCLevel(l.p, `S${i+1}`, true, i+1));
-      // R levels — strongest = R1
-      smcResistances.forEach((l, i) => drawSMCLevel(l.p, `R${i+1}`, false, i+1));
-
-      // ── ORDER BLOCKS — entry prices of open positions ─────────────────────
-      if(d.openPos.length > 0) {
-        d.openPos.forEach((pos, i) => {
-          const ep = pos.entryPrice;
-          if(ep <= minP || ep >= maxP) return;
-          const xE = toX(ep);
-          const isLong = pos.side === 'buy';
-          // OB box: thin horizontal band at entry
-          ctx.fillStyle = isLong ? 'rgba(37,99,235,0.10)' : 'rgba(168,85,247,0.10)';
-          ctx.fillRect(pad.l, toY(0)-1, cW, 2);
-          // Entry line
-          ctx.strokeStyle = isLong ? 'rgba(37,99,235,0.75)' : 'rgba(168,85,247,0.75)';
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([4,2]);
-          ctx.beginPath(); ctx.moveTo(xE, pad.t); ctx.lineTo(xE, pad.t+cH); ctx.stroke();
-          ctx.setLineDash([]);
-          // Label
-          ctx.fillStyle = isLong ? 'rgba(37,99,235,0.95)' : 'rgba(168,85,247,0.95)';
-          ctx.font = 'bold 9px monospace';
+      // X axis line + X labels — auto-fitted BTC price ticks at 1000 or 5000 intervals
+      ctx.strokeStyle='rgba(80,100,130,.65)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(pad.l,pad.t+cH); ctx.lineTo(pad.l+cW,pad.t+cH); ctx.stroke();
+      {
+        const priceRange = maxP - minP;
+        const maxLabels = Math.floor(cW / 52);
+        const rawStep = priceRange / maxLabels;
+        const step = rawStep <= 1000 ? 1000 : 5000;
+        const firstTick = Math.ceil(minP / step) * step;
+        for(let v = firstTick; v <= maxP; v += step) {
+          const x = toX(v);
+          if(x < pad.l + 10 || x > pad.l + cW - 10) continue;
+          // X tick mark
+          ctx.strokeStyle = 'rgba(80,100,130,.7)'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(x, pad.t+cH); ctx.lineTo(x, pad.t+cH+5); ctx.stroke();
+          // X label — bold, dark, bigger
+          ctx.fillStyle = 'rgba(30,40,60,.92)';
+          ctx.font = 'bold 10px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText(`OB${i+1} ${isLong?'▲':'▼'}`, xE, pad.t + 22 + i*12);
-          ctx.font = 'bold 8px monospace';
-          ctx.fillText('$'+(ep/1000).toFixed(1)+'k', xE, H-14);
-        });
+          ctx.fillText('$'+(v/1000).toFixed(0)+'k', x, H-4);
+        }
+        // Always mark current price with accent colour
+        if(price > minP && price < maxP) {
+          const xNow = toX(price);
+          ctx.strokeStyle = 'rgba(99,102,241,.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+          ctx.beginPath(); ctx.moveTo(xNow,pad.t); ctx.lineTo(xNow,pad.t+cH); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle='rgba(99,102,241,.9)'; ctx.font='bold 9px monospace'; ctx.textAlign='center';
+          ctx.fillText('NOW', xNow, pad.t+9);
+        }
       }
 
-      // ── SL / TP lines ─────────────────────────────────────────────────────
-      if(d.openPos.length > 0) {
-        d.openPos.forEach((pos) => {
-          if(pos.sl && pos.sl > minP && pos.sl < maxP) {
-            const xSL = toX(pos.sl);
-            ctx.strokeStyle = 'rgba(220,38,38,0.6)';
-            ctx.lineWidth = 1; ctx.setLineDash([2,4]);
-            ctx.beginPath(); ctx.moveTo(xSL,pad.t); ctx.lineTo(xSL,pad.t+cH); ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.fillStyle='rgba(220,38,38,.85)'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
-            ctx.fillText('SL', xSL, pad.t+cH-16);
-          }
-          if(pos.tp && pos.tp > minP && pos.tp < maxP) {
-            const xTP = toX(pos.tp);
-            ctx.strokeStyle = 'rgba(5,150,105,0.6)';
-            ctx.lineWidth = 1; ctx.setLineDash([2,4]);
-            ctx.beginPath(); ctx.moveTo(xTP,pad.t); ctx.lineTo(xTP,pad.t+cH); ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.fillStyle='rgba(5,150,105,.85)'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
-            ctx.fillText('TP', xTP, pad.t+cH-16);
-          }
-        });
-      }
+     
 
       // LIQ X-axis label — bold red, below axis
       if(critLiq > minP && critLiq < maxP) {
@@ -7202,9 +7889,9 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       c2.width = W2; c2.height = H2;
       ctx2.clearRect(0, 0, W2, H2);
 
-      const step2 = 5000;
-      const rangeMin2 = Math.floor(price * 0.67 / step2) * step2;
-      const rangeMax2 = Math.ceil(price * 1.10 / step2) * step2;
+      const step2 = 1000;
+      const rangeMin2 = Math.floor(price * 0.9 / step2) * step2;
+      const rangeMax2 = Math.ceil(price * 1.025 / step2) * step2;
       const simPrices2 = [];
       for(let p = rangeMin2; p <= rangeMax2; p += step2) simPrices2.push(p);
 
@@ -7360,7 +8047,26 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     document.getElementById('cmd-input').addEventListener('input',e=>this.renderCmd(e.target.value));
     document.addEventListener('keydown',e=>{if(e.key==='Escape')this.closeCmd();});
 
+    // Whale range slider
+    const whaleRange = document.getElementById('whale-range');
+    if (whaleRange) {
+      whaleRange.addEventListener('input', e => {
+        const val = parseFloat(e.target.value);
+        this.whaleThr = val;
+        const lbl = document.getElementById('whale-range-val');
+        if (lbl) lbl.textContent = val.toFixed(1);
+        this.renderWhales();
+      });
+    }
 
+    // Trade range slider — threshold set by oninput=app.setTradeThr already
+  }
+
+  setTradeThr(val) {
+    this.tradeThr = parseFloat(val) || 0.0001;
+    const lbl = document.getElementById('trade-range-val');
+    if (lbl) lbl.textContent = parseFloat(val).toFixed(1);
+    this.renderTrades();
   }
 }
 
