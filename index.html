@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -101,11 +102,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);f
 /* ===== MARKET VIEW ===== */
 .sort-pill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .15s;}
 .sort-pill.active{background:var(--accent);border-color:var(--accent);color:white;}
-.mkt-table-wrap{flex:1;overflow:auto;border-radius:10px;border:1px solid var(--border);box-shadow:0 2px 12px rgba(0,0,0,.05);}
+.mkt-table-wrap{flex:1;overflow:auto;border-radius:0;border:none;box-shadow:none;background:var(--bg1);}
+#view-market{background:var(--bg1);}
+.mkt-header-row{background:var(--bg1);}
+
 .mkt-table{width:100%;border-collapse:collapse;}
 .mkt-table thead th{
   padding:10px 14px;font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;
-  color:var(--text3);font-weight:700;background:var(--bg2);
+  color:var(--text3);font-weight:700;background:var(--bg1);
   border-bottom:2px solid var(--border2);position:sticky;top:0;z-index:5;
   white-space:nowrap;font-family:var(--mono);cursor:pointer;user-select:none;
   transition:color .12s;
@@ -121,7 +125,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);f
 .mkt-table td:first-child{border-left:2px solid transparent;}
 .mkt-rank{
   font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:600;
-  background:var(--bg3);border-radius:4px;padding:2px 6px;display:inline-block;min-width:24px;text-align:center;
+  background:transparent;border:1px solid var(--border);border-radius:4px;padding:2px 6px;display:inline-block;min-width:24px;text-align:center;
 }
 .mkt-rank.top3{background:rgba(212,175,55,.15);color:#b45309;border:1px solid rgba(212,175,55,.3);}
 .coin-cell{display:flex;align-items:center;gap:6px;max-width:100px;}
@@ -141,7 +145,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);f
 .hl-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--dn),var(--up));}
 .hl-vals{display:flex;gap:4px;font-family:var(--mono);font-size:9px;}
 .mkt-header-row{display:flex;align-items:center;gap:10px;padding:10px 10px 0;flex-shrink:0;flex-wrap:wrap;}
-.mkt-fetch-time{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;}
+.mkt-fetch-time{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px;padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;}
 .mkt-fetch-time .dot{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 4px var(--up);}
 .mkt-count-badge{font-family:var(--mono);font-size:10px;padding:3px 9px;background:rgba(37,99,235,.1);color:var(--accent);border-radius:10px;border:1px solid rgba(37,99,235,.2);}
 /* Bid/Ask price range bar in topbar */
@@ -637,7 +641,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
           </button>
         </div>
       </div>
-      <div style="flex:1;overflow:auto;padding:10px;padding-top:8px;">
+      <div style="flex:1;overflow:auto;padding:0;background:var(--bg1);">
         <div class="mkt-table-wrap" style="height:100%;">
           <table class="mkt-table">
             <thead>
@@ -1840,6 +1844,14 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
         </div>
         <!-- Results -->
         <div id="ob-results" style="display:none;flex-direction:column;gap:12px;">
+          <!-- SMC Chart -->
+          <div style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);overflow:hidden;">
+            <div class="vt-hdr">
+              <span class="vt-title"><i class="fa-solid fa-chart-candlestick" style="color:#f59e0b;"></i> SMC CHART — CANDLES · OB ZONES · FVG · BOS</span>
+              <div class="vt-stats"><span style="font-size:9px;color:var(--text3);font-family:var(--mono);">🟦 Bull OB &nbsp;🟥 Bear OB &nbsp;🟨 FVG &nbsp;— BOS/CHoCH</span></div>
+            </div>
+            <canvas id="ob-smc-chart" style="width:100%;height:420px;display:block;"></canvas>
+          </div>
           <!-- Verdict bar -->
           <div id="ob-verdict-bar" style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
             <div id="ob-verdict-emoji" style="font-size:32px;">⏳</div>
@@ -1977,7 +1989,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
       <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:12px;display:flex;flex-direction:column;gap:14px;">
 
         <!-- SETUP + ORDER -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:110px;">
           <div style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);padding:14px 16px;">
             <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;"><i class="fa-solid fa-wallet" style="color:var(--accent);margin-right:5px;"></i>ACCOUNT SETUP</div>
             <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
@@ -2003,7 +2015,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
         </div>
 
         <!-- LIQUIDATION DANGER PANEL -->
-        <div style="border-radius:10px;border:2px solid rgba(220,38,38,.5);background:linear-gradient(135deg,rgba(220,38,38,.06),rgba(217,119,6,.04));overflow:hidden;">
+        <div style="border-radius:10px;border:2px solid rgba(220,38,38,.5);background:var(--bg1);overflow:hidden;min-height:300px;">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:rgba(220,38,38,.1);border-bottom:1px solid rgba(220,38,38,.3);">
             <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--dn);display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-skull-crossbones"></i> LIQUIDATION RISK — NET EQUITY ANALYSIS</span>
             <span style="font-size:9px;color:var(--text3);font-family:var(--mono);" id="dana-liq-subtitle">Fund account to see liq estimate</span>
@@ -2037,20 +2049,20 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
         </div>
 
         <!-- CHARTS -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);overflow:hidden;">
             <div class="vt-hdr"><span class="vt-title"><i class="fa-solid fa-chart-line" style="color:var(--accent);"></i> P&amp;L CURVE vs BTC PRICE</span><div class="vt-stats"><span style="font-size:9px;color:var(--text3);font-family:var(--mono);">LIQ · ATH · NOW marked</span></div></div>
-            <div style="position:relative;height:220px;padding:10px;"><canvas id="dana-pnl-chart" style="position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);"></canvas></div>
+            <div style="padding:10px;"><canvas id="dana-pnl-chart" style="width:100%;height:300px;display:block;"></canvas></div>
           </div>
           <div style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);overflow:hidden;">
-            <div class="vt-hdr"><span class="vt-title"><i class="fa-solid fa-chart-bar" style="color:#a855f7;"></i> BALANCE AT BTC LEVELS</span><div class="vt-stats"><span style="font-size:9px;color:var(--text3);font-family:var(--mono);">Green=profit · Red=loss · Gold=ATH</span></div></div>
-            <div style="position:relative;height:220px;padding:10px;"><canvas id="dana-balance-chart" style="position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);"></canvas></div>
+            <div class="vt-hdr"><span class="vt-title"><i class="fa-solid fa-chart-bar" style="color:#a855f7;"></i> BALANCE AT BTC LEVELS</span><div class="vt-stats"><span style="font-size:9px;color:var(--text3);font-family:var(--mono);">Free balance impact · Green=gain · Red=loss · Blue=now</span></div></div>
+            <div style="padding:10px;"><canvas id="dana-balance-chart" style="width:100%;height:300px;display:block;"></canvas></div>
           </div>
         </div>
 
         <!-- OPEN POSITIONS — collapsible, hidden by default when empty -->
         <!-- OPEN POSITIONS — always visible, auto-updates -->
-        <div style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);overflow:hidden;" id="dana-open-section">
+        <div style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);overflow:hidden;min-height:390px;" id="dana-open-section">
           <div class="vt-hdr">
             <span class="vt-title"><i class="fa-solid fa-circle-dot" style="color:var(--up);animation:blink 2s infinite;"></i> OPEN POSITIONS</span>
             <div class="vt-stats"><span id="dana-open-count" style="color:var(--text3);">0 open</span></div>
@@ -2071,7 +2083,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
         </div>
 
         <!-- TRADE HISTORY — always visible, auto-updates -->
-        <div style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);overflow:hidden;" id="dana-hist-section">
+        <div style="border-radius:10px;border:1px solid var(--border);background:var(--bg1);overflow:hidden;min-height:390px;" id="dana-hist-section">
           <div class="vt-hdr">
             <span class="vt-title"><i class="fa-solid fa-clock-rotate-left" style="color:#a855f7;"></i> TRADE HISTORY</span>
             <div class="vt-stats">
@@ -6260,6 +6272,223 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     return { verdict, conviction, entryZone, slPrice, tp1Price, tp2Price, rr, riskPct, durationNote, marketStructure, activeZones, activeFVGs, analysis, price };
   }
 
+  _drawSMCChart(plan, candles) {
+    const cv = document.getElementById('ob-smc-chart');
+    if(!cv) return;
+    const W = cv.offsetWidth || cv.parentElement.offsetWidth || 900;
+    const H = cv.offsetHeight || 420;
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    const n = candles.length;
+    const price = plan.price;
+    const pad = { l: 72, r: 80, t: 28, b: 44 };
+    const cW = W - pad.l - pad.r;
+    const cH = H - pad.t - pad.b;
+
+    // Price range — min/max of all candles + some padding
+    let pMin = Math.min(...candles.map(c => c.l));
+    let pMax = Math.max(...candles.map(c => c.h));
+    // Extend to include OB and FVG zones
+    plan.activeZones.forEach(z => { pMin = Math.min(pMin, z.low); pMax = Math.max(pMax, z.high); });
+    plan.activeFVGs.forEach(f => { pMin = Math.min(pMin, f.low); pMax = Math.max(pMax, f.high); });
+    const pPad = (pMax - pMin) * 0.04;
+    pMin -= pPad; pMax += pPad;
+    const pRange = pMax - pMin;
+
+    const toY = p => pad.t + cH - ((p - pMin) / pRange) * cH;
+    const slotW = cW / n;
+    const candleW = Math.max(2, slotW * 0.6);
+    const toX = i => pad.l + i * slotW + slotW / 2;
+
+    // ── Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── Y gridlines + price labels
+    const ySteps = 6;
+    for(let i = 0; i <= ySteps; i++) {
+      const p = pMin + pRange * i / ySteps;
+      const y = toY(p);
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(15,25,50,0.75)';
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'right';
+      const label = p >= 1000 ? '$' + Math.round(p/100)*100 : '$' + p.toFixed(1);
+      ctx.fillText(label, pad.l - 4, y + 4);
+    }
+
+    // ── FVG zones — yellow/gold semi-transparent rectangles
+    plan.activeFVGs.forEach(f => {
+      const y1 = toY(f.high);
+      const y2 = toY(f.low);
+      const h = Math.abs(y2 - y1);
+      ctx.fillStyle = f.dir === 'Bull' ? 'rgba(234,179,8,0.13)' : 'rgba(234,179,8,0.13)';
+      ctx.strokeStyle = f.dir === 'Bull' ? 'rgba(234,179,8,0.5)' : 'rgba(234,179,8,0.5)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.fillRect(pad.l, Math.min(y1, y2), cW, Math.max(h, 2));
+      ctx.strokeRect(pad.l, Math.min(y1, y2), cW, Math.max(h, 2));
+      ctx.setLineDash([]);
+      // Label on right
+      ctx.fillStyle = 'rgba(161,120,0,0.9)';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`FVG ${f.dir}`, pad.l + cW + 3, Math.min(y1, y2) + h / 2 + 4);
+    });
+
+    // ── Order Block zones — colored rectangles spanning full width
+    plan.activeZones.forEach(z => {
+      const isBull = z.type.includes('Bull');
+      const isBreaker = z.type.includes('Breaker');
+      const y1 = toY(z.high);
+      const y2 = toY(z.low);
+      const h = Math.max(Math.abs(y2 - y1), 3);
+      // Fill
+      ctx.fillStyle = isBreaker
+        ? (isBull ? 'rgba(99,102,241,0.10)' : 'rgba(168,85,247,0.10)')
+        : (isBull ? 'rgba(5,150,105,0.12)'  : 'rgba(220,38,38,0.12)');
+      ctx.fillRect(pad.l, Math.min(y1, y2), cW, h);
+      // Border top + bottom
+      ctx.strokeStyle = isBreaker
+        ? (isBull ? 'rgba(99,102,241,0.6)' : 'rgba(168,85,247,0.6)')
+        : (isBull ? 'rgba(5,150,105,0.7)'  : 'rgba(220,38,38,0.7)');
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, Math.min(y1,y2)); ctx.lineTo(pad.l+cW, Math.min(y1,y2));
+      ctx.moveTo(pad.l, Math.max(y1,y2)); ctx.lineTo(pad.l+cW, Math.max(y1,y2));
+      ctx.stroke();
+      // Label right side
+      ctx.fillStyle = isBreaker
+        ? (isBull ? 'rgba(99,102,241,0.95)' : 'rgba(168,85,247,0.95)')
+        : (isBull ? 'rgba(5,150,105,0.95)'  : 'rgba(220,38,38,0.95)');
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(z.type + (z.strength === 'Strong' ? ' ★' : ''), pad.l + cW + 3, Math.min(y1,y2) + h/2 + 4);
+    });
+
+    // ── Candles
+    candles.forEach((c, i) => {
+      const x = toX(i);
+      const yO = toY(c.o), yC = toY(c.c), yH = toY(c.h), yL = toY(c.l);
+      const bull = c.c >= c.o;
+      const bodyTop = Math.min(yO, yC);
+      const bodyH = Math.max(Math.abs(yC - yO), 1.5);
+
+      // Wick
+      ctx.strokeStyle = bull ? 'rgba(5,150,105,0.85)' : 'rgba(220,38,38,0.85)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, yH); ctx.lineTo(x, bodyTop);
+      ctx.moveTo(x, bodyTop + bodyH); ctx.lineTo(x, yL);
+      ctx.stroke();
+
+      // Body
+      ctx.fillStyle = bull ? 'rgba(5,150,105,0.85)' : 'rgba(220,38,38,0.80)';
+      ctx.fillRect(x - candleW/2, bodyTop, candleW, bodyH);
+    });
+
+    // ── Swing Highs / Lows — small triangles
+    const swingHigh = [], swingLow = [];
+    for(let i=2; i<n-2; i++) {
+      if(candles[i].h > candles[i-1].h && candles[i].h > candles[i-2].h && candles[i].h > candles[i+1].h && candles[i].h > candles[i+2].h) swingHigh.push(i);
+      if(candles[i].l < candles[i-1].l && candles[i].l < candles[i-2].l && candles[i].l < candles[i+1].l && candles[i].l < candles[i+2].l) swingLow.push(i);
+    }
+    swingHigh.forEach(i => {
+      const x = toX(i), y = toY(candles[i].h) - 6;
+      ctx.fillStyle = 'rgba(37,99,235,0.7)';
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x-4, y-7); ctx.lineTo(x+4, y-7); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(37,99,235,0.9)'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('HH', x, y - 9);
+    });
+    swingLow.forEach(i => {
+      const x = toX(i), y = toY(candles[i].l) + 6;
+      ctx.fillStyle = 'rgba(220,38,38,0.7)';
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x-4, y+7); ctx.lineTo(x+4, y+7); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(220,38,38,0.9)'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('LL', x, y + 18);
+    });
+
+    // ── BOS / CHoCH lines — horizontal structure breaks
+    // BOS: draw at the swing high/low that was broken
+    if(swingHigh.length >= 2) {
+      const prev = swingHigh[swingHigh.length - 2], curr = swingHigh[swingHigh.length - 1];
+      if(candles[curr].h > candles[prev].h) {
+        // BOS UP — line at previous swing high level
+        const y = toY(candles[prev].h);
+        ctx.strokeStyle = 'rgba(37,99,235,0.8)'; ctx.lineWidth = 1.5; ctx.setLineDash([6,3]);
+        ctx.beginPath(); ctx.moveTo(toX(prev), y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(37,99,235,0.95)'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'left';
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(pad.l + cW - 48, y - 12, 48, 14);
+        ctx.fillStyle = 'rgba(37,99,235,0.95)';
+        ctx.fillText('BOS ↑', pad.l + cW - 46, y - 1);
+      }
+    }
+    if(swingLow.length >= 2) {
+      const prev = swingLow[swingLow.length - 2], curr = swingLow[swingLow.length - 1];
+      if(candles[curr].l < candles[prev].l) {
+        const y = toY(candles[prev].l);
+        ctx.strokeStyle = 'rgba(220,38,38,0.8)'; ctx.lineWidth = 1.5; ctx.setLineDash([6,3]);
+        ctx.beginPath(); ctx.moveTo(toX(prev), y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(pad.l + cW - 52, y - 1, 52, 14);
+        ctx.fillStyle = 'rgba(220,38,38,0.95)'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'left';
+        ctx.fillText('BOS ↓', pad.l + cW - 50, y + 11);
+      }
+    }
+
+    // CHoCH — if structure shifted, mark it
+    if(plan.marketStructure === 'contracting' || (swingHigh.length >= 2 && swingLow.length >= 2)) {
+      const lastHH = swingHigh.slice(-2);
+      const lastLL = swingLow.slice(-2);
+      if(lastHH.length === 2 && lastLL.length === 2) {
+        const bullToDown = candles[lastHH[1]].h < candles[lastHH[0]].h && candles[lastLL[1]].l < candles[lastLL[0]].l;
+        const downToBull = candles[lastHH[1]].h > candles[lastHH[0]].h && candles[lastLL[1]].l > candles[lastLL[0]].l;
+        if(bullToDown || downToBull) {
+          const chochIdx = Math.max(lastHH[1], lastLL[1]);
+          const chochPrice = bullToDown ? candles[lastLL[1]].l : candles[lastHH[1]].h;
+          const y = toY(chochPrice);
+          ctx.strokeStyle = 'rgba(168,85,247,0.85)'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
+          ctx.beginPath(); ctx.moveTo(toX(chochIdx), y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(pad.l + cW - 60, y - 12, 60, 14);
+          ctx.fillStyle = 'rgba(168,85,247,0.95)'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'left';
+          ctx.fillText('CHoCH', pad.l + cW - 58, y - 1);
+        }
+      }
+    }
+
+    // ── Current price line
+    const yNow = toY(price);
+    ctx.strokeStyle = 'rgba(37,99,235,0.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(pad.l, yNow); ctx.lineTo(pad.l + cW, yNow); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(37,99,235,0.95)'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'right';
+    ctx.fillText('NOW $' + Math.round(price).toLocaleString(), pad.l + cW - 2, yNow - 4);
+
+    // ── X-axis time labels (every ~10 candles)
+    const labelEvery = Math.max(1, Math.floor(n / 10));
+    ctx.fillStyle = 'rgba(15,25,50,0.75)'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+    candles.forEach((c, i) => {
+      if(i % labelEvery !== 0) return;
+      const d = new Date(c.t);
+      const lbl = (this._obTF||'1h') === '1d'
+        ? d.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+        : d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+      ctx.fillText(lbl, toX(i), pad.t + cH + 28);
+    });
+  }
+
   _renderOBResults(plan, candles) {
     const results = document.getElementById('ob-results');
     if(!results) return;
@@ -6321,6 +6550,9 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text3);font-family:var(--mono);">No unfilled FVGs detected</td></tr>';
 
     if(el('ob-analysis-text')) el('ob-analysis-text').textContent = plan.analysis;
+
+    // Draw SMC chart
+    this._drawSMCChart(plan, candles);
   }
 
   // ═══════════════════════════════════════════════
@@ -6784,7 +7016,7 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       const ctx = c1.getContext('2d');
       const W = c1.offsetWidth, H = c1.offsetHeight || 160;
       c1.width = W; c1.height = H;
-      const pad = {l:52,r:16,t:16,b:38};
+      const pad = {l:52,r:16,t:16,b:52};
       const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
       const minP = Math.min(price*0.8, critLiq*0.95);
       const maxP = Math.max(price*1.05, price*1.1);
@@ -6850,11 +7082,101 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
       // Curve
       ctx.beginPath(); pts.forEach((pt,i)=>i===0?ctx.moveTo(toX(pt.p),toY(pt.pnl)):ctx.lineTo(toX(pt.p),toY(pt.pnl)));
       ctx.strokeStyle='#6366f1'; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.stroke();
-      // X labels — include liq price prominently
+      // X labels
       ctx.fillStyle='rgba(100,116,139,.65)'; ctx.font='8px monospace'; ctx.textAlign='center';
-      [minP, price, ATH, maxP].filter(v=>v>minP&&v<maxP).forEach(v => {
+      [minP, price, maxP].filter(v=>v>minP&&v<maxP).forEach(v => {
         ctx.fillText('$'+(v/1000).toFixed(1)+'k', toX(v), H-4);
       });
+
+      // ── SMC LEVELS ──────────────────────────────────────────────────────────
+      // Support levels (S1 closest, S3 furthest) — green vertical bands
+      const smcSupports    = (this.supportLevels    || []).slice(0, 3);
+      const smcResistances = (this.resistanceLevels || []).slice(0, 3);
+
+      // Draw S/R zone bands (±0.15% width) then label
+      const drawSMCLevel = (px, label, isSupport, strength) => {
+        if(px <= minP || px >= maxP) return;
+        const xPx = toX(px);
+        const alpha = strength === 1 ? 0.55 : strength === 2 ? 0.38 : 0.22;
+        const col = isSupport ? `rgba(5,150,105,${alpha})` : `rgba(220,38,38,${alpha})`;
+        const colLine = isSupport ? `rgba(5,150,105,${alpha+0.2})` : `rgba(220,38,38,${alpha+0.2})`;
+        // Zone band
+        const bandW = Math.max(2, cW * 0.003);
+        ctx.fillStyle = col;
+        ctx.fillRect(xPx - bandW/2, pad.t, bandW, cH);
+        // Vertical line
+        ctx.strokeStyle = colLine;
+        ctx.lineWidth = strength === 1 ? 1.5 : 1;
+        ctx.setLineDash(strength === 1 ? [] : [3,3]);
+        ctx.beginPath(); ctx.moveTo(xPx, pad.t); ctx.lineTo(xPx, pad.t+cH); ctx.stroke();
+        ctx.setLineDash([]);
+        // Label top
+        ctx.fillStyle = isSupport ? 'rgba(5,150,105,.95)' : 'rgba(220,38,38,.95)';
+        ctx.font = `bold ${strength===1?10:9}px monospace`;
+        ctx.textAlign = 'center';
+        const labelY = isSupport ? pad.t + cH - 6 : pad.t + 10;
+        ctx.fillText(label, xPx, labelY);
+        // Price label on x-axis
+        ctx.fillStyle = isSupport ? 'rgba(5,150,105,.8)' : 'rgba(220,38,38,.8)';
+        ctx.font = 'bold 8px monospace';
+        ctx.fillText('$'+(px/1000).toFixed(1)+'k', xPx, H - 4);
+      };
+
+      // S levels — strongest = S1
+      smcSupports.forEach((l, i) => drawSMCLevel(l.p, `S${i+1}`, true, i+1));
+      // R levels — strongest = R1
+      smcResistances.forEach((l, i) => drawSMCLevel(l.p, `R${i+1}`, false, i+1));
+
+      // ── ORDER BLOCKS — entry prices of open positions ─────────────────────
+      if(d.openPos.length > 0) {
+        d.openPos.forEach((pos, i) => {
+          const ep = pos.entryPrice;
+          if(ep <= minP || ep >= maxP) return;
+          const xE = toX(ep);
+          const isLong = pos.side === 'buy';
+          // OB box: thin horizontal band at entry
+          ctx.fillStyle = isLong ? 'rgba(37,99,235,0.10)' : 'rgba(168,85,247,0.10)';
+          ctx.fillRect(pad.l, toY(0)-1, cW, 2);
+          // Entry line
+          ctx.strokeStyle = isLong ? 'rgba(37,99,235,0.75)' : 'rgba(168,85,247,0.75)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4,2]);
+          ctx.beginPath(); ctx.moveTo(xE, pad.t); ctx.lineTo(xE, pad.t+cH); ctx.stroke();
+          ctx.setLineDash([]);
+          // Label
+          ctx.fillStyle = isLong ? 'rgba(37,99,235,0.95)' : 'rgba(168,85,247,0.95)';
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`OB${i+1} ${isLong?'▲':'▼'}`, xE, pad.t + 22 + i*12);
+          ctx.font = 'bold 8px monospace';
+          ctx.fillText('$'+(ep/1000).toFixed(1)+'k', xE, H-14);
+        });
+      }
+
+      // ── SL / TP lines ─────────────────────────────────────────────────────
+      if(d.openPos.length > 0) {
+        d.openPos.forEach((pos) => {
+          if(pos.sl && pos.sl > minP && pos.sl < maxP) {
+            const xSL = toX(pos.sl);
+            ctx.strokeStyle = 'rgba(220,38,38,0.6)';
+            ctx.lineWidth = 1; ctx.setLineDash([2,4]);
+            ctx.beginPath(); ctx.moveTo(xSL,pad.t); ctx.lineTo(xSL,pad.t+cH); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle='rgba(220,38,38,.85)'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+            ctx.fillText('SL', xSL, pad.t+cH-16);
+          }
+          if(pos.tp && pos.tp > minP && pos.tp < maxP) {
+            const xTP = toX(pos.tp);
+            ctx.strokeStyle = 'rgba(5,150,105,0.6)';
+            ctx.lineWidth = 1; ctx.setLineDash([2,4]);
+            ctx.beginPath(); ctx.moveTo(xTP,pad.t); ctx.lineTo(xTP,pad.t+cH); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle='rgba(5,150,105,.85)'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+            ctx.fillText('TP', xTP, pad.t+cH-16);
+          }
+        });
+      }
+
       // LIQ X-axis label — bold red, below axis
       if(critLiq > minP && critLiq < maxP) {
         const xLiqLabel = toX(critLiq);
@@ -6862,7 +7184,6 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
         ctx.fillText('LIQ', xLiqLabel, H-14);
         ctx.fillStyle='rgba(220,38,38,.75)'; ctx.font='12px monospace';
         ctx.fillText('$'+(critLiq/1000).toFixed(1)+'k', xLiqLabel, H-4);
-        // Triangle marker pointing up from bottom
         ctx.beginPath(); ctx.fillStyle='rgba(220,38,38,.8)';
         ctx.moveTo(xLiqLabel-5, pad.t+cH+1);
         ctx.lineTo(xLiqLabel+5, pad.t+cH+1);
@@ -6872,52 +7193,111 @@ REQUIRED OUTPUT FORMAT (JSON only, no markdown, no preamble)
     }
 
     // Chart 2: Balance bar chart at various BTC levels
+    // Chart 2: Balance at BTC levels — free balance impact from open trade only
+    // Range: current price -33% to +10%, rounded to 5000 steps
     const c2 = document.getElementById('dana-balance-chart');
     if(c2 && c2.offsetWidth > 0) {
-      const ctx = c2.getContext('2d');
-      const W = c2.offsetWidth, H = c2.offsetHeight || 160;
-      c2.width = W; c2.height = H;
-      const pad = {l:48,r:14,t:16,b:28};
-      const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
-      const mults = [-0.20,-0.15,-0.10,-0.05,-0.03,-0.01,0,+0.01,+0.03,+0.05];
-      const simPrices = [...new Set([...mults.map(m=>Math.round(price*(1+m))),ATH])].sort((a,b)=>a-b);
-      const bars = simPrices.map(sp => {
+      const ctx2 = c2.getContext('2d');
+      const W2 = c2.offsetWidth, H2 = c2.offsetHeight || 300;
+      c2.width = W2; c2.height = H2;
+      ctx2.clearRect(0, 0, W2, H2);
+
+      const step2 = 5000;
+      const rangeMin2 = Math.floor(price * 0.67 / step2) * step2;
+      const rangeMax2 = Math.ceil(price * 1.10 / step2) * step2;
+      const simPrices2 = [];
+      for(let p = rangeMin2; p <= rangeMax2; p += step2) simPrices2.push(p);
+
+      // Balance at each price = freeBalance + pnl from open trades at that price
+      const bars2 = simPrices2.map(sp => {
         let pnl = 0;
-        if(d.openPos.length>0) { d.openPos.forEach(pos=>{ pnl+=pos.side==='buy'?(sp-pos.entryPrice)*pos.lot:(pos.entryPrice-sp)*pos.lot; }); }
-        else { pnl = (sp-price)*lot; }
-        // liqHit: use net liq price (not per-position stored liqPrice)
+        if(d.openPos.length > 0) {
+          d.openPos.forEach(pos => {
+            pnl += pos.side === 'buy'
+              ? (sp - pos.entryPrice) * pos.lot
+              : (pos.entryPrice - sp) * pos.lot;
+          });
+        }
         const liqHit = critLiq > 0 && sp <= critLiq;
-        // bal at simP = netBalance at current + change in pnl
-        const bal = liqHit ? 0 : Math.max(0, netBalance + pnl - upnl);
-        return {price:sp, bal, liqHit};
+        const bal = liqHit ? 0 : freeBalance + pnl;
+        return { price: sp, bal, pnl, liqHit };
       });
-      const maxBal = Math.max(...bars.map(b=>b.bal), netBalance, 0.001);
-      const barW   = Math.max(2, cW/bars.length-2);
-      ctx.clearRect(0,0,W,H);
-      bars.forEach((bar,i) => {
-        const x   = pad.l + i*(cW/bars.length)+1;
-        const bH  = (bar.bal/maxBal)*cH;
-        const y   = pad.t+cH-bH;
-        const isNow = Math.abs(bar.price-price) < price*0.005;
-        const isATH = bar.price===ATH;
-        ctx.fillStyle = bar.liqHit?'rgba(220,38,38,.5)':isATH?'rgba(245,158,11,.7)':isNow?'rgba(37,99,235,.8)':bar.bal>netBalance?'rgba(5,150,105,.6)':'rgba(220,38,38,.4)';
-        ctx.fillRect(x,y,barW,bH);
+
+      // Current balance at actual price
+      const curBal2 = freeBalance + upnl;
+
+      // Y range with padding
+      const allBals2 = [...bars2.map(b => b.bal), curBal2];
+      const yDataMin = Math.min(...allBals2);
+      const yDataMax = Math.max(...allBals2);
+      const yPad2 = (yDataMax - yDataMin) * 0.10 || 1;
+      const yMin2 = yDataMin - yPad2;
+      const yMax2 = yDataMax + yPad2;
+      const yRange2 = yMax2 - yMin2;
+
+      const n2 = simPrices2.length;
+      const pad2 = { l: 72, r: 16, t: 28, b: 44 };
+      const cW2 = W2 - pad2.l - pad2.r;
+      const cH2 = H2 - pad2.t - pad2.b;
+      const slotW2 = cW2 / n2;
+      const barW2 = Math.max(4, slotW2 - 6);
+      const toY2 = val => pad2.t + cH2 - ((val - yMin2) / yRange2) * cH2;
+
+      // Y gridlines + labels
+      for(let i = 0; i <= 5; i++) {
+        const v = yMin2 + (yRange2 * i / 5);
+        const yy = toY2(v);
+        ctx2.strokeStyle = 'rgba(0,0,0,0.07)';
+        ctx2.lineWidth = 1;
+        ctx2.setLineDash([3,3]);
+        ctx2.beginPath(); ctx2.moveTo(pad2.l, yy); ctx2.lineTo(pad2.l + cW2, yy); ctx2.stroke();
+        ctx2.setLineDash([]);
+        ctx2.fillStyle = 'rgba(15,25,50,0.85)';
+        ctx2.font = 'bold 11px monospace';
+        ctx2.textAlign = 'right';
+        ctx2.fillText('$' + v.toFixed(1), pad2.l - 5, yy + 4);
+      }
+
+      // Draw bars
+      bars2.forEach((bar, i) => {
+        const x = pad2.l + i * slotW2 + (slotW2 - barW2) / 2;
+        const isNow = Math.abs(bar.price - price) < step2 * 0.5;
+        const gain = bar.bal >= curBal2;
+
+        ctx2.fillStyle = bar.liqHit  ? 'rgba(220,38,38,0.60)'
+          : isNow                    ? 'rgba(37,99,235,0.85)'
+          : gain                     ? 'rgba(5,150,105,0.72)'
+          :                            'rgba(220,38,38,0.50)';
+
+        const yTop  = toY2(bar.bal);
+        const yBase = toY2(Math.max(yMin2, 0));
+        const bH2   = Math.max(2, Math.abs(yBase - yTop));
+        ctx2.fillRect(x, Math.min(yTop, yBase), barW2, bH2);
+
+        // Value label on top of bar
+        ctx2.fillStyle = 'rgba(15,25,50,0.80)';
+        ctx2.font = 'bold 9px monospace';
+        ctx2.textAlign = 'center';
+        if(yTop - 4 > pad2.t + 8) ctx2.fillText('$' + bar.bal.toFixed(1), x + barW2 / 2, yTop - 4);
+
+        // X label — every bar
+        ctx2.fillStyle = isNow ? 'rgba(37,99,235,1.0)' : 'rgba(15,25,50,0.90)';
+        ctx2.font = isNow ? 'bold 12px monospace' : 'bold 11px monospace';
+        ctx2.textAlign = 'center';
+        ctx2.fillText('$' + (bar.price / 1000).toFixed(0) + 'k', x + barW2 / 2, pad2.t + cH2 + 28);
       });
-      // Current balance line (shows netBalance = economic position)
-      const yB = pad.t+cH-(netBalance/maxBal)*cH;
-      ctx.strokeStyle='rgba(37,99,235,.55)'; ctx.setLineDash([3,3]); ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(pad.l,yB); ctx.lineTo(pad.l+cW,yB); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='rgba(37,99,235,.8)'; ctx.font='bold 8px monospace'; ctx.textAlign='left';
-      ctx.fillText('NOW $'+netBalance.toFixed(2),pad.l+3,yB-3);
-      // Y labels
-      ctx.fillStyle='rgba(100,116,139,.65)'; ctx.font='8px monospace'; ctx.textAlign='right';
-      for(let i=0;i<=3;i++) { const v=maxBal*i/3; ctx.fillText('$'+v.toFixed(2),pad.l-3,pad.t+cH-(v/maxBal)*cH+3); }
-      // X labels
-      ctx.fillStyle='rgba(100,116,139,.65)'; ctx.font='8px monospace'; ctx.textAlign='center';
-      bars.filter((_,i)=>i%3===0||bars[i].price===ATH||Math.abs(bars[i].price-price)<price*0.005).forEach((bar,_,a) => {
-        const i = bars.indexOf(bar);
-        ctx.fillText('$'+(bar.price/1000).toFixed(0)+'k', pad.l+i*(cW/bars.length)+barW/2, H-4);
-      });
+
+      // Current balance reference line
+      const yNow2 = toY2(curBal2);
+      ctx2.strokeStyle = 'rgba(37,99,235,0.65)';
+      ctx2.lineWidth = 1.5;
+      ctx2.setLineDash([5,4]);
+      ctx2.beginPath(); ctx2.moveTo(pad2.l, yNow2); ctx2.lineTo(pad2.l + cW2, yNow2); ctx2.stroke();
+      ctx2.setLineDash([]);
+      ctx2.fillStyle = 'rgba(37,99,235,0.95)';
+      ctx2.font = 'bold 10px monospace';
+      ctx2.textAlign = 'left';
+      ctx2.fillText('NOW $' + curBal2.toFixed(2), pad2.l + 6, yNow2 - 5);
     }
   }
 
