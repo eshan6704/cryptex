@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PAXG Elite Grid Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #f5f0e8;
+    --bg2:     #ede7d9;
+    --bg3:     #e4dccb;
+    --border:  #cfc5ae;
+    --border2: #bfb49a;
+    --gold:    #b8860b;
+    --gold2:   #d4a017;
+    --gold3:   #f0c040;
+    --gold-bg: rgba(184,134,11,0.08);
+    --green:   #1a7a4a;
+    --red:     #c0392b;
+    --text:    #2c2416;
+    --text2:   #5a4e38;
+    --text3:   #8a7a60;
+    --text4:   #a89878;
+    --mono:    'DM Mono', monospace;
+    --serif:   'Playfair Display', serif;
+    --sans:    'DM Sans', sans-serif;
+    --shadow:  0 1px 4px rgba(80,60,20,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+
+  /* ─── HEADER ─── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    background: #fff; border-bottom: 2px solid var(--gold2);
+    box-shadow: var(--shadow); position: sticky; top: 0; z-index: 200;
+  }
+  .logo { font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+  .logo-icon { width: 26px; height: 26px; background: linear-gradient(135deg,var(--gold2),var(--gold3)); border-radius: 5px; display:flex;align-items:center;justify-content:center;font-size:13px; box-shadow:0 2px 5px rgba(184,134,11,0.3); }
+  .logo sub { font-family:var(--sans);font-size:8px;font-weight:600;color:var(--text3);letter-spacing:.15em;text-transform:uppercase;vertical-align:middle;margin-left:3px; }
+  .header-price { text-align:center; }
+  .header-price .sym { font-size:8px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--text3); }
+  .header-price .pval { font-family:var(--mono);font-size:18px;font-weight:500;color:var(--gold);line-height:1.1; }
+  .hstatus { display:flex;align-items:center;gap:6px;font-size:10px;font-weight:500;color:var(--text3); }
+  .sdot { width:7px;height:7px;border-radius:50%;background:var(--border2);transition:background .3s; }
+  .sdot.live { background:var(--green);box-shadow:0 0 0 2px rgba(26,122,74,0.25);animation:blink 1.4s infinite; }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+
+  /* ─── MAIN APP CONTAINER ─── */
+  .app { display:flex; flex-direction:column; height:calc(100vh - 52px); overflow:hidden; }
+
+  /* ─── TAB BAR ─── */
+  .tab-bar { 
+    display:flex; gap:0; background:#fff; border-bottom:1px solid var(--border); 
+    flex-shrink:0; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .tab-bar::-webkit-scrollbar { display:none; }
+  .tab { 
+    flex:1; min-width:100px; padding:12px 8px; font-size:11px; font-weight:600; 
+    letter-spacing:.05em; text-transform:uppercase; color:var(--text3); 
+    cursor:pointer; border-bottom:2px solid transparent; 
+    transition:color .2s,border-color .2s,background .2s; user-select:none; 
+    text-align:center; white-space:nowrap;
+  }
+  .tab:hover { color:var(--gold); background:var(--bg); }
+  .tab.active { color:var(--gold); border-bottom-color:var(--gold2); background:var(--bg); }
+
+  /* ─── PANELS ─── */
+  .panel-container { flex:1; overflow:hidden; position:relative; }
+  .panel { 
+    display:none; flex-direction:column; height:100%; overflow:hidden;
+    animation:fadeIn .2s ease;
+  }
+  .panel.active { display:flex; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  /* ─── TAB 1: SIMULATOR ─── */
+  .simulator-panel { overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .simulator-panel::-webkit-scrollbar { width:4px; }
+  .simulator-panel::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+  /* Controls Section */
+  .controls-section { 
+    background:#fff; padding:14px; border-bottom:1px solid var(--border);
+  }
+  .sb-lbl { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text4); font-weight:600; margin-bottom:12px; }
+  .ctrl-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; }
+  .ctrl-g { display:flex; flex-direction:column; }
+  .ctrl-g label { font-size:11px; font-weight:500; color:var(--text3); margin-bottom:4px; }
+  .ctrl-g input { 
+    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px; 
+    padding:10px 12px; font-family:var(--mono); font-size:13px; color:var(--text); 
+    outline:none; transition:border-color .2s,box-shadow .2s; 
+  }
+  .ctrl-g input:focus { border-color:var(--gold2); box-shadow:0 0 0 3px rgba(212,160,23,.15); }
+  .btn-start { 
+    width:100%; padding:12px 16px; margin-top:10px;
+    background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 100%); 
+    border:none; border-radius:7px; color:#fff; font-family:var(--sans); 
+    font-weight:600; font-size:13px; letter-spacing:.07em; cursor:pointer; 
+    box-shadow:0 3px 10px rgba(184,134,11,.35); transition:transform .15s,box-shadow .15s; 
+  }
+  .btn-start:hover { transform:translateY(-1px); box-shadow:0 5px 16px rgba(184,134,11,.4); }
+  .btn-start:active { transform:translateY(0); }
+
+  /* Stats Section */
+  .stats-section { 
+    background:var(--bg2); padding:14px; border-bottom:1px solid var(--border);
+  }
+  .stats-grid { 
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; 
+  }
+  .stat-card { 
+    background:#fff; padding:10px 12px; border-radius:8px; border:1px solid var(--border);
+    box-shadow:var(--shadow);
+  }
+  .stat-label { font-size:9px; color:var(--text4); font-weight:600; letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px; }
+  .stat-value { font-family:var(--mono); font-size:16px; font-weight:600; color:var(--text); }
+  .stat-value.gold { color:var(--gold); }
+  .stat-value.green { color:var(--green); }
+  .stat-value.red { color:var(--red); }
+
+  /* SMC Legend */
+  .legend-section { 
+    background:#fff; padding:14px; border-bottom:1px solid var(--border); 
+  }
+  .smc-legend { display:flex; flex-wrap:wrap; gap:8px; }
+  .smc-leg-row { 
+    display:flex; align-items:center; gap:6px; font-size:10px; color:var(--text2); 
+    background:var(--bg); padding:4px 8px; border-radius:4px; border:1px solid var(--border);
+  }
+  .smc-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+  /* SR Table Section */
+  .sr-section { 
+    background:var(--bg2); padding:14px; border-bottom:1px solid var(--border);
+  }
+  .sr-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .sr-table { 
+    width:100%; min-width:300px; border-collapse:collapse; 
+  }
+  .sr-table th { 
+    font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--text4); 
+    font-weight:600; padding:8px 6px; text-align:left; border-bottom:1px solid var(--border); 
+    white-space:nowrap; background:#fff;
+  }
+  .sr-table td { 
+    font-family:var(--mono); font-size:11px; padding:8px 6px; 
+    border-bottom:1px solid var(--bg3); background:#fff;
+  }
+  .sr-table .tf { color:var(--text3); font-weight:500; }
+  .sr-table .sup { color:var(--green); font-weight:600; }
+  .sr-table .res { color:var(--red); font-weight:600; }
+
+  /* ─── TRADES SECTION ─── */
+  .trades-section { 
+    display:flex; flex-direction:column; gap:10px; padding:14px; 
+    background:var(--bg); min-height:400px;
+  }
+  .trade-card { 
+    background:#fff; border-radius:10px; border:1px solid var(--border); 
+    box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;
+    min-height:180px;
+  }
+  .trade-hdr { 
+    padding:10px 12px; border-bottom:1px solid var(--border); 
+    display:flex; align-items:center; justify-content:space-between; 
+    background:var(--bg); flex-shrink:0;
+  }
+  .trade-title { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--text3); font-weight:600; }
+  .badge { 
+    font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:20px; 
+    background:var(--gold-bg); color:var(--gold); border:1px solid rgba(184,134,11,.2); 
+  }
+  .trade-scroll { 
+    overflow:auto; flex:1; -webkit-overflow-scrolling:touch;
+    min-height:120px;
+  }
+  .trade-scroll::-webkit-scrollbar { width:4px; height:4px; }
+  .trade-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  table.dt { 
+    width:100%; min-width:600px; border-collapse:collapse; font-size:11px; font-family:var(--mono);
+  }
+  table.dt thead th { 
+    position:sticky; top:0; background:#fff; font-size:9px; letter-spacing:.1em; 
+    text-transform:uppercase; color:var(--text4); font-weight:600; font-family:var(--sans); 
+    padding:8px 6px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  table.dt thead th:first-child, table.dt thead th:nth-child(2) { text-align:left; }
+  table.dt tbody tr { border-bottom:1px solid var(--bg3); transition:background .1s; }
+  table.dt tbody tr:hover { background:var(--bg); }
+  table.dt tbody td { 
+    padding:6px; text-align:right; color:var(--text2); white-space:nowrap;
+  }
+  table.dt tbody td:first-child, table.dt tbody td:nth-child(2) { text-align:left; }
+  td.buy { color:var(--green); font-weight:600; }
+  td.sell { color:var(--red); font-weight:600; }
+  td.pos { color:var(--green); font-weight:600; }
+  td.neg { color:var(--red); font-weight:600; }
+
+  /* ─── TAB 2: TRADINGVIEW CHART ─── */
+  .chart-panel { 
+    background:var(--bg); padding:8px; overflow:hidden;
+  }
+  .tv-card {
+    background:#fff; border-radius:10px; border:1px solid var(--border);
+    box-shadow:var(--shadow); overflow:hidden; height:100%;
+    display:flex; flex-direction:column;
+  }
+  .tv-card-header {
+    padding:10px 14px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-shrink:0; background:var(--bg);
+  }
+  .tv-card-title {
+    font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--text3); font-weight:600;
+    display:flex; align-items:center; gap:6px;
+  }
+  .tv-card-title::before { content:''; display:inline-block; width:3px; height:10px; background:linear-gradient(to bottom,var(--gold2),var(--gold3)); border-radius:2px; }
+  .tv-inner { flex:1; overflow:hidden; min-height:300px; }
+  .tradingview-widget-container { height:100% !important; width:100% !important; }
+  .tradingview-widget-container__widget { height:calc(100% - 28px) !important; width:100% !important; }
+
+  /* ─── TAB 3: ORDER BOOK ─── */
+  .orderbook-panel { 
+    background:var(--bg); padding:8px; overflow:hidden;
+  }
+  .ob-container {
+    background:#fff; border-radius:10px; border:1px solid var(--border);
+    box-shadow:var(--shadow); height:100%; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .ob-header {
+    padding:12px 14px; border-bottom:1px solid var(--border);
+    background:var(--bg); flex-shrink:0;
+  }
+  .ob-title {
+    font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--text3); font-weight:600;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .ob-spread {
+    font-family:var(--mono); font-size:14px; color:var(--gold); font-weight:600;
+  }
+  .ob-content {
+    flex:1; overflow:hidden; display:flex; flex-direction:column;
+  }
+  .ob-table-header {
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    padding:8px 12px; background:var(--bg2); border-bottom:1px solid var(--border);
+    font-size:9px; font-weight:600; color:var(--text4); letter-spacing:.1em; text-transform:uppercase;
+  }
+  .ob-table-header span { text-align:right; }
+  .ob-table-header span:first-child { text-align:left; }
+  .ob-rows {
+    flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column;
+  }
+  .ob-row {
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    padding:6px 12px; border-bottom:1px solid var(--bg3);
+    font-family:var(--mono); font-size:12px; align-items:center;
+    position:relative;
+  }
+  .ob-row:hover { background:var(--bg); }
+  .ob-row span { text-align:right; position:relative; z-index:1; }
+  .ob-row span:first-child { text-align:left; }
+  .ob-row.ask { color:var(--red); }
+  .ob-row.bid { color:var(--green); }
+  .ob-row.current { background:rgba(184,134,11,0.1); font-weight:600; }
+  .ob-depth-bar {
+    position:absolute; right:0; top:0; bottom:0; opacity:0.15;
+  }
+  .ob-depth-bar.ask { background:var(--red); }
+  .ob-depth-bar.bid { background:var(--green); }
+  .ob-current-price {
+    padding:10px 14px; background:var(--gold-bg); border-top:1px solid var(--border);
+    border-bottom:1px solid var(--border); text-align:center; flex-shrink:0;
+  }
+  .ob-current-label { font-size:9px; color:var(--text4); letter-spacing:.1em; text-transform:uppercase; }
+  .ob-current-value { font-family:var(--mono); font-size:20px; font-weight:600; color:var(--gold); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (min-width:768px) {
+    header { padding:12px 24px; }
+    .logo { font-size:19px; }
+    .logo-icon { width:30px; height:30px; font-size:15px; }
+    .header-price .pval { font-size:22px; }
+    .tab { min-width:120px; padding:14px 20px; font-size:12px; }
+    .controls-section, .stats-section, .legend-section, .sr-section { padding:18px 24px; }
+    .trades-section { padding:20px; }
+    .trade-card { min-height:200px; }
+    table.dt { min-width:700px; }
+    .chart-panel, .orderbook-panel { padding:16px; }
+  }
+
+  @media (max-width:480px) {
+    .ctrl-grid { grid-template-columns:1fr; }
+    .stats-grid { grid-template-columns:repeat(2, 1fr); }
+    .tab { min-width:80px; font-size:10px; padding:10px 6px; }
+    .trade-card { min-height:150px; }
+    table.dt { font-size:10px; }
+    table.dt tbody td { padding:5px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">◈</div>
+    PAXG <sub>Grid</sub>
+  </div>
+  <div class="header-price">
+    <div class="sym">PAXG / USDT</div>
+    <div class="pval" id="livePrice">—</div>
+  </div>
+  <div class="hstatus">
+    <div class="sdot" id="statusDot"></div>
+    <span id="statusText">OFFLINE</span>
+  </div>
+</header>
+
+<div class="app">
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <div class="tab active" onclick="switchTab('simulator', this)">⚙️ Simulator</div>
+    <div class="tab" onclick="switchTab('chart', this)">📈 Chart</div>
+    <div class="tab" onclick="switchTab('orderbook', this)">📚 Order Book</div>
+  </div>
+
+  <div class="panel-container">
+    <!-- TAB 1: SIMULATOR -->
+    <div class="panel active simulator-panel" id="panel-simulator">
+
+      <!-- Controls -->
+      <div class="controls-section">
+        <div class="sb-lbl">Parameters</div>
+        <div class="ctrl-grid">
+          <div class="ctrl-g">
+            <label>Funded Balance ($)</label>
+            <input type="number" id="fundBalance" value="1000" step="100">
+          </div>
+          <div class="ctrl-g">
+            <label>Grid Size ($)</label>
+            <input type="number" id="gridSize" value="1" step="0.5">
+          </div>
+          <div class="ctrl-g">
+            <label>Max Daily Risk (%)</label>
+            <input type="number" id="dailyRisk" value="5">
+          </div>
+        </div>
+        <button class="btn-start" onclick="startSimulator()">▶ Start Simulation</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-section">
+        <div class="sb-lbl">Account Balances</div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Funded</div>
+            <div class="stat-value gold" id="funded">$1,000.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Live Equity</div>
+            <div class="stat-value" id="live">$1,000.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Liq. Balance</div>
+            <div class="stat-value" id="liq">$1,000.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total P&L</div>
+            <div class="stat-value" id="totalPnl">$0.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Open / Closed</div>
+            <div class="stat-value" id="tradeStats">0 / 0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SMC Legend -->
+      <div class="legend-section">
+        <div class="sb-lbl">SMC Legend</div>
+        <div class="smc-legend">
+          <div class="smc-leg-row"><div class="smc-dot" style="background:rgba(26,122,74,0.25);border:1.5px solid #1a7a4a"></div>Bull OB</div>
+          <div class="smc-leg-row"><div class="smc-dot" style="background:rgba(192,57,43,0.2);border:1.5px solid #c0392b"></div>Bear OB</div>
+          <div class="smc-leg-row"><div class="smc-dot" style="background:rgba(26,122,74,0.12);border:1.5px dashed #1a7a4a"></div>Bull FVG</div>
+          <div class="smc-leg-row"><div class="smc-dot" style="background:rgba(192,57,43,0.1);border:1.5px dashed #c0392b"></div>Bear FVG</div>
+          <div class="smc-leg-row"><div class="smc-dot" style="background:#1a5276;border-radius:50%"></div>BOS</div>
+          <div class="smc-leg-row"><div class="smc-dot" style="background:var(--gold2);border-radius:50%"></div>CHoCH</div>
+        </div>
+      </div>
+
+      <!-- SR Levels -->
+      <div class="sr-section">
+        <div class="sb-lbl">Support / Resistance Levels</div>
+        <div class="sr-scroll">
+          <table class="sr-table">
+            <thead>
+              <tr><th>TF</th><th>Support</th><th>Resistance</th></tr>
+            </thead>
+            <tbody id="srBody">
+              <tr><td colspan="3" style="color:var(--text4);font-size:11px;padding:12px 6px">Waiting...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Trades -->
+      <div class="trades-section">
+        <div class="trade-card">
+          <div class="trade-hdr">
+            <div class="trade-title">Open Positions</div>
+            <div class="badge" id="openBadge">0</div>
+          </div>
+          <div class="trade-scroll">
+            <table class="dt">
+              <thead>
+                <tr>
+                  <th>Time</th><th>Side</th><th>Entry</th><th>TP</th><th>SL</th>
+                  <th>Live</th><th>Fee</th><th>Blocked</th><th>P&L</th>
+                </tr>
+              </thead>
+              <tbody id="tradesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="trade-card">
+          <div class="trade-hdr">
+            <div class="trade-title">Trade History</div>
+            <div class="badge" id="closedBadge">0</div>
+          </div>
+          <div class="trade-scroll">
+            <table class="dt">
+              <thead>
+                <tr>
+                  <th>Time</th><th>Side</th><th>Entry</th><th>TP</th><th>SL</th>
+                  <th>Close</th><th>Fee</th><th>Blocked</th><th>P&L</th>
+                </tr>
+              </thead>
+              <tbody id="closedBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: TRADINGVIEW CHART -->
+    <div class="panel chart-panel" id="panel-chart">
+      <div class="tv-card">
+        <div class="tv-card-header">
+          <div class="tv-card-title">TradingView Chart — PAXG/USDT</div>
+          <div style="font-size:10px;color:var(--text3)">Binance</div>
+        </div>
+        <div class="tv-inner" id="tvContainer">
+          <div class="tradingview-widget-container" style="height:100%;width:100%">
+            <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+            <div class="tradingview-widget-copyright" style="font-size:11px">
+              <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+                <span style="color:var(--text3)">Track all markets on TradingView</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ORDER BOOK -->
+    <div class="panel orderbook-panel" id="panel-orderbook">
+      <div class="ob-container">
+        <div class="ob-header">
+          <div class="ob-title">
+            <span>Order Book — PAXG/USDT</span>
+            <span class="ob-spread" id="obSpread">Spread: —</span>
+          </div>
+        </div>
+        <div class="ob-content">
+          <!-- Asks (Sells) - Red -->
+          <div class="ob-table-header">
+            <span>Price (USDT)</span>
+            <span>Amount (PAXG)</span>
+            <span>Total</span>
+          </div>
+          <div class="ob-rows" id="obAsks">
+            <div class="ob-row ask">
+              <span>—</span><span>—</span><span>—</span>
+            </div>
+          </div>
+
+          <!-- Current Price -->
+          <div class="ob-current-price">
+            <div class="ob-current-label">Last Traded Price</div>
+            <div class="ob-current-value" id="obLastPrice">—</div>
+          </div>
+
+          <!-- Bids (Buys) - Green -->
+          <div class="ob-rows" id="obBids">
+            <div class="ob-row bid">
+              <span>—</span><span>—</span><span>—</span>
+            </div>
+          </div>
+          <div class="ob-table-header">
+            <span>Price (USDT)</span>
+            <span>Amount (PAXG)</span>
+            <span>Total</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let tfData = {"1m":[],"5m":[],"15m":[],"1h":[],"4h":[],"1d":[]};
+let SR = {};
+let live1m = {open:null,high:null,low:null,close:null,volume:0,startTime:null};
+let trades=[], closedTrades=[], balanceHistory=[];
+let fundedBalance=1000, liveBalance=1000, liquidationBalance=1000;
+let lastBuyPrice=null, lastSellPrice=null;
+let currentPrice=0, wsTrade, wsDepth;
+let orderBook = { asks: [], bids: [], lastUpdateId: 0 };
+let isSimulatorRunning = false;
+
+// ═══════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════
+function switchTab(tabId, tabElement) {
+  // Update tab buttons
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if(tabElement) tabElement.classList.add('active');
+  else document.querySelector(`.tab[onclick*="'" + tabId + "'"]`).classList.add('active');
+
+  // Update panels
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tabId).classList.add('active');
+
+  // Load TradingView if chart tab
+  if(tabId === 'chart' && !document.getElementById('tvContainer').dataset.loaded) {
+    loadTradingView();
+    document.getElementById('tvContainer').dataset.loaded = 'true';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// TRADINGVIEW WIDGET
+// ═══════════════════════════════════════════════════
+function loadTradingView() {
+  const container = document.getElementById('tvContainer');
+  const widgetDiv = container.querySelector('.tradingview-widget-container__widget');
+
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.async = true;
+  script.innerHTML = JSON.stringify({
+    "autosize": true,
+    "symbol": "BINANCE:PAXGUSDT",
+    "interval": "5",
+    "timezone": "Asia/Kolkata",
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "backgroundColor": "rgba(255,255,255,1)",
+    "gridColor": "rgba(207,197,174,0.3)",
+    "withdateranges": true,
+    "hide_side_toolbar": false,
+    "allow_symbol_change": true,
+    "watchlist": ["BINANCE:PAXGUSDT","BINANCE:XAUTUSDT","BINANCE:BTCUSDT","BINANCE:SOLUSDT"],
+    "details": true,
+    "hotlist": false,
+    "calendar": false,
+    "studies": ["STD;EMA","STD;EMA","STD;Volume","STD;RSI"],
+    "studies_overrides": {
+      "moving average exponential.length": 20,
+      "moving average exponential.plot.color": "rgb(212,160,23)",
+      "moving average exponential.plot.linewidth": 2
+    },
+    "container_id": "tradingview_paxg"
+  });
+
+  widgetDiv.appendChild(script);
+}
+
+// ═══════════════════════════════════════════════════
+// BALANCE / UI
+// ═══════════════════════════════════════════════════
+function fmtN(n){ return n.toFixed(2); }
+function fmtP(n){ return (n>=0?'+':'')+n.toFixed(2); }
+
+function updateBalances(){
+  let pnl=liveBalance-fundedBalance;
+  document.getElementById("funded").textContent=`$${fmtN(fundedBalance)}`;
+  document.getElementById("live").textContent=`$${fmtN(liveBalance)}`;
+  document.getElementById("liq").textContent=`$${fmtN(liquidationBalance)}`;
+  document.getElementById("tradeStats").textContent=`${trades.length} / ${closedTrades.length}`;
+  document.getElementById("openBadge").textContent=trades.length;
+  document.getElementById("closedBadge").textContent=closedTrades.length;
+  let pel=document.getElementById("totalPnl");
+  pel.textContent=(pnl>=0?'+':'')+`$${fmtN(pnl)}`;
+  pel.className='stat-value '+(pnl>=0?'green':'red');
+}
+
+// ═══════════════════════════════════════════════════
+// 1M CANDLE BUILDER (from WebSocket)
+// ═══════════════════════════════════════════════════
+function update1mCandle(price,vol=0){
+  let now=Date.now(), minute=Math.floor(now/60000);
+  if(!live1m.startTime){live1m.startTime=minute;live1m.open=price;live1m.high=price;live1m.low=price;}
+  if(minute!==live1m.startTime){
+    tfData["1m"].push({...live1m,close:price});
+    if(tfData["1m"].length>500) tfData["1m"].shift();
+    live1m={open:price,high:price,low:price,close:price,volume:vol,startTime:minute};
+  } else {
+    live1m.high=Math.max(live1m.high,price);
+    live1m.low=Math.min(live1m.low,price);
+    live1m.close=price; live1m.volume+=vol;
+  }
+  currentPrice = price;
+  document.getElementById("livePrice").textContent=`$${price.toFixed(2)}`;
+  document.getElementById("obLastPrice").textContent=`$${price.toFixed(2)}`;
+}
+
+// ═══════════════════════════════════════════════════
+// ORDER BOOK WEBSOCKET
+// ═══════════════════════════════════════════════════
+function connectOrderBook() {
+  // Close existing connection
+  if(wsDepth) wsDepth.close();
+
+  // Fetch initial order book snapshot
+  fetch('https://api.binance.com/api/v3/depth?symbol=PAXGUSDT&limit=20')
+    .then(r => r.json())
+    .then(data => {
+      orderBook.asks = data.asks.map(a => ({ price: parseFloat(a[0]), amount: parseFloat(a[1]) }));
+      orderBook.bids = data.bids.map(b => ({ price: parseFloat(b[0]), amount: parseFloat(b[1]) }));
+      orderBook.lastUpdateId = data.lastUpdateId;
+      renderOrderBook();
+
+      // Connect to WebSocket for updates
+      wsDepth = new WebSocket('wss://stream.binance.com:9443/ws/paxgusdt@depth@100ms');
+
+      wsDepth.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        updateOrderBook(data);
+      };
+    })
+    .catch(err => console.error('Order book fetch error:', err));
+}
+
+function updateOrderBook(data) {
+  // Update asks
+  if(data.a) {
+    data.a.forEach(function(update) {
+      const price = parseFloat(update[0]);
+      const amount = parseFloat(update[1]);
+      const idx = orderBook.asks.findIndex(x => Math.abs(x.price - price) < 0.0001);
+      if(amount === 0) {
+        if(idx > -1) orderBook.asks.splice(idx, 1);
+      } else {
+        if(idx > -1) orderBook.asks[idx].amount = amount;
+        else {
+          orderBook.asks.push({ price: price, amount: amount });
+          orderBook.asks.sort((a, b) => a.price - b.price);
+        }
+      }
+    });
+  }
+
+  // Update bids
+  if(data.b) {
+    data.b.forEach(function(update) {
+      const price = parseFloat(update[0]);
+      const amount = parseFloat(update[1]);
+      const idx = orderBook.bids.findIndex(x => Math.abs(x.price - price) < 0.0001);
+      if(amount === 0) {
+        if(idx > -1) orderBook.bids.splice(idx, 1);
+      } else {
+        if(idx > -1) orderBook.bids[idx].amount = amount;
+        else {
+          orderBook.bids.push({ price: price, amount: amount });
+          orderBook.bids.sort((a, b) => b.price - a.price);
+        }
+      }
+    });
+  }
+
+  renderOrderBook();
+}
+
+function renderOrderBook() {
+  const maxRows = 10;
+
+  // Get top asks (lowest prices, ascending)
+  const asks = orderBook.asks.slice(0, maxRows).sort((a, b) => b.price - a.price); // Reverse for display
+  const bids = orderBook.bids.slice(0, maxRows);
+
+  // Calculate spread
+  if(asks.length > 0 && bids.length > 0) {
+    const spread = asks[asks.length-1].price - bids[0].price;
+    const spreadPct = (spread / bids[0].price * 100).toFixed(3);
+    document.getElementById('obSpread').textContent = `Spread: ${spread.toFixed(2)} (${spreadPct}%)`;
+  }
+
+  // Render asks
+  const asksContainer = document.getElementById('obAsks');
+  if(asks.length > 0) {
+    const maxAskTotal = Math.max(...asks.map(a => a.amount * a.price));
+    asksContainer.innerHTML = asks.map(ask => {
+      const total = ask.amount * ask.price;
+      const width = (total / maxAskTotal * 100).toFixed(1);
+      return `
+        <div class="ob-row ask">
+          <div class="ob-depth-bar ask" style="width:${width}%"></div>
+          <span>${ask.price.toFixed(2)}</span>
+          <span>${ask.amount.toFixed(4)}</span>
+          <span>${total.toFixed(2)}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Render bids
+  const bidsContainer = document.getElementById('obBids');
+  if(bids.length > 0) {
+    const maxBidTotal = Math.max(...bids.map(b => b.amount * b.price));
+    bidsContainer.innerHTML = bids.map(bid => {
+      const total = bid.amount * bid.price;
+      const width = (total / maxBidTotal * 100).toFixed(1);
+      return `
+        <div class="ob-row bid">
+          <div class="ob-depth-bar bid" style="width:${width}%"></div>
+          <span>${bid.price.toFixed(2)}</span>
+          <span>${bid.amount.toFixed(4)}</span>
+          <span>${total.toFixed(2)}</span>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SR COMPUTE
+// ═══════════════════════════════════════════════════
+function computeSR(candles){
+  if(candles.length<5) return{supports:[],resistances:[]};
+  let avgVol=candles.reduce((s,c)=>s+c.volume,0)/candles.length;
+  let supports=[],resistances=[];
+  for(let i=2;i<candles.length-2;i++){
+    let c=candles[i];
+    if(c.low<candles[i-1].low&&c.low<candles[i+1].low&&c.low<candles[i-2].low&&c.low<candles[i+2].low&&c.volume>avgVol*1.2) supports.push({price:c.low});
+    if(c.high>candles[i-1].high&&c.high>candles[i+1].high&&c.high>candles[i-2].high&&c.high>candles[i+2].high&&c.volume>avgVol*1.2) resistances.push({price:c.high});
+  }
+  return{supports,resistances};
+}
+function computeAllSR(){for(let tf in tfData) SR[tf]=computeSR(tfData[tf]);updateSRUI();}
+
+function getNearestSupport(price){
+  let all=[];for(let tf in SR)SR[tf].supports.forEach(s=>all.push(s.price));
+  return all.filter(p=>p<price).sort((a,b)=>b-a)[0]||price-5;
+}
+function getNearestResistance(price){
+  let all=[];for(let tf in SR)SR[tf].resistances.forEach(r=>all.push(r.price));
+  return all.filter(p=>p>price).sort((a,b)=>a-b)[0]||price+5;
+}
+function unbalancedTrades(){
+  return Math.abs(trades.filter(t=>t.type==="BUY").length-trades.filter(t=>t.type==="SELL").length);
+}
+
+// ═══════════════════════════════════════════════════
+// GRID LOGIC
+// ═══════════════════════════════════════════════════
+function canOpenTrade(type,price){
+  let ub=Math.max(1,unbalancedTrades());
+  let grid=parseFloat(document.getElementById("gridSize").value);
+  let minGrid=grid*ub;
+  if(type==="BUY"){if(lastBuyPrice!==null&&price<lastBuyPrice+minGrid)return false;if(lastSellPrice!==null&&price>lastSellPrice-minGrid)return false;}
+  if(type==="SELL"){if(lastSellPrice!==null&&price>lastSellPrice-minGrid)return false;if(lastBuyPrice!==null&&price<lastBuyPrice+minGrid)return false;}
+  let blocked=(trades.length+1)*price/900;
+  if(liveBalance-blocked-0.15<0.95*fundedBalance)return false;
+  return true;
+}
+
+function tryOpenTrade(price){
+  let bc=trades.filter(t=>t.type==="BUY").length;
+  let sc=trades.filter(t=>t.type==="SELL").length;
+  let type=bc>sc?"SELL":sc>bc?"BUY":(Math.random()<0.5?"BUY":"SELL");
+  if(!canOpenTrade(type,price))return;
+  let tp=type==="BUY"?getNearestResistance(price):getNearestSupport(price);
+  let sl=type==="BUY"?getNearestSupport(price):getNearestResistance(price);
+  trades.push({time:Date.now(),type,entry:price,tp,sl,fee:0.15,blocked:price/900,profit:0,currentPrice:price});
+  if(type==="BUY")lastBuyPrice=price;else lastSellPrice=price;
+}
+
+function updateTrades(price){
+  for(let i=trades.length-1;i>=0;i--){
+    let t=trades[i];t.currentPrice=price;
+    t.profit=t.type==="BUY"?price-t.entry-t.fee:t.entry-price-t.fee;
+    if((t.type==="BUY"&&(price>=t.tp||price<=t.sl))||(t.type==="SELL"&&(price<=t.tp||price>=t.sl))){
+      t.closePrice=price;closedTrades.unshift(t);trades.splice(i,1);
+    }
+  }
+  let totalProfit=trades.reduce((s,t)=>s+t.profit,0);
+  let totalBlocked=trades.reduce((s,t)=>s+t.blocked,0);
+  liveBalance=fundedBalance+totalProfit;
+  liquidationBalance=liveBalance-totalBlocked;
+  balanceHistory.push({time:Date.now(),balance:liveBalance});
+  if(balanceHistory.length>2000)balanceHistory.shift();
+}
+
+function updateTradeHistory(){
+  let tb=document.getElementById("tradesBody");tb.innerHTML="";
+  trades.forEach(t=>{
+    let tr=document.createElement("tr");
+    let pc=t.profit>=0?"pos":"neg";
+    tr.innerHTML=`<td>${new Date(t.time).toLocaleTimeString()}</td>
+    <td class="${t.type.toLowerCase()}">${t.type}</td>
+    <td>${t.entry.toFixed(2)}</td><td>${t.tp.toFixed(2)}</td><td>${t.sl.toFixed(2)}</td>
+    <td>${t.currentPrice.toFixed(2)}</td><td>${t.fee.toFixed(2)}</td>
+    <td>${t.blocked.toFixed(4)}</td><td class="${pc}">${fmtP(t.profit)}</td>`;
+    tb.appendChild(tr);
+  });
+  let cb=document.getElementById("closedBody");cb.innerHTML="";
+  closedTrades.slice(0,100).forEach(t=>{
+    let tr=document.createElement("tr");
+    let pc=t.profit>=0?"pos":"neg";
+    tr.innerHTML=`<td>${new Date(t.time).toLocaleTimeString()}</td>
+    <td class="${t.type.toLowerCase()}">${t.type}</td>
+    <td>${t.entry.toFixed(2)}</td><td>${t.tp.toFixed(2)}</td><td>${t.sl.toFixed(2)}</td>
+    <td>${t.closePrice.toFixed(2)}</td><td>${t.fee.toFixed(2)}</td>
+    <td>${t.blocked.toFixed(4)}</td><td class="${pc}">${fmtP(t.profit)}</td>`;
+    cb.appendChild(tr);
+  });
+}
+
+function updateSRUI(){
+  let tbody=document.getElementById("srBody");tbody.innerHTML="";
+  for(let tf in SR){
+    let s=SR[tf].supports.slice(-1)[0]?.price;
+    let r=SR[tf].resistances.slice(-1)[0]?.price;
+    let tr=document.createElement("tr");
+    tr.innerHTML=`<td class="tf">${tf}</td><td class="sup">${s?s.toFixed(2):"-"}</td><td class="res">${r?r.toFixed(2):"-"}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════
+function startSimulator(){
+  isSimulatorRunning = true;
+
+  // Close existing connections
+  if(wsTrade) wsTrade.close();
+
+  fundedBalance=parseFloat(document.getElementById("fundBalance").value);
+  liveBalance=fundedBalance;liquidationBalance=fundedBalance;
+  trades=[];closedTrades=[];balanceHistory=[{time:Date.now(),balance:fundedBalance}];
+  tfData={"1m":[],"5m":[],"15m":[],"1h":[],"4h":[],"1d":[]};SR={};
+  lastBuyPrice=null;lastSellPrice=null;
+  updateBalances();
+
+  // Connect Order Book
+  connectOrderBook();
+
+  let dot=document.getElementById("statusDot"),txt=document.getElementById("statusText");
+  dot.className="sdot";txt.textContent="CONNECTING…";
+
+  // Trade WebSocket for price updates
+  wsTrade=new WebSocket("wss://stream.binance.com:9443/ws/paxgusdt@trade");
+  wsTrade.onopen=()=>{dot.className="sdot live";txt.textContent="LIVE";};
+  wsTrade.onclose=()=>{dot.className="sdot";txt.textContent="OFFLINE";isSimulatorRunning=false;};
+  wsTrade.onerror=()=>{dot.className="sdot";txt.textContent="ERROR";isSimulatorRunning=false;};
+  wsTrade.onmessage=e=>{
+    let d=JSON.parse(e.data);
+    let price=parseFloat(d.p);
+    update1mCandle(price,parseFloat(d.q));
+    tryOpenTrade(price);
+    updateTrades(price);
+  };
+
+  // Intervals
+  if(window.simInterval) clearInterval(window.simInterval);
+  window.simInterval = setInterval(()=>{updateBalances();updateTradeHistory();},500);
+
+  if(window.srInterval) clearInterval(window.srInterval);
+  window.srInterval = setInterval(()=>{computeAllSR();},5000);
+}
+
+// Auto-connect order book on page load
+document.addEventListener('DOMContentLoaded', () => {
+  connectOrderBook();
+});
+</script>
+</body>
+</html>
