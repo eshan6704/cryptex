@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Universal Grid Simulator Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-app: #0f172a;
+      --bg-card: #1e293b;
+      --bg-input: #334155;
+      --border: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --green: #22c55e;
+      --red: #ef4444;
+      --gold: #f59e0b;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body { 
+      font-family: var(--font-sans); 
+      background: var(--bg-app); 
+      color: var(--text-primary); 
+      min-height: 100vh; 
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* --- Header --- */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.5rem;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .logo { 
+      font-family: 'Playfair Display', serif; 
+      font-size: 1.25rem; 
+      color: var(--accent); 
+      display: flex; align-items: center; gap: 0.5rem; 
+    }
+    .logo-icon { 
+      width: 32px; height: 32px; 
+      background: var(--accent); 
+      color: var(--bg-app);
+      border-radius: 8px; 
+      display: flex; align-items: center; justify-content: center; 
+      font-size: 1.2rem; font-weight: bold;
+    }
+    .price-display { text-align: right; }
+    .price-symbol { font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.05em; }
+    .price-value { font-family: var(--font-mono); font-size: 1.5rem; color: var(--accent); font-weight: 500; }
+    
+    .status-badge {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      background: var(--bg-input);
+      border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+    .status-dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+    /* --- Layout --- */
+    .app-container {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      height: calc(100vh - 73px);
+    }
+
+    /* --- Sidebar --- */
+    .sidebar {
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;
+    }
+
+    .input-group { margin-bottom: 1rem; }
+    .input-group label { display: block; font-size: 0.875rem; margin-bottom: 0.5rem; color: var(--text-secondary); font-weight: 600; }
+    .input-wrapper { position: relative; }
+    input, select {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.75rem; color: var(--text-primary);
+      font-family: var(--font-mono); font-size: 0.9rem; outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+
+    .btn {
+      width: 100%; padding: 0.875rem; border: none; border-radius: 8px;
+      font-weight: 600; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-primary { background: var(--accent); color: var(--bg-app); }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-stop { background: var(--red); color: white; display: none; }
+
+    .info-box {
+      background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3);
+      border-radius: 8px; padding: 0.75rem; font-size: 0.75rem; color: var(--text-secondary);
+      margin-top: 0.5rem; line-height: 1.4;
+    }
+
+    /* --- Main Content --- */
+    .main-content {
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    .tabs {
+      display: flex; gap: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;
+    }
+    .tab {
+      padding: 0.75rem 1rem; cursor: pointer; color: var(--text-secondary);
+      font-weight: 600; border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .grid-dashboard {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;
+    }
+    .stat-card {
+      background: var(--bg-card); padding: 1.25rem; border-radius: 12px;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .stat-label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .stat-value { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 600; }
+
+    /* --- Tables --- */
+    .card {
+      background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);
+      overflow: hidden; box-shadow: var(--shadow);
+    }
+    .card-header {
+      padding: 1rem 1.5rem; background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+    }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 1rem 1.5rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); }
+    td { padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); font-family: var(--font-mono); }
+    
+    .side-buy { color: var(--green); font-weight: 600; }
+    .side-sell { color: var(--red); font-weight: 600; }
+    .pnl-pos { color: var(--green); }
+    .pnl-neg { color: var(--red); }
+
+    /* --- Chart & Orderbook --- */
+    .panel { display: none; height: 100%; }
+    .panel.active { display: block; }
+    #tv-container { height: 600px; border-radius: 12px; overflow: hidden; background: white; }
+
+    .ob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+    .ob-column { background: var(--bg-card); padding: 1rem; }
+    .ob-row { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.8rem; }
+
+    @media (max-width: 1024px) {
+      .app-container { grid-template-columns: 1fr; height: auto; }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">G</div>
+    GridSim Pro
+  </div>
+  <div class="price-display">
+    <div class="price-symbol" id="displaySymbol">PAXGUSDT</div>
+    <div class="price-value" id="livePrice">0.00</div>
+  </div>
+  <div class="status-badge">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">OFFLINE</span>
+  </div>
+</header>
+
+<div class="app-container">
+  <aside class="sidebar">
+    <section>
+      <div class="section-title">Trading Setup</div>
+      <div class="input-group">
+        <label>Select Trading Pair</label>
+        <select id="pairSelector" onchange="selectPair()">
+          <option value="PAXGUSDT">PAXG</option>
+          <option value="PAXGMINI">PAXGmini</option>
+          <option value="BTCUSDT">BTCUSDT</option>
+          <option value="SOLUSDT">SOLUSDT</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Lot Size</label>
+        <select id="lotSize" onchange="selectPair()">
+          <option value="0.01">0.01</option>
+          <option value="0.1">0.1</option>
+          <option value="1">1</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Initial Balance (USDT)</label>
+        <input type="number" id="initBalance" value="1000">
+      </div>
+      <div class="input-group">
+        <label>Grid Spacing (USDT)</label>
+        <input type="number" id="gridSpacing" value="1" step="0.1">
+      </div>
+      <div class="input-group">
+        <label>Daily Risk Limit (%)</label>
+        <input type="number" id="dailyRisk" value="5" step="0.1">
+      </div>
+      <button class="btn btn-primary" id="startBtn" onclick="toggleSimulation()">
+        <span>▶</span> Start Simulation
+      </button>
+      <button class="btn btn-stop" id="stopBtn" onclick="toggleSimulation()">
+        <span>■</span> Stop Simulation
+      </button>
+      <div class="info-box" id="contractInfo">
+        Fee: 0.15% | Block: 9/4500 | Loss/100$: 100$
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">Support & Resistance</div>
+      <div class="card" style="background: transparent; border: none; box-shadow: none;">
+        <table style="font-size: 0.75rem;">
+          <thead>
+            <tr><th>TF</th><th>Support</th><th>Resistance</th></tr>
+          </thead>
+          <tbody id="srBody">
+            <tr><td colspan="3" style="text-align:center; color: var(--text-secondary);">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </aside>
+
+  <main class="main-content">
+    <div class="grid-dashboard">
+      <div class="stat-card">
+        <div class="stat-label">Equity</div>
+        <div class="stat-value" id="statEquity">$1,000.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total P&L</div>
+        <div class="stat-value" id="statPnl">$0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Open Trades</div>
+        <div class="stat-value" id="statOpen">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Margin Used</div>
+        <div class="stat-value" id="statMargin">$0.00</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('trades')">Positions</div>
+      <div class="tab" onclick="switchTab('chart')">Live Chart</div>
+      <div class="tab" onclick="switchTab('orderbook')">Order Book</div>
+    </div>
+
+    <div id="panel-trades" class="panel active">
+      <div class="card">
+        <div class="card-header">
+          <div style="font-weight: 600;">Active Positions</div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Side</th>
+                <th>Entry</th>
+                <th>TP</th>
+                <th>SL</th>
+                <th>Current</th>
+                <th>P&L</th>
+              </tr>
+            </thead>
+            <tbody id="tradesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+          <div style="font-weight: 600;">History (Last 50)</div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Side</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>Fee</th>
+                <th>P&L</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-chart" class="panel">
+      <div id="tv-container"></div>
+    </div>
+
+    <div id="panel-orderbook" class="panel">
+      <div class="card">
+        <div class="ob-grid">
+          <div class="ob-column">
+            <div class="section-title" style="color: var(--red);">Asks (Sells)</div>
+            <div id="obAsks"></div>
+          </div>
+          <div class="ob-column">
+            <div class="section-title" style="color: var(--green);">Bids (Buys)</div>
+            <div id="obBids"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ─── Contract Configuration ───────────────────────────────────────────────
+  // baseMargin: margin for 1 lot at refPrice
+  // refPrice:   price at which baseMargin is calibrated
+  // feeFlat:    flat fee per trade per lot ($)
+  // multiplier: P&L = priceDiff × lotSize × multiplier
+  const CONTRACT_CONFIG = {
+    PAXGUSDT: {
+      name: 'PAXG',
+      binanceSymbol: 'PAXGUSDT',
+      feeFlat: 15,
+      baseMargin: 900,
+      refPrice: 4500,
+      multiplier: 100,
+      dipInterval: 100,
+      lossPerDip: 100
+    },
+    PAXGMINI: {
+      name: 'PAXGmini',
+      binanceSymbol: 'PAXGUSDT',
+      feeFlat: 15,
+      baseMargin: 180,       // 900/5
+      refPrice: 4500,
+      multiplier: 20,        // 100/5
+      dipInterval: 100,
+      lossPerDip: 20
+    },
+    BTCUSDT: {
+      name: 'BTCUSDT',
+      binanceSymbol: 'BTCUSDT',
+      feeFlat: 15,
+      baseMargin: 250,
+      refPrice: 70000,
+      multiplier: 1,
+      dipInterval: 10000,
+      lossPerDip: 100
+    },
+    SOLUSDT: {
+      name: 'SOLUSDT',
+      binanceSymbol: 'SOLUSDT',
+      feeFlat: 15,
+      baseMargin: 80,
+      refPrice: 80,
+      multiplier: 100,
+      dipInterval: 1,
+      lossPerDip: 1
+    }
+  };
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  // Margin scales with current price relative to refPrice, then by lotSize
+  function calcMargin(cfg, entryPrice, lotSize) {
+    return (entryPrice / cfg.refPrice) * cfg.baseMargin * lotSize;
+  }
+
+  // P&L = priceDiff × lotSize × multiplier  (direction already handled by caller)
+  function calcPnl(cfg, priceDiff, lotSize) {
+    return priceDiff * lotSize * cfg.multiplier;
+  }
+
+  // Flat fee scales by lotSize
+  function calcFee(cfg, lotSize) {
+    return cfg.feeFlat * lotSize;
+  }
+
+  function getLotSize() {
+    return parseFloat(document.getElementById('lotSize').value);
+  }
+
+  // State
+  const state = {
+    pairType: 'PAXGUSDT',
+    binanceSymbol: 'PAXGUSDT',
+    isRunning: false,
+    balance: 1000,
+    equity: 1000,
+    trades: [],
+    history: [],
+    lastPrice: 0,
+    highestPrice: 0,
+    ws: null,
+    wsOB: null,
+    lastTradePrice: null
+  };
+
+  // UI Utilities
+  const $ = id => document.getElementById(id);
+  const formatUSD = val => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+  const getConfig = () => CONTRACT_CONFIG[state.pairType];
+
+  function selectPair() {
+    const selected = $('pairSelector').value;
+    state.pairType = selected;
+    const cfg = getConfig();
+    state.binanceSymbol = cfg.binanceSymbol;
+    const lotSize = getLotSize();
+
+    // Update header display
+    $('displaySymbol').textContent = cfg.name;
+
+    // Update contract info box
+    const marginAt1Lot = cfg.baseMargin;
+    const marginNow = (cfg.baseMargin * lotSize).toFixed(2);
+    $('contractInfo').textContent =
+      `Fee: $${(cfg.feeFlat * lotSize).toFixed(2)} | Margin: $${marginNow} | ` +
+      `Return: Δprice × ${lotSize} × ${cfg.multiplier} | Ref: $${cfg.refPrice}`;
+
+    // Reset chart if visible
+    const container = $('tv-container');
+    container.innerHTML = '';
+    if ($('panel-chart').classList.contains('active')) {
+      initTradingView();
+    }
+
+    if (state.isRunning) {
+      restartSimulation();
+    }
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    $(`panel-${tab}`).classList.add('active');
+    if (tab === 'chart') initTradingView();
+  }
+
+  // Simulation Control
+  function toggleSimulation() {
+    if (state.isRunning) {
+      stopSimulation();
+    } else {
+      startSimulation();
+    }
+  }
+
+  function startSimulation() {
+    state.isRunning = true;
+    state.balance = parseFloat($('initBalance').value);
+    state.equity = state.balance;
+    state.trades = [];
+    state.history = [];
+    state.lastPrice = 0;
+    state.highestPrice = 0;
+    state.lastTradePrice = null;
+    
+    $('startBtn').style.display = 'none';
+    $('stopBtn').style.display = 'flex';
+    $('statusDot').className = 'status-dot live';
+    $('statusText').textContent = 'LIVE';
+
+    connectWebSocket();
+    connectOrderBook();
+  }
+
+  function stopSimulation() {
+    state.isRunning = false;
+    if (state.ws) state.ws.close();
+    if (state.wsOB) state.wsOB.close();
+    
+    $('startBtn').style.display = 'flex';
+    $('stopBtn').style.display = 'none';
+    $('statusDot').className = 'status-dot';
+    $('statusText').textContent = 'OFFLINE';
+  }
+
+  function restartSimulation() {
+    stopSimulation();
+    setTimeout(startSimulation, 500);
+  }
+
+  function connectWebSocket() {
+    if (state.ws) state.ws.close();
+    state.ws = new WebSocket(`wss://stream.binance.com:9443/ws/${state.binanceSymbol.toLowerCase()}@trade`);
+    
+    state.ws.onmessage = e => {
+      const data = JSON.parse(e.data);
+      const price = parseFloat(data.p);
+      state.lastPrice = price;
+      state.highestPrice = Math.max(state.highestPrice, price);
+      $('livePrice').textContent = price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      
+      updateSimulation(price);
+    };
+
+    state.ws.onerror = () => {
+      console.error('WebSocket error for', state.binanceSymbol);
+    };
+
+    state.ws.onclose = () => {
+      if (state.isRunning) {
+        console.log('WebSocket closed, reconnecting...');
+        setTimeout(connectWebSocket, 3000);
+      }
+    };
+  }
+
+  function connectOrderBook() {
+    if (state.wsOB) state.wsOB.close();
+    state.wsOB = new WebSocket(`wss://stream.binance.com:9443/ws/${state.binanceSymbol.toLowerCase()}@depth10@100ms`);
+    
+    state.wsOB.onmessage = e => {
+      const data = JSON.parse(e.data);
+      renderOrderBook(data.bids, data.asks);
+    };
+
+    state.wsOB.onerror = () => {
+      console.error('Order book WebSocket error');
+    };
+  }
+
+  function updateSimulation(price) {
+    const cfg = getConfig();
+    const lotSize = getLotSize();
+    const gridSpacing = parseFloat($('gridSpacing').value);
+
+    // Update existing trades
+    let totalPnl = 0;
+    for (let i = state.trades.length - 1; i >= 0; i--) {
+      const t = state.trades[i];
+      const priceDiff = t.side === 'BUY' ? price - t.entry : t.entry - price;
+      const fee = calcFee(cfg, lotSize);
+      t.pnl = calcPnl(cfg, priceDiff, lotSize) - fee;
+      totalPnl += t.pnl;
+
+      // Check TP/SL
+      if ((t.side === 'BUY' && (price >= t.tp || price <= t.sl)) ||
+          (t.side === 'SELL' && (price <= t.tp || price >= t.sl))) {
+        t.exit = price;
+        t.fee = fee;
+        state.balance += t.pnl;
+        state.history.unshift(t);
+        state.trades.splice(i, 1);
+      }
+    }
+
+    state.equity = state.balance + totalPnl;
+
+    // Grid Logic
+    const unbalance = Math.abs(
+      state.trades.filter(t => t.side === 'BUY').length -
+      state.trades.filter(t => t.side === 'SELL').length
+    );
+    const minGridSpacing = gridSpacing * Math.max(1, unbalance);
+
+    if (!state.lastTradePrice || Math.abs(price - state.lastTradePrice) >= minGridSpacing) {
+      const buyCount = state.trades.filter(t => t.side === 'BUY').length;
+      const sellCount = state.trades.filter(t => t.side === 'SELL').length;
+
+      let side = buyCount > sellCount ? 'SELL' : sellCount > buyCount ? 'BUY' : (Math.random() > 0.5 ? 'BUY' : 'SELL');
+
+      const tp = side === 'BUY' ? price + gridSpacing : price - gridSpacing;
+      const sl = side === 'BUY' ? price - gridSpacing * 2 : price + gridSpacing * 2;
+
+      const margin = calcMargin(cfg, price, lotSize);
+      if (state.equity - margin > state.balance * 0.05) {
+        state.trades.push({ time: new Date().toLocaleTimeString(), side, entry: price, tp, sl, pnl: 0, fee: 0 });
+        state.lastTradePrice = price;
+      }
+    }
+
+    updateUI();
+  }
+
+  function updateUI() {
+    const cfg = getConfig();
+    const lotSize = getLotSize();
+    $('statEquity').textContent = formatUSD(state.equity);
+    const totalPnl = state.equity - parseFloat($('initBalance').value);
+    $('statPnl').textContent = formatUSD(totalPnl);
+    $('statPnl').className = 'stat-value ' + (totalPnl >= 0 ? 'pnl-pos' : 'pnl-neg');
+    $('statOpen').textContent = state.trades.length;
+
+    // Margin = sum of margin for each open trade at its entry price
+    let totalMargin = 0;
+    state.trades.forEach(t => {
+      totalMargin += calcMargin(cfg, t.entry, lotSize);
+    });
+    $('statMargin').textContent = formatUSD(totalMargin);
+
+    // Trades Table
+    const tbody = $('tradesBody');
+    tbody.innerHTML = state.trades.map(t => `
+      <tr>
+        <td>${t.time}</td>
+        <td class="side-${t.side.toLowerCase()}">${t.side}</td>
+        <td>${t.entry.toFixed(2)}</td>
+        <td>${t.tp.toFixed(2)}</td>
+        <td>${t.sl.toFixed(2)}</td>
+        <td>${state.lastPrice.toFixed(2)}</td>
+        <td class="${t.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${formatUSD(t.pnl)}</td>
+      </tr>
+    `).join('');
+
+    // History Table
+    const hbody = $('historyBody');
+    hbody.innerHTML = state.history.slice(0, 50).map(t => `
+      <tr>
+        <td>${t.time}</td>
+        <td class="side-${t.side.toLowerCase()}">${t.side}</td>
+        <td>${t.entry.toFixed(2)}</td>
+        <td>${t.exit ? t.exit.toFixed(2) : '-'}</td>
+        <td>${formatUSD(t.fee)}</td>
+        <td class="${t.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${formatUSD(t.pnl)}</td>
+      </tr>
+    `).join('');
+  }
+
+
+  function renderOrderBook(bids, asks) {
+    const renderRows = (data, colorClass) => data.slice(0, 10).map(row => `
+      <div class="ob-row">
+        <span class="${colorClass}">${parseFloat(row[0]).toFixed(2)}</span>
+        <span>${parseFloat(row[1]).toFixed(4)}</span>
+      </div>
+    `).join('');
+
+    $('obAsks').innerHTML = renderRows(asks, 'side-sell');
+    $('obBids').innerHTML = renderRows(bids, 'side-buy');
+  }
+
+  function initTradingView() {
+    const container = $('tv-container');
+    if (container.innerHTML.includes('tradingview')) return;
+    
+    container.innerHTML = `
+      <div class="tradingview-widget-container" style="height:100%;width:100%">
+        <div id="tradingview_widget" style="height:100%;width:100%"></div>
+      </div>
+    `;
+    
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = () => {
+      new TradingView.widget({
+        "autosize": true,
+        "symbol": `BINANCE:${state.binanceSymbol}`,
+        "interval": "15",
+        "timezone": "Etc/UTC",
+        "theme": "light",
+        "style": "1",
+        "locale": "en",
+        "enable_publishing": false,
+        "hide_side_toolbar": false,
+        "allow_symbol_change": true,
+        "container_id": "tradingview_widget",
+        "studies": [
+          "STD;EMA",
+          "STD;Volume",
+          "STD;Pivot_Points_High_Low",
+          "STD;RSI"
+        ],
+        "show_popup_button": true,
+        "popup_width": "1000",
+        "popup_height": "650",
+        "backgroundColor": "#ffffff",
+        "gridColor": "rgba(240, 243, 250, 0.06)",
+        "withdateranges": true
+      });
+    };
+    document.head.appendChild(script);
+  }
+
+  // Initialize
+  selectPair();
+  updateUI();
+</script>
+
+</body>
+</html>
