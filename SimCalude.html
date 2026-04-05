@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Universal Grid Simulator Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-app: #0f172a;
+      --bg-card: #1e293b;
+      --bg-input: #334155;
+      --border: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --green: #22c55e;
+      --red: #ef4444;
+      --gold: #f59e0b;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body { 
+      font-family: var(--font-sans); 
+      background: var(--bg-app); 
+      color: var(--text-primary); 
+      min-height: 100vh; 
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* --- Header --- */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.5rem;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .logo { 
+      font-family: 'Playfair Display', serif; 
+      font-size: 1.25rem; 
+      color: var(--accent); 
+      display: flex; align-items: center; gap: 0.5rem; 
+    }
+    .logo-icon { 
+      width: 32px; height: 32px; 
+      background: var(--accent); 
+      color: var(--bg-app);
+      border-radius: 8px; 
+      display: flex; align-items: center; justify-content: center; 
+      font-size: 1.2rem; font-weight: bold;
+    }
+    .price-display { text-align: right; }
+    .price-symbol { font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.05em; }
+    .price-value { font-family: var(--font-mono); font-size: 1.5rem; color: var(--accent); font-weight: 500; }
+    
+    .status-badge {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      background: var(--bg-input);
+      border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+    .status-dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+    /* --- Layout --- */
+    .app-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: calc(100vh - 64px);
+    }
+
+    /* --- Sidebar --- */
+    .sidebar {
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex; flex-direction: column; gap: 1rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .section-title {
+      font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.75rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .section-title::before { content:''; flex:1; height:1px; background: var(--border); }
+
+    .input-group { margin-bottom: 0.65rem; }
+    .input-group label {
+      display: block; font-size: 0.72rem; margin-bottom: 0.3rem;
+      color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .input-wrapper { position: relative; }
+    input, select {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 7px; padding: 0.55rem 0.75rem; color: var(--text-primary);
+      font-family: var(--font-mono); font-size: 0.85rem; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+    }
+
+    .pair-lot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+    .btn {
+      width: 100%; padding: 0.7rem; border: none; border-radius: 8px;
+      font-weight: 700; cursor: pointer; transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      font-size: 0.85rem; letter-spacing: 0.03em;
+    }
+    .btn-primary { background: var(--accent); color: var(--bg-app); }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56,189,248,0.3); }
+    .btn-stop { background: var(--red); color: white; display: none; }
+    .btn-stop:hover { background: #dc2626; }
+
+    .info-box {
+      background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.2);
+      border-radius: 8px; padding: 0.6rem 0.75rem; font-size: 0.7rem; color: var(--text-secondary);
+      margin-top: 0.4rem; line-height: 1.6; font-family: var(--font-mono);
+    }
+
+    /* --- Header --- */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1.5rem;
+      height: 64px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 1px 0 var(--border), 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      color: var(--accent);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .logo-icon {
+      width: 30px; height: 30px;
+      background: var(--accent); color: var(--bg-app);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 800;
+    }
+    .header-center {
+      display: flex; align-items: center; gap: 1.5rem;
+    }
+    .price-display { text-align: center; }
+    .price-symbol { font-size: 0.65rem; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.08em; }
+    .price-value { font-family: var(--font-mono); font-size: 1.4rem; color: var(--accent); font-weight: 600; line-height: 1.1; }
+    .price-change { font-family: var(--font-mono); font-size: 0.7rem; margin-top: 1px; }
+
+    .status-badge {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.3rem 0.85rem;
+      background: var(--bg-input);
+      border-radius: 9999px;
+      font-size: 0.72rem; font-weight: 700;
+      border: 1px solid var(--border);
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #64748b; }
+    .status-dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    /* ═══════════════════════════════════════════════════════
+       NEW LAYOUT — sidebar-nav + content area
+       ═══════════════════════════════════════════════════════ */
+
+    /* Override old app-container */
+    .app-container {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 1fr;
+      height: calc(100vh - 64px);
+    }
+
+    /* ── Sidebar (desktop) ── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      width: 240px;
+      flex-shrink: 0;
+    }
+
+    /* Nav tabs inside sidebar */
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      padding: 0.75rem 0.6rem;
+      gap: 0.3rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 9px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+      user-select: none;
+      border: 1px solid transparent;
+    }
+    .nav-item:hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-primary);
+    }
+    .nav-item.active {
+      background: rgba(56,189,248,0.1);
+      color: var(--accent);
+      border-color: rgba(56,189,248,0.2);
+    }
+    .nav-item.active .nav-icon {
+      filter: drop-shadow(0 0 5px rgba(56,189,248,0.5));
+    }
+    .nav-icon {
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      width: 22px;
+      text-align: center;
+      transition: filter 0.15s;
+    }
+    .nav-label {
+      flex: 1;
+      letter-spacing: 0.02em;
+    }
+    .nav-pip {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .nav-item.active .nav-pip { opacity: 1; }
+
+    /* Sidebar controls (config forms) */
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .sidebar-body::-webkit-scrollbar { width: 3px; }
+    .sidebar-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── Main Content ── */
+    .main-content {
+      overflow-y: auto; overflow-x: hidden;
+      padding: 1.25rem 1.5rem;
+      display: flex; flex-direction: column; gap: 1.25rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      min-height: 0;
+    }
+
+    /* ── Mobile Bottom Bar ── */
+    .mobile-bottom-bar {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 62px;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      z-index: 200;
+      align-items: stretch;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .mob-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: color 0.15s, background 0.15s;
+      position: relative;
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+    .mob-nav-item::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 2px;
+      border-radius: 0 0 2px 2px;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .mob-nav-item.active { color: var(--accent); }
+    .mob-nav-item.active::before { opacity: 1; }
+    .mob-nav-icon { font-size: 1.3rem; line-height: 1; }
+
+    /* grid-dashboard lives inside panel-trades now */
+    .grid-dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    /* Mobile sim controls — only visible on mobile */
+    .mobile-sim-controls {
+      display: none;
+      flex-direction: column;
+      gap: 0.6rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem;
+    }
+    .mob-sim-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .mob-sim-field label {
+      display: block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+    .mob-sim-field input,
+    .mob-sim-field select {
+      padding: 0.4rem 0.45rem;
+      font-size: 0.72rem;
+    }
+    .mob-sim-btns {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .mob-sim-btns .btn {
+      flex: 1;
+      padding: 0.55rem;
+      font-size: 0.78rem;
+    }
+    .mob-contract-info {
+      flex: 1.5;
+      margin-top: 0;
+      font-size: 0.65rem;
+      padding: 0.45rem 0.6rem;
+    }
+    @media (max-width: 900px) {
+      .mobile-sim-controls { display: flex; }
+      #panel-trades.active .grid-dashboard { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .mob-sim-row { grid-template-columns: 1fr 1fr; }
+    }
+    .stat-card {
+      background: var(--bg-card); padding: 1rem 1.15rem; border-radius: 10px;
+      border: 1px solid var(--border);
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: rgba(56,189,248,0.3); }
+    .stat-card::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0.4;
+    }
+    .stat-label {
+      font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 0.35rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .stat-value { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; }
+    .stat-icon {
+      position: absolute; right: 0.75rem; top: 0.75rem;
+      font-size: 1.1rem; opacity: 0.15;
+    }
+
+    /* --- Tables --- */
+    .card {
+      background: var(--bg-card); border-radius: 0 0 10px 10px;
+      border: 1px solid var(--border); border-top: none;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 0.75rem 1.25rem; background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .card-standalone {
+      border-radius: 10px; border-top: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th {
+      text-align: left; padding: 0.65rem 1rem;
+      color: var(--text-secondary); font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    td {
+      padding: 0.6rem 1rem; border-bottom: 1px solid rgba(51,65,85,0.5);
+      font-family: var(--font-mono); font-size: 0.8rem;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .side-buy { color: var(--green); font-weight: 700; }
+    .side-sell { color: var(--red); font-weight: 700; }
+    .pnl-pos { color: var(--green); }
+    .pnl-neg { color: var(--red); }
+
+    /* --- Panels --- */
+    /* Panels: all hidden by default */
+    .panel { display: none; flex-direction: column; gap: 1rem; }
+    .panel.active { display: flex; }
+
+    /* Stat cards only show inside active trades panel — hidden everywhere else */
+    .grid-dashboard { display: none; }
+    #panel-trades.active .grid-dashboard { display: grid; }
+
+    /* chart fullscreen */
+    .chart-fullscreen {
+      position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important;
+      z-index: 9999; background: var(--bg-app);
+    }
+    #chartFsBtn {
+      position: absolute; top: 10px; right: 10px; z-index: 10;
+      background: rgba(30,41,59,0.8); border: 1px solid var(--border);
+      color: var(--text-primary); padding: 5px 10px; border-radius: 5px; cursor: pointer;
+    }
+
+    /* --- Order Book panel --- */
+    #panel-orderbook { display: none; flex-direction: row; gap: 1rem; }
+    #panel-orderbook.active { display: flex; }
+    #panel-orderbook .ob-main { flex: 1; min-width: 0; }
+    #panel-orderbook .ob-analysis { width: 340px; flex-shrink: 0; }
+    .ob-main { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; min-height: 520px; }
+    .ob-controls { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.02); }
+    .ob-controls label { font-size: 0.65rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
+    .ob-controls input { width: 80px; padding: 0.35rem 0.5rem; font-size: 0.75rem; }
+    .ob-group-btns { display: flex; gap: 0.25rem; }
+    .ob-gbtn { padding: 0.35rem 0.6rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: 5px; color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .ob-gbtn:hover { color: var(--text-primary); border-color: var(--accent); }
+    .ob-gbtn.active { background: var(--accent); color: var(--bg-app); border-color: var(--accent); }
+    
+    .ob-book { flex: 1; display: flex; flex-direction: column; padding: 0.5rem 0; overflow: hidden; min-height: 0; }
+    .ob-book-header { display: grid; grid-template-columns: 1fr 1.3fr 1.3fr; padding: 0.25rem 1.25rem; font-size: 0.65rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .ob-book-header span:nth-child(2), .ob-book-header span:nth-child(3) { text-align: right; }
+
+    .ob-rows { flex: 1; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--border) transparent; min-height: 150px; }
+    .ob-rows::-webkit-scrollbar { width: 3px; }
+    .ob-rows::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .ob-row-item { display: grid; grid-template-columns: 1fr 1.3fr 1.3fr; padding: 0.15rem 1.25rem; font-family: var(--font-mono); font-size: 0.75rem; position: relative; cursor: default; }
+    .ob-row-item span { position: relative; z-index: 1; white-space: nowrap; }
+    .ob-row-item span:nth-child(2), .ob-row-item span:nth-child(3) { text-align: right; }
+    .ob-depth-bar { position: absolute; top: 0; bottom: 0; right: 0; opacity: 0.15; transition: width 0.3s; }
+    .ob-row-item.a { color: var(--red); }
+    .ob-row-item.a .ob-depth-bar { background: var(--red); }
+    .ob-row-item.b { color: var(--green); }
+    .ob-row-item.b .ob-depth-bar { background: var(--green); }
+    .ob-row-item.ob-fine { background: rgba(56,189,248,0.03); }
+    .ob-fine-tag { font-size: 0.6rem; opacity: 0.5; margin-left: 4px; vertical-align: middle; }
+
+    .ob-spread { padding: 0.5rem 1.25rem; background: rgba(255,255,255,0.03); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; }
+    .spread-val { color: var(--accent); font-family: var(--font-mono); }
+    .mid-val { color: var(--text-primary); font-family: var(--font-mono); }
+    .ob-cum-bar { height: 3px; display: flex; background: var(--bg-input); }
+    .ob-cum-bar .bid-side { background: var(--green); transition: width 0.5s; }
+    .ob-cum-bar .ask-side { flex: 1; background: var(--red); }
+
+    .ob-analysis { display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto; padding-right: 0.25rem; }
+    .ana-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; }
+    .ana-title { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+    .sr-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .sr-row:last-child { border-bottom: none; }
+    .sr-badge { font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .sr-badge.sup { background: rgba(34,197,94,0.15); color: var(--green); }
+    .sr-badge.res { background: rgba(239,68,68,0.15); color: var(--red); }
+    .sr-badge.strong { background: var(--accent); color: var(--bg-app); }
+    .sr-strength { font-size: 0.65rem; color: var(--text-secondary); font-family: var(--font-mono); }
+
+    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .metric-item { background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03); }
+    .metric-label { font-size: 0.6rem; color: var(--text-secondary); margin-bottom: 0.15rem; }
+    .metric-value { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; }
+
+    .imb-bar-wrap { height: 6px; background: var(--bg-input); border-radius: 3px; margin: 0.5rem 0; overflow: hidden; }
+    .imb-bar-fill { height: 100%; width: 50%; transition: width 0.5s, background 0.5s; }
+    
+    .signal-item { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.35rem 0; font-size: 0.72rem; line-height: 1.3; }
+    .signal-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 0.35rem; flex-shrink: 0; }
+    .signal-dot.bull { background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .signal-dot.bear { background: var(--red); box-shadow: 0 0 5px var(--red); }
+    .signal-dot.neutral { background: var(--text-secondary); }
+
+    .heatmap-row { display: flex; gap: 2px; margin-bottom: 2px; }
+    .heatmap-cell { flex: 1; height: 18px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); border-radius: 2px; color: rgba(255,255,255,0.9); font-weight: 600; }
+
+    /* --- SR Level Labels on OB rows --- */
+    .ob-sr-label {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px; z-index: 2;
+    }
+    .ob-row-item { position: relative; }
+    .sr-level-tag {
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      font-size: 0.55rem; font-weight: 800; letter-spacing: 0.04em; z-index: 3;
+      padding: 1px 4px; border-radius: 3px; pointer-events: none;
+    }
+    .sr-tag-s1 { background: rgba(34,197,94,0.25); color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
+    .sr-tag-s2 { background: rgba(34,197,94,0.35); color: #22c55e; border: 1px solid rgba(34,197,94,0.55); }
+    .sr-tag-s3 { background: rgba(34,197,94,0.5); color: #16a34a; border: 1px solid rgba(34,197,94,0.75); font-size:0.6rem; }
+    .sr-tag-r1 { background: rgba(239,68,68,0.25); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
+    .sr-tag-r2 { background: rgba(239,68,68,0.35); color: #ef4444; border: 1px solid rgba(239,68,68,0.55); }
+    .sr-tag-r3 { background: rgba(239,68,68,0.5); color: #dc2626; border: 1px solid rgba(239,68,68,0.75); font-size:0.6rem; }
+
+    /* --- OB Area Chart --- */
+    #ob-area-chart-wrap {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.85rem; margin-top: 0; flex-shrink: 0;
+    }
+    #ob-area-chart-wrap .ana-title { margin-bottom: 0.5rem; }
+    #obAreaCanvas { width: 100%; border-radius: 6px; display: block; }
+
+    /* --- Recent Trades Table --- */
+    #ob-recent-trades-wrap {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.85rem; flex-shrink: 0;
+    }
+    .rt-controls { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem; flex-wrap: wrap; }
+    .rt-controls label { font-size: 0.65rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; white-space: nowrap; }
+    .rt-controls input { width: 90px; padding: 0.3rem 0.5rem; font-size: 0.75rem; }
+    .rt-badge { font-size: 0.6rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; }
+    .rt-badge.buy { background: rgba(34,197,94,0.15); color: var(--green); }
+    .rt-badge.sell { background: rgba(239,68,68,0.15); color: var(--red); }
+    #rtTableWrap { max-height: 200px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    #rtTableWrap::-webkit-scrollbar { width: 4px; }
+    #rtTableWrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    #rtTable { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    #rtTable th { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border); font-weight: 700; }
+    #rtTable td { padding: 0.28rem 0.5rem; font-family: var(--font-mono); font-size: 0.73rem; border-bottom: 1px solid rgba(51,65,85,0.3); }
+    #rtTable tr:last-child td { border-bottom: none; }
+    #rtTable tr.new-trade { animation: flashRow 0.5s ease; }
+    @keyframes flashRow { 0% { background: rgba(56,189,248,0.15); } 100% { background: transparent; } }
+
+    /* --- OB Stats Row --- */
+    .ob-stats-row {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 0.4rem; margin-top: 0.5rem;
+    }
+    .ob-stat-mini { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 6px; padding: 0.4rem 0.5rem; }
+    .ob-stat-mini-label { font-size: 0.58rem; color: var(--text-secondary); margin-bottom: 0.1rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ob-stat-mini-val { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; }
+
+    /* --- SMC Panel (below chart tab) --- */
+    #smc-panel {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.85rem; margin-top: 0.75rem; flex-shrink: 0;
+    }
+    .smc-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.5rem; margin-top: 0.6rem; }
+    .smc-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 7px; padding: 0.5rem 0.6rem; }
+    .smc-label { font-size: 0.58rem; color: var(--text-secondary); margin-bottom: 0.15rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .smc-val { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; }
+    .smc-val.bull { color: var(--green); }
+    .smc-val.bear { color: var(--red); }
+    .smc-val.neutral { color: var(--accent); }
+    .smc-signal-list { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.6rem; }
+    .smc-signal { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; padding: 0.3rem 0.5rem; border-radius: 5px; background: rgba(255,255,255,0.02); }
+    .smc-signal .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .smc-signal .dot.bull { background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .smc-signal .dot.bear { background: var(--red); box-shadow: 0 0 5px var(--red); }
+    .smc-signal .dot.neutral { background: var(--gold); }
+
+    /* SMC Canvas Chart */
+    #smcCanvas { width: 100%; border-radius: 6px; display: block; background: rgba(0,0,0,0.2); margin-top: 0.75rem; }
+
+    /* Panel chart flex wrap */
+    #panel-chart { display: none; flex-direction: column; gap: 0.75rem; }
+    #panel-chart.active { display: flex !important; }
+    #tv-container { height: 450px; min-height: 350px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; flex-shrink: 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .app-container {
+        grid-template-columns: 1fr;
+        height: calc(100vh - 64px - 62px);
+      }
+      .sidebar { display: none !important; }
+      .mobile-bottom-bar { display: flex !important; }
+      .main-content { padding: 0.85rem 0.9rem; }
+      /* grid-dashboard columns on mobile */
+      #panel-trades.active .grid-dashboard { grid-template-columns: 1fr 1fr; }
+      /* OB panel: stack vertically on mobile */
+      #panel-orderbook { flex-direction: column !important; }
+      #panel-orderbook .ob-main { width: 100% !important; min-height: 580px; }
+      #panel-orderbook .ob-analysis { width: 100% !important; }
+      .ob-rows { min-height: 200px; }
+      .smc-grid { grid-template-columns: 1fr 1fr !important; }
+      body { padding-bottom: 62px; }
+    }
+    @media (max-width: 640px) {
+      .header-center { display: none; }
+      .logo-icon { width: 28px; height: 28px; font-size: 0.9rem; }
+      .logo { font-size: 1rem; }
+      #panel-trades.active .grid-dashboard { gap: 0.5rem; }
+      .stat-value { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">G</div>
+    <span>Universal Grid <span style="color:var(--text-secondary); font-weight:400;">Pro</span></span>
+  </div>
+  <div class="header-center">
+    <div class="price-display">
+      <div class="price-symbol" id="displaySymbol">BTCUSDT</div>
+      <div class="price-value" id="livePrice">0.00</div>
+    </div>
+  </div>
+  <div class="status-badge">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">OFFLINE</span>
+  </div>
+</header>
+
+<!-- ── Mobile Bottom Navigation Bar ── -->
+<nav class="mobile-bottom-bar" id="mobileBottomBar">
+  <button class="mob-nav-item active" data-tab="trades" onclick="switchTab('trades', this)">
+    <span class="mob-nav-icon">📊</span>
+    <span>Simulate</span>
+  </button>
+  <button class="mob-nav-item" data-tab="chart" onclick="switchTab('chart', this)">
+    <span class="mob-nav-icon">📈</span>
+    <span>Chart</span>
+  </button>
+  <button class="mob-nav-item" data-tab="orderbook" onclick="switchTab('orderbook', this)">
+    <span class="mob-nav-icon">📋</span>
+    <span>Order Book</span>
+  </button>
+</nav>
+
+<div class="app-container">
+
+  <!-- ── Sidebar (desktop) ── -->
+  <aside class="sidebar">
+
+    <!-- Tab Navigation in sidebar -->
+    <div class="sidebar-nav">
+      <div class="nav-item active" data-tab="trades" onclick="switchTab('trades', this)">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Trade Simulation</span>
+        <span class="nav-pip"></span>
+      </div>
+      <div class="nav-item" data-tab="chart" onclick="switchTab('chart', this)">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Live Chart</span>
+        <span class="nav-pip"></span>
+      </div>
+      <div class="nav-item" data-tab="orderbook" onclick="switchTab('orderbook', this)">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Order Book</span>
+        <span class="nav-pip"></span>
+      </div>
+    </div>
+
+    <!-- Config controls -->
+    <div class="sidebar-body">
+      <section>
+        <div class="section-title">Configuration</div>
+        <div class="pair-lot-row">
+          <div class="input-group" style="margin-bottom:0">
+            <label>Trading Pair</label>
+            <select id="pairSelector" onchange="handlePairChange()">
+              <option value="BTCUSDT" selected>BTCUSDT</option>
+              <option value="PAXGUSDT">PAXGUSDT (Gold)</option>
+              <option value="PAXGMINI">PAXGmini</option>
+              <option value="SOLUSDT">SOLUSDT</option>
+            </select>
+          </div>
+          <div class="input-group" style="margin-bottom:0">
+            <label>Lot Size</label>
+            <select id="lotSize" onchange="handlePairChange()">
+              <option value="0.01">0.01</option>
+              <option value="0.1">0.1</option>
+              <option value="1">1</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+        </div>
+        <div style="height:0.65rem"></div>
+        <div class="input-group">
+          <label>Initial Balance (USDT)</label>
+          <input type="number" id="initBalance" value="1000">
+        </div>
+        <div class="input-group">
+          <label>Grid Spacing (USDT)</label>
+          <input type="number" id="gridSpacing" value="100" step="0.1">
+        </div>
+        <div class="input-group">
+          <label>Daily Risk Limit (%)</label>
+          <input type="number" id="dailyRisk" value="5" step="0.1">
+        </div>
+        <button class="btn btn-primary" id="startBtn" onclick="toggleSimulation()">
+          <span>▶</span> Start Trade Simulation
+        </button>
+        <button class="btn btn-stop" id="stopBtn" onclick="toggleSimulation()">
+          <span>■</span> Stop Trade Simulation
+        </button>
+        <div class="info-box" id="contractInfo">—</div>
+      </section>
+
+      <section>
+        <div class="section-title">Support &amp; Resistance</div>
+        <div class="card" style="background:transparent;border:none;box-shadow:none;">
+          <table style="font-size:0.72rem;">
+            <thead>
+              <tr><th>TF</th><th>Support</th><th>Resistance</th></tr>
+            </thead>
+            <tbody id="srBody">
+              <tr><td colspan="3" style="text-align:center;color:var(--text-secondary);">No data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <div id="panel-trades" class="panel active">
+      <!-- Stat Cards — simulation tab only -->
+      <div class="grid-dashboard">
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Equity</div>
+          <div class="stat-value" id="statEquity">$1,000.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-label">Total P&L</div>
+          <div class="stat-value" id="statPnl">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-label">Open Trades</div>
+          <div class="stat-value" id="statOpen">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔒</div>
+          <div class="stat-label">Margin Used</div>
+          <div class="stat-value" id="statMargin">$0.00</div>
+        </div>
+      </div>
+
+      <!-- Mobile-only sim controls (sidebar hidden on mobile) -->
+      <div class="mobile-sim-controls">
+        <div class="mob-sim-row">
+          <div class="mob-sim-field">
+            <label>Pair</label>
+            <select onchange="document.getElementById('pairSelector').value=this.value; handlePairChange();" id="mobPairSelector">
+              <option value="BTCUSDT" selected>BTCUSDT</option>
+              <option value="PAXGUSDT">PAXGUSDT</option>
+              <option value="PAXGMINI">PAXGmini</option>
+              <option value="SOLUSDT">SOLUSDT</option>
+            </select>
+          </div>
+          <div class="mob-sim-field">
+            <label>Lot</label>
+            <select onchange="document.getElementById('lotSize').value=this.value; handlePairChange();" id="mobLotSize">
+              <option value="0.01">0.01</option>
+              <option value="0.1">0.1</option>
+              <option value="1" selected>1</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+          <div class="mob-sim-field">
+            <label>Balance</label>
+            <input type="number" id="mobInitBalance" value="1000" onchange="document.getElementById('initBalance').value=this.value">
+          </div>
+          <div class="mob-sim-field">
+            <label>Grid</label>
+            <input type="number" id="mobGridSpacing" value="100" onchange="document.getElementById('gridSpacing').value=this.value">
+          </div>
+        </div>
+        <div class="mob-sim-btns">
+          <button class="btn btn-primary" id="mobStartBtn" onclick="toggleSimulation()">▶ Start</button>
+          <button class="btn btn-stop" id="mobStopBtn" onclick="toggleSimulation()" style="display:none;">■ Stop</button>
+          <div class="info-box mob-contract-info" id="mobContractInfo">—</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div style="font-weight: 600;">Active Positions</div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Side</th>
+                <th>Entry</th>
+                <th>TP</th>
+                <th>SL</th>
+                <th>Current</th>
+                <th>P&L</th>
+              </tr>
+            </thead>
+            <tbody id="tradesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card card-standalone" style="margin-top: 1rem;">
+        <div class="card-header">
+          <div style="font-weight: 600;">History (Last 50)</div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Side</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>Fee</th>
+                <th>P&L</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-chart" class="panel">
+      <div id="tv-container">
+        <button id="chartFsBtn" onclick="toggleChartFs()" title="Fullscreen">⛶</button>
+      </div>
+
+      <!-- SMC / ICT Indicator Panel -->
+      <div id="smc-panel">
+        <div class="ana-title">&#129504; SMC / ICT Indicator Analysis <span style="font-size:0.6rem;color:var(--text-secondary);margin-left:0.5rem;">Live · Updates with price</span></div>
+        <div class="smc-grid" id="smcGrid">
+          <div class="smc-item"><div class="smc-label">Market Structure</div><div class="smc-val neutral" id="smcStructure">—</div></div>
+          <div class="smc-item"><div class="smc-label">CHoCH / BOS</div><div class="smc-val neutral" id="smcChoch">—</div></div>
+          <div class="smc-item"><div class="smc-label">Order Block</div><div class="smc-val neutral" id="smcOB">—</div></div>
+          <div class="smc-item"><div class="smc-label">FVG (Imbalance)</div><div class="smc-val neutral" id="smcFVG">—</div></div>
+          <div class="smc-item"><div class="smc-label">Premium / Discount</div><div class="smc-val neutral" id="smcPD">—</div></div>
+          <div class="smc-item"><div class="smc-label">Liquidity Sweep</div><div class="smc-val neutral" id="smcLiq">—</div></div>
+          <div class="smc-item"><div class="smc-label">Session Bias</div><div class="smc-val neutral" id="smcSession">—</div></div>
+          <div class="smc-item"><div class="smc-label">OB Confirmation</div><div class="smc-val neutral" id="smcConf">—</div></div>
+        </div>
+        <div class="smc-signal-list" id="smcSignals"></div>
+        <canvas id="smcCanvas" height="160"></canvas>
+      </div>
+    </div>
+
+    <div id="panel-orderbook" class="panel">
+      <div class="ob-main">
+        <div class="ob-controls">
+          <label>Group</label>
+          <input type="number" id="obGroup" value="25" min="0.01" step="1" onchange="obGroupChanged()">
+          <div class="ob-group-btns" id="obGroupBtns"></div>
+          <span id="obSyncStatus" style="margin-left:auto; font-size:0.68rem; padding:0.2rem 0.55rem; border-radius:5px; background:rgba(100,116,139,0.3); color:var(--text-secondary); font-weight:600;">● OFFLINE</span>
+        </div>
+        <div class="ob-book">
+          <div class="ob-book-header">
+            <span>Price</span><span>Qty</span><span>Total</span>
+          </div>
+          <div id="obAskRows" class="ob-rows"></div>
+          <div class="ob-spread">
+            <span>Spread: <span class="spread-val" id="obSpread">—</span></span>
+            <span>Mid: <span class="mid-val" id="obMid">—</span></span>
+          </div>
+          <div class="ob-cum-bar">
+            <div class="bid-side" id="obCumBid" style="width:50%"></div>
+            <div class="ask-side" id="obCumAsk"></div>
+          </div>
+          <div id="obBidRows" class="ob-rows"></div>
+        </div>
+      </div>
+
+      <div class="ob-analysis">
+        <!-- Area Chart S3→R3 -->
+        <div id="ob-area-chart-wrap" class="ana-card">
+          <div class="ana-title">&#128200; OB Depth Area Chart (S3 → R3)</div>
+          <canvas id="obAreaCanvas" height="130"></canvas>
+          <div class="ob-stats-row" id="obSRSummary"></div>
+        </div>
+
+        <!-- Recent Trades -->
+        <div id="ob-recent-trades-wrap" class="ana-card">
+          <div class="ana-title">&#9889; Recent Trades Feed</div>
+          <div class="rt-controls">
+            <label>Min Qty Filter:</label>
+            <input type="number" id="rtMinQty" value="0" min="0" step="0.01" onchange="filterRecentTrades()" placeholder="0">
+            <span id="rtCount" style="font-size:0.65rem;color:var(--text-secondary);margin-left:auto;">0 trades</span>
+          </div>
+          <div id="rtTableWrap">
+            <table id="rtTable">
+              <thead><tr><th>Time</th><th>Side</th><th>Price</th><th>Qty</th><th>Value (USDT)</th></tr></thead>
+              <tbody id="rtBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ana-card">
+          <div class="ana-title">&#128205; S/R Levels (Order Book qty ranked)</div>
+          <div id="obSRList"></div>
+        </div>
+        <div class="ana-card">
+          <div class="ana-title">&#128202; Market Metrics</div>
+          <div class="metric-grid" id="obMetrics"></div>
+        </div>
+        <div class="ana-card">
+          <div class="ana-title">&#9878;&#65039; Bid/Ask Imbalance</div>
+          <div id="obImbText" style="font-size:0.8rem; margin-bottom:0.4rem;"></div>
+          <div class="imb-bar-wrap"><div class="imb-bar-fill" id="obImbBar"></div></div>
+          <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-secondary);">
+            <span>Bids <span id="obBidPct" style="color:var(--green); font-weight:700;"></span></span>
+            <span>Asks <span id="obAskPct" style="color:var(--red); font-weight:700;"></span></span>
+          </div>
+        </div>
+        <div class="ana-card">
+          <div class="ana-title">&#128678; Order Flow Signals</div>
+          <div class="signal-list" id="obSignals"></div>
+        </div>
+        <div class="ana-card">
+          <div class="ana-title">&#128293; Liquidity Heatmap (Ask &#8593; | Bid &#8595;)</div>
+          <div id="obHeatmap"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ─── Contract Configuration ───────────────────────────────────────────────
+  const CONTRACT_CONFIG = {
+    PAXGUSDT: {
+      name: 'PAXG',
+      binanceSymbol: 'PAXGUSDT',
+      feeFlat: 15,
+      baseMargin: 900,
+      refPrice: 4500,
+      multiplier: 100,
+      dipInterval: 100,
+      lossPerDip: 100,
+      defaultGrid: 5
+    },
+    PAXGMINI: {
+      name: 'PAXGmini',
+      binanceSymbol: 'PAXGUSDT',
+      feeFlat: 15,
+      baseMargin: 180,
+      refPrice: 4500,
+      multiplier: 20,
+      dipInterval: 100,
+      lossPerDip: 20,
+      defaultGrid: 5
+    },
+    BTCUSDT: {
+      name: 'BTCUSDT',
+      binanceSymbol: 'BTCUSDT',
+      feeFlat: 15,
+      baseMargin: 250,
+      refPrice: 70000,
+      multiplier: 1,
+      dipInterval: 10000,
+      lossPerDip: 100,
+      defaultGrid: 100
+    },
+    SOLUSDT: {
+      name: 'SOLUSDT',
+      binanceSymbol: 'SOLUSDT',
+      feeFlat: 15,
+      baseMargin: 80,
+      refPrice: 80,
+      multiplier: 100,
+      dipInterval: 1,
+      lossPerDip: 1,
+      defaultGrid: 1
+    }
+  };
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  function calcMargin(cfg, entryPrice, lotSize) {
+    return (entryPrice / cfg.refPrice) * cfg.baseMargin * lotSize;
+  }
+
+  function calcPnl(cfg, priceDiff, lotSize) {
+    return priceDiff * lotSize * cfg.multiplier;
+  }
+
+  function calcFee(cfg, lotSize) {
+    return cfg.feeFlat * lotSize;
+  }
+
+  function getLotSize() {
+    return parseFloat(document.getElementById('lotSize').value);
+  }
+
+  // State
+  const state = {
+    pairType: 'BTCUSDT',
+    binanceSymbol: 'BTCUSDT',
+    isSimulationRunning: false,
+    balance: 1000,
+    equity: 1000,
+    trades: [],
+    history: [],
+    lastPrice: 0,
+    highestPrice: 0,
+    ws: null,
+    wsOB: null,
+    lastTradePrice: null
+  };
+
+  const $ = id => document.getElementById(id);
+  const formatUSD = val => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+  const getConfig = () => CONTRACT_CONFIG[state.pairType];
+  // BTC → 4 decimals, everything else (Gold/SOL) → 2 decimals
+  function getQtyDec() { return state.pairType === 'BTCUSDT' ? 4 : 2; }
+
+  function handlePairChange() {
+    const selected = $('pairSelector').value;
+    state.pairType = selected;
+    const cfg = getConfig();
+    state.binanceSymbol = cfg.binanceSymbol;
+    
+    // Set default grid for symbol
+    if (cfg.defaultGrid) {
+      $('gridSpacing').value = cfg.defaultGrid;
+    }
+
+    $('displaySymbol').textContent = cfg.name;
+    const lotSize = getLotSize();
+    const infoText = `Fee: $${(cfg.feeFlat * lotSize).toFixed(2)} | Margin: $${(cfg.baseMargin * lotSize).toFixed(2)}`;
+    $('contractInfo').textContent = infoText;
+    if ($('mobContractInfo')) $('mobContractInfo').textContent = infoText;
+
+    // Refresh TradingView
+    const container = $('tv-container');
+    container.innerHTML = '';
+    if ($('panel-chart').classList.contains('active')) {
+      initTradingView();
+    }
+
+    // Always restart live fetch on pair change
+    startLiveFetch();
+    
+    if ($('panel-orderbook').classList.contains('active')) initObControls();
+  }
+
+  function startLiveFetch() {
+    connectWebSocket();
+    connectOrderBook();
+    connectRecentTradesWS();
+  }
+
+  function switchTab(tab, clickedEl) {
+    // Deactivate all panels
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    $(`panel-${tab}`).classList.add('active');
+
+    // Sync sidebar nav items
+    document.querySelectorAll('.nav-item').forEach(n => {
+      n.classList.toggle('active', n.dataset.tab === tab);
+    });
+    // Sync mobile bottom bar items
+    document.querySelectorAll('.mob-nav-item').forEach(n => {
+      n.classList.toggle('active', n.dataset.tab === tab);
+    });
+
+    if (tab === 'chart') {
+      initTradingView();
+      if (state.lastPrice) renderSMCPanel(state.lastPrice);
+    }
+    if (tab === 'orderbook') {
+      initObControls();
+      if (!state.wsOB || state.wsOB.readyState > 1) {
+        connectOrderBook();
+      } else {
+        renderGroupedOB();
+      }
+      renderRecentTrades();
+    }
+  }
+
+  function toggleSimulation() {
+    if (state.isSimulationRunning) {
+      stopSimulation();
+    } else {
+      startSimulation();
+    }
+  }
+
+  function startSimulation() {
+    state.isSimulationRunning = true;
+    state.balance = parseFloat($('initBalance').value);
+    state.equity = state.balance;
+    state.trades = [];
+    state.history = [];
+    state.lastTradePrice = null;
+    $('startBtn').style.display = 'none';
+    $('stopBtn').style.display = 'flex';
+    if ($('mobStartBtn')) { $('mobStartBtn').style.display = 'none'; $('mobStopBtn').style.display = 'flex'; }
+    updateUI();
+  }
+
+  function stopSimulation() {
+    state.isSimulationRunning = false;
+    $('startBtn').style.display = 'flex';
+    $('stopBtn').style.display = 'none';
+    if ($('mobStartBtn')) { $('mobStartBtn').style.display = 'flex'; $('mobStopBtn').style.display = 'none'; }
+  }
+
+  // ─── Recent Trades ────────────────────────────────────────────────────────
+  const recentTrades = [];
+  const MAX_RECENT_TRADES = 200;
+  let wsRecentTrades = null;
+
+  function connectRecentTradesWS() {
+    if (wsRecentTrades) { wsRecentTrades.close(); wsRecentTrades = null; }
+    wsRecentTrades = new WebSocket(`wss://stream.binance.com:9443/ws/${state.binanceSymbol.toLowerCase()}@trade`);
+    wsRecentTrades.onmessage = e => {
+      const d = JSON.parse(e.data);
+      const trade = {
+        time: new Date(d.T),
+        side: d.m ? 'SELL' : 'BUY', // m=true => maker was buyer => price taker sold
+        price: parseFloat(d.p),
+        qty: parseFloat(d.q),
+        value: parseFloat(d.p) * parseFloat(d.q)
+      };
+      recentTrades.unshift(trade);
+      if (recentTrades.length > MAX_RECENT_TRADES) recentTrades.pop();
+      if ($('panel-orderbook').classList.contains('active')) renderRecentTrades();
+      updateSMC(trade.price, trade.qty, trade.side);
+    };
+    wsRecentTrades.onclose = () => setTimeout(connectRecentTradesWS, 3000);
+  }
+
+  function filterRecentTrades() { renderRecentTrades(); }
+
+  function renderRecentTrades() {
+    const minQty = parseFloat($('rtMinQty').value) || 0;
+    const filtered = recentTrades.filter(t => t.qty >= minQty);
+    $('rtCount').textContent = `${filtered.length} trades`;
+    const rows = filtered.slice(0, 100).map((t, i) => {
+      const timeStr = t.time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const pd = t.price > 1000 ? 2 : 4;
+      const qdec = getQtyDec();
+      return `<tr class="${i === 0 ? 'new-trade' : ''}">
+        <td style="color:var(--text-secondary)">${timeStr}</td>
+        <td><span class="rt-badge ${t.side.toLowerCase()}">${t.side}</span></td>
+        <td style="color:${t.side==='BUY'?'var(--green)':'var(--red)'}">${t.price.toLocaleString(undefined,{minimumFractionDigits:pd,maximumFractionDigits:pd})}</td>
+        <td>${t.qty.toFixed(qdec)}</td>
+        <td style="color:var(--text-secondary)">${t.value > 1000 ? '$'+Math.round(t.value).toLocaleString() : '$'+t.value.toFixed(2)}</td>
+      </tr>`;
+    }).join('');
+    $('rtBody').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:1rem">Waiting for trades…</td></tr>';
+  }
+
+  // ─── S1/S2/S3 R1/R2/R3 Levels ────────────────────────────────────────────
+  const srLevels = { s1:null,s2:null,s3:null,r1:null,r2:null,r3:null };
+
+  function computeSRLevels(bidRows, askRows) {
+    const sortedBids = [...bidRows].filter(r=>r.qty>0).sort((a,b)=>b.qty-a.qty);
+    const sortedAsks = [...askRows].filter(r=>r.qty>0).sort((a,b)=>b.qty-a.qty);
+    // S1=weakest support (rank 2), S2=medium (rank 1), S3=strongest (rank 0) 
+    // But S3 is *lowest in price* among top-3 bids, S1 highest
+    const top3bids = sortedBids.slice(0,3).sort((a,b)=>b.lo-a.lo); // highest price first
+    const top3asks = sortedAsks.slice(0,3).sort((a,b)=>a.lo-b.lo); // lowest price first
+    srLevels.s1 = top3bids[0] || null; // closest to price (highest bid price)
+    srLevels.s2 = top3bids[1] || null;
+    srLevels.s3 = top3bids[2] || null; // furthest below price (lowest bid price)
+    srLevels.r1 = top3asks[0] || null; // closest to price (lowest ask price)
+    srLevels.r2 = top3asks[1] || null;
+    srLevels.r3 = top3asks[2] || null; // furthest above price (highest ask price)
+  }
+
+  function connectWebSocket() {
+    if (state.ws) state.ws.close();
+    state.ws = new WebSocket(`wss://stream.binance.com:9443/ws/${state.binanceSymbol.toLowerCase()}@trade`);
+    
+    state.ws.onopen = () => {
+      $('statusDot').className = 'status-dot live';
+      $('statusText').textContent = 'LIVE';
+    };
+
+    state.ws.onmessage = e => {
+      const data = JSON.parse(e.data);
+      const price = parseFloat(data.p);
+      state.lastPrice = price;
+      state.highestPrice = Math.max(state.highestPrice, price);
+      $('livePrice').textContent = price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      
+      if (state.isSimulationRunning) {
+        updateSimulation(price);
+      }
+    };
+
+    state.ws.onclose = () => {
+      $('statusDot').className = 'status-dot';
+      $('statusText').textContent = 'OFFLINE';
+      setTimeout(connectWebSocket, 3000);
+    };
+  }
+
+  function setObStatus(text, color) {
+    const el = $('obSyncStatus');
+    if (!el) return;
+    el.textContent = '● ' + text;
+    el.style.background = color === 'green' ? 'rgba(34,197,94,0.15)' :
+                          color === 'yellow' ? 'rgba(245,158,11,0.15)' :
+                          'rgba(100,116,139,0.2)';
+    el.style.color = color === 'green' ? 'var(--green)' :
+                     color === 'yellow' ? 'var(--gold)' :
+                     'var(--text-secondary)';
+  }
+
+  const obSync = {
+    snapshotId: 0,
+    initialized: false,
+    buffer: [],
+    syncing: false
+  };
+
+  function applyDiff(side, updates) {
+    updates.forEach(([p, q]) => {
+      const qty = parseFloat(q);
+      if (qty === 0) delete side[p];
+      else side[p] = qty;
+    });
+  }
+
+  function applyBufferedEvents() {
+    for (const ev of obSync.buffer) {
+      if (ev.u <= obSync.snapshotId) continue;
+      applyDiff(rawOB.bids, ev.b);
+      applyDiff(rawOB.asks, ev.a);
+    }
+    obSync.buffer = [];
+    obSync.initialized = true;
+  }
+
+  async function fetchOBSnapshot(symbol) {
+    setObStatus('SYNCING…', 'yellow');
+    try {
+      const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol.toUpperCase()}&limit=5000`);
+      const data = await res.json();
+      for (const k in rawOB.bids) delete rawOB.bids[k];
+      for (const k in rawOB.asks) delete rawOB.asks[k];
+      data.bids.forEach(([p, q]) => { rawOB.bids[p] = parseFloat(q); });
+      data.asks.forEach(([p, q]) => { rawOB.asks[p] = parseFloat(q); });
+      obSync.snapshotId = data.lastUpdateId;
+      applyBufferedEvents();
+      setObStatus(`LIVE · ${Object.keys(rawOB.bids).length}b/${Object.keys(rawOB.asks).length}a`, 'green');
+      if ($('panel-orderbook').classList.contains('active')) renderGroupedOB();
+    } catch (err) {
+      setTimeout(() => fetchOBSnapshot(symbol), 3000);
+    }
+  }
+
+  function connectOrderBook() {
+    if (state.wsOB) { state.wsOB.close(); state.wsOB = null; }
+    obSync.initialized = false;
+    obSync.buffer = [];
+    obSync.snapshotId = 0;
+    setObStatus('CONNECTING…', 'yellow');
+    state.wsOB = new WebSocket(`wss://stream.binance.com:9443/ws/${state.binanceSymbol.toLowerCase()}@depth@100ms`);
+    state.wsOB.onmessage = e => {
+      const ev = JSON.parse(e.data);
+      if (!obSync.initialized) obSync.buffer.push(ev);
+      else {
+        applyDiff(rawOB.bids, ev.b);
+        applyDiff(rawOB.asks, ev.a);
+        if ($('panel-orderbook').classList.contains('active')) renderGroupedOB();
+      }
+    };
+    state.wsOB.onopen = () => fetchOBSnapshot(state.binanceSymbol);
+    state.wsOB.onclose = () => setTimeout(connectOrderBook, 3000);
+  }
+
+  function updateSimulation(price) {
+    const cfg = getConfig();
+    const lotSize = getLotSize();
+    const gridSpacing = parseFloat($('gridSpacing').value);
+    let totalPnl = 0;
+    for (let i = state.trades.length - 1; i >= 0; i--) {
+      const t = state.trades[i];
+      const priceDiff = t.side === 'BUY' ? price - t.entry : t.entry - price;
+      const fee = calcFee(cfg, lotSize);
+      t.pnl = calcPnl(cfg, priceDiff, lotSize) - fee;
+      totalPnl += t.pnl;
+      if ((t.side === 'BUY' && (price >= t.tp || price <= t.sl)) ||
+          (t.side === 'SELL' && (price <= t.tp || price >= t.sl))) {
+        t.exit = price;
+        t.fee = fee;
+        state.balance += t.pnl;
+        state.history.unshift(t);
+        state.trades.splice(i, 1);
+      }
+    }
+    state.equity = state.balance + totalPnl;
+    const unbalance = Math.abs(state.trades.filter(t => t.side === 'BUY').length - state.trades.filter(t => t.side === 'SELL').length);
+    const minGridSpacing = gridSpacing * Math.max(1, unbalance);
+    if (!state.lastTradePrice || Math.abs(price - state.lastTradePrice) >= minGridSpacing) {
+      const buyCount = state.trades.filter(t => t.side === 'BUY').length;
+      const sellCount = state.trades.filter(t => t.side === 'SELL').length;
+      
+      // Determine side with "Prefer BUY" logic
+      let side = 'BUY';
+      
+      // Calculate confidence for SELL:
+      // 1. Order book imbalance (more asks than bids)
+      // 2. Proximity to a large ask wall (resistance)
+      const totalBids = Object.values(rawOB.bids).reduce((a, b) => a + b, 0);
+      const totalAsks = Object.values(rawOB.asks).reduce((a, b) => a + b, 0);
+      const askPressure = totalAsks / (totalBids + totalAsks || 1);
+      
+      // If significant sell pressure (>65%) OR we have too many buys compared to sells, consider SELL
+      if (askPressure > 0.65 || (buyCount > sellCount + 2)) {
+        side = 'SELL';
+      } else if (buyCount > sellCount) {
+        // Default balancing if no strong pressure
+        side = Math.random() > 0.7 ? 'SELL' : 'BUY';
+      }
+
+      const tp = side === 'BUY' ? price + gridSpacing : price - gridSpacing;
+      const sl = side === 'BUY' ? price - gridSpacing * 2 : price + gridSpacing * 2;
+      const margin = calcMargin(cfg, price, lotSize);
+      if (state.equity - margin > state.balance * 0.05) {
+        state.trades.push({ time: new Date().toLocaleTimeString(), side, entry: price, tp, sl, pnl: 0, fee: 0 });
+        state.lastTradePrice = price;
+      }
+    }
+    updateUI();
+  }
+
+  function updateUI() {
+    const cfg = getConfig();
+    const lotSize = getLotSize();
+    $('statEquity').textContent = formatUSD(state.equity);
+    const totalPnl = state.equity - parseFloat($('initBalance').value);
+    $('statPnl').textContent = formatUSD(totalPnl);
+    $('statPnl').className = 'stat-value ' + (totalPnl >= 0 ? 'pnl-pos' : 'pnl-neg');
+    $('statOpen').textContent = state.trades.length;
+    let totalMargin = 0;
+    state.trades.forEach(t => { totalMargin += calcMargin(cfg, t.entry, lotSize); });
+    $('statMargin').textContent = formatUSD(totalMargin);
+    $('tradesBody').innerHTML = state.trades.map(t => `
+      <tr>
+        <td>${t.time}</td>
+        <td class="side-${t.side.toLowerCase()}">${t.side}</td>
+        <td>${t.entry.toFixed(2)}</td>
+        <td>${t.tp.toFixed(2)}</td>
+        <td>${t.sl.toFixed(2)}</td>
+        <td>${state.lastPrice.toFixed(2)}</td>
+        <td class="${t.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${formatUSD(t.pnl)}</td>
+      </tr>
+    `).join('');
+    $('historyBody').innerHTML = state.history.slice(0, 50).map(t => `
+      <tr>
+        <td>${t.time}</td>
+        <td class="side-${t.side.toLowerCase()}">${t.side}</td>
+        <td>${t.entry.toFixed(2)}</td>
+        <td>${t.exit ? t.exit.toFixed(2) : '-'}</td>
+        <td>${formatUSD(t.fee)}</td>
+        <td class="${t.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${formatUSD(t.pnl)}</td>
+      </tr>
+    `).join('');
+  }
+
+  const OB_DEFAULT_GROUPS = { BTCUSDT: 25, PAXGUSDT: 1, PAXGMINI: 1, SOLUSDT: 0.1 };
+  const OB_PRESET_GROUPS = {
+    BTCUSDT: [10, 25, 50, 100, 250],
+    PAXGUSDT: [0.5, 1, 2, 5, 10],
+    PAXGMINI: [0.5, 1, 2, 5, 10],
+    SOLUSDT: [0.05, 0.1, 0.25, 0.5, 1]
+  };
+  const rawOB = { bids: {}, asks: {} };
+  function obGetGroup() { return parseFloat($('obGroup').value) || 25; }
+  function obGroupChanged() { renderGroupedOB(); }
+  function obSetGroup(g) {
+    $('obGroup').value = g;
+    document.querySelectorAll('.ob-gbtn').forEach(b => b.classList.toggle('active', parseFloat(b.dataset.g) === g));
+    renderGroupedOB();
+  }
+  function initObControls() {
+    const pair = state.pairType;
+    const def = OB_DEFAULT_GROUPS[pair] || 1;
+    const presets = OB_PRESET_GROUPS[pair] || [1, 5, 10, 25, 50];
+    $('obGroup').value = def;
+    $('obGroupBtns').innerHTML = presets.map(g => `<button class="ob-gbtn ${g === def ? 'active' : ''}" data-g="${g}" onclick="obSetGroup(${g})">${g}</button>`).join('');
+  }
+
+  const FINE_ROWS = 5, OUTER_ROWS = 19, OB_ROWS = 24;
+  function floorG(price, g) { return Math.floor(Math.round(price / g * 1e9) / 1e9) * g; }
+  function sumBucket(rawMap, lo, size) {
+    const hi = lo + size;
+    let qty = 0;
+    for (const [p, q] of Object.entries(rawMap)) {
+      const px = parseFloat(p);
+      if (px >= lo && px < hi) qty += parseFloat(q);
+    }
+    return qty;
+  }
+  function buildRows(rawMap, group, fineGroup, midLevel, side) {
+    const rows = [];
+    if (side === 'bid') {
+      for (let i = 0; i < FINE_ROWS; i++) {
+        const lo = floorG(midLevel - i * fineGroup, fineGroup);
+        rows.push({ lo, size: fineGroup, qty: sumBucket(rawMap, lo, fineGroup), fine: true });
+      }
+      const fineBottom = rows[FINE_ROWS - 1].lo;
+      const outerStart = floorG(fineBottom - group, group);
+      for (let i = 0; i < OUTER_ROWS; i++) {
+        const lo = outerStart - i * group;
+        rows.push({ lo, size: group, qty: sumBucket(rawMap, lo, group), fine: false });
+      }
+    } else {
+      const fineStart = floorG(midLevel + fineGroup, fineGroup);
+      for (let i = 0; i < FINE_ROWS; i++) {
+        const lo = fineStart + i * fineGroup;
+        rows.push({ lo, size: fineGroup, qty: sumBucket(rawMap, lo, fineGroup), fine: true });
+      }
+      const fineTop = rows[FINE_ROWS - 1].lo + fineGroup;
+      const outerStart = floorG(fineTop, group);
+      for (let i = 0; i < OUTER_ROWS; i++) {
+        const lo = outerStart + i * group;
+        rows.push({ lo, size: group, qty: sumBucket(rawMap, lo, group), fine: false });
+      }
+    }
+    return rows;
+  }
+
+  function renderGroupedOB() {
+    if (!state.lastPrice) return;
+    const group = obGetGroup(), fineGroup = group / 5, price = state.lastPrice, midLevel = floorG(price, fineGroup);
+    const bidRows = buildRows(rawOB.bids, group, fineGroup, midLevel, 'bid');
+    const askRows = buildRows(rawOB.asks, group, fineGroup, midLevel, 'ask');
+    const allQtys = [...bidRows, ...askRows].map(r => r.qty), maxQty = Math.max(...allQtys, 1);
+    let bidTotal = 0, askTotal = 0;
+    bidRows.forEach(r => bidTotal += r.qty);
+    askRows.forEach(r => askTotal += r.qty);
+    function priceDec(fine) { const g = fine ? fineGroup : group; return g < 0.01 ? 4 : g < 0.1 ? 3 : g < 1 ? 2 : g < 10 ? 1 : 0; }
+    const qtyDec = getQtyDec();
+    function rowHTML(r, side, cumVal) {
+      const pct = (r.qty / maxQty * 100).toFixed(1), dec = priceDec(r.fine);
+      const tag = r.fine ? `<span class="ob-fine-tag">×${fineGroup % 1 === 0 ? fineGroup : fineGroup.toFixed(1)}</span>` : '';
+      return `<div class="ob-row-item ${side}${r.fine ? ' ob-fine' : ''}">
+        <div class="ob-depth-bar" style="width:${pct}%;"></div>
+        <span>${r.lo.toFixed(dec)}${tag}</span>
+        <span>${r.qty > 0 ? r.qty.toFixed(qtyDec) : '—'}</span>
+        <span>${cumVal > 0 ? cumVal.toFixed(qtyDec) : '—'}</span>
+      </div>`;
+    }
+    let askCum = 0;
+    const askCums = askRows.map(r => { askCum += r.qty; return askCum; });
+    $('obAskRows').innerHTML = [...askRows].reverse().map((r, ri) => rowHTML(r, 'a', askCums[askRows.length - 1 - ri])).join('');
+    let bidCum = 0;
+    $('obBidRows').innerHTML = bidRows.map(r => { bidCum += r.qty; return rowHTML(r, 'b', bidCum); }).join('');
+    const bestBid = bidRows[0].lo, bestAsk = askRows[0].lo;
+    const spread = (bestAsk - bestBid).toFixed(priceDec(true)), mid = ((bestBid + bestAsk) / 2).toFixed(priceDec(true));
+    $('obSpread').textContent = spread;
+    $('obMid').textContent = mid;
+    const total = bidTotal + askTotal || 1, bidPct = (bidTotal / total * 100).toFixed(1), askPct = (askTotal / total * 100).toFixed(1);
+    $('obCumBid').style.width = bidPct + '%';
+    $('obBidPct').textContent = bidPct + '%';
+    $('obAskPct').textContent = askPct + '%';
+    analyzeOB(bidRows, askRows, group, price, bidTotal, askTotal, maxQty, priceDec(false));
+  }
+
+  function analyzeOB(bidRows, askRows, group, price, bidTotal, askTotal, maxQty, pd) {
+    const qtyDec = getQtyDec();
+    const total = bidTotal + askTotal || 1, bidPct = bidTotal / total, askPct = askTotal / total;
+    const sortedBids = [...bidRows].filter(r => r.qty > 0).sort((a, b) => b.qty - a.qty);
+    const sortedAsks = [...askRows].filter(r => r.qty > 0).sort((a, b) => b.qty - a.qty);
+    const supLevels = sortedBids.slice(0, 3), resLevels = sortedAsks.slice(0, 3);
+    const allSR = [...supLevels.map((r, i) => ({ ...r, type: 'sup', rank: i })), ...resLevels.map((r, i) => ({ ...r, type: 'res', rank: i }))].sort((a, b) => b.qty - a.qty);
+
+    // Compute S1-S3 / R1-R3
+    computeSRLevels(bidRows, askRows);
+
+    $('obSRList').innerHTML = allSR.slice(0, 6).map(r => {
+      const label = r.type === 'sup' ? 'Support' : 'Resistance', dist = Math.abs(r.lo - price).toFixed(pd), pctDist = (Math.abs(r.lo - price) / price * 100).toFixed(2);
+      return `<div class="sr-row"><div style="display:flex; align-items:center; gap:0.5rem;"><span class="sr-badge ${r.rank === 0 ? 'strong' : r.type}">${r.rank === 0 ? '★ ' + label : label}</span><span style="font-family:var(--font-mono); font-size:0.82rem;">${r.lo.toFixed(pd)}</span></div><div style="text-align:right;"><div class="sr-strength">${r.qty.toFixed(qtyDec)} qty</div><div style="font-size:0.68rem; color:var(--text-secondary);">Δ${dist} (${pctDist}%)</div></div></div>`;
+    }).join('');
+    const wAvgBid = bidRows.reduce((s, r) => s + r.lo * r.qty, 0) / (bidTotal || 1), wAvgAsk = askRows.reduce((s, r) => s + r.lo * r.qty, 0) / (askTotal || 1);
+    const imbalanceRatio = bidPct >= 0.5 ? (bidPct / (askPct || 0.001)).toFixed(2) : (askPct / (bidPct || 0.001)).toFixed(2);
+    const direction = bidPct >= 0.5 ? '▲ Bid' : '▼ Ask', topBidWall = supLevels[0], topAskWall = resLevels[0];
+    const totalRange = (FINE_ROWS * (group / 5) + OUTER_ROWS * group).toFixed(pd);
+    $('obMetrics').innerHTML = [
+      { label: 'Bid Volume', val: bidTotal.toFixed(qtyDec), col: 'var(--green)' },
+      { label: 'Ask Volume', val: askTotal.toFixed(qtyDec), col: 'var(--red)' },
+      { label: 'Wtd Bid Avg', val: wAvgBid.toFixed(pd), col: 'var(--text-primary)' },
+      { label: 'Wtd Ask Avg', val: wAvgAsk.toFixed(pd), col: 'var(--text-primary)' },
+      { label: 'Imb Ratio', val: `${imbalanceRatio}× ${direction}`, col: bidPct >= 0.5 ? 'var(--green)' : 'var(--red)' },
+      { label: `Range (${OB_ROWS*2}L)`, val: `±${totalRange}`, col: 'var(--accent)' },
+      { label: 'Top Bid Wall', val: topBidWall ? topBidWall.lo.toFixed(pd) : '—', col: 'var(--green)' },
+      { label: 'Top Ask Wall', val: topAskWall ? topAskWall.lo.toFixed(pd) : '—', col: 'var(--red)' },
+    ].map(m => `<div class="metric-item"><div class="metric-label">${m.label}</div><div class="metric-value" style="color:${m.col}">${m.val}</div></div>`).join('');
+    const bidPctNum = bidPct * 100, color = bidPctNum > 60 ? 'var(--green)' : bidPctNum < 40 ? 'var(--red)' : 'var(--gold)';
+    $('obImbBar').style.width = bidPctNum.toFixed(1) + '%';
+    $('obImbBar').style.background = color;
+    $('obImbText').innerHTML = `<span style="color:${color}; font-weight:700;">${bidPctNum > 60 ? 'Buy Pressure' : bidPctNum < 40 ? 'Sell Pressure' : 'Balanced Market'}</span> &nbsp;Ratio ${imbalanceRatio}×`;
+    const signals = [];
+    if (bidPct > 0.65) signals.push({ dot: 'bull', txt: 'Strong bid dominance — buyers stacking' });
+    else if (askPct > 0.65) signals.push({ dot: 'bear', txt: 'Strong ask dominance — sellers stacking' });
+    else signals.push({ dot: 'neutral', txt: 'Market balanced — no clear pressure' });
+    if (topBidWall && Math.abs(topBidWall.lo - price) / price < 0.003) signals.push({ dot: 'bull', txt: `Large bid wall near price at ${topBidWall.lo.toFixed(pd)} — bounce likely` });
+    if (topAskWall && Math.abs(topAskWall.lo - price) / price < 0.003) signals.push({ dot: 'bear', txt: `Large ask wall near price at ${topAskWall.lo.toFixed(pd)} — resistance likely` });
+    $('obSignals').innerHTML = signals.map(s => `<div class="signal-item"><div class="signal-dot ${s.dot}"></div><span>${s.txt}</span></div>`).join('');
+    const heatAsks = [...askRows].reverse().slice(0, 8), heatBids = bidRows.slice(0, 8), heatMax = Math.max(...heatAsks.map(r => r.qty), ...heatBids.map(r => r.qty), 1);
+    function heatColor(qty, side) { const intensity = Math.min(qty / heatMax, 1); return side === 'ask' ? `rgba(239,68,68,${0.15 + intensity * 0.75})` : `rgba(34,197,94,${0.15 + intensity * 0.75})`; }
+    $('obHeatmap').innerHTML = heatAsks.map(r => `<div class="heatmap-row"><div class="heatmap-cell" style="background:${heatColor(r.qty,'ask')}">${r.lo.toFixed(pd)}</div><div class="heatmap-cell" style="background:${heatColor(r.qty,'ask')}; flex:0.5;">${r.qty > 0 ? r.qty.toFixed(qtyDec) : ''}</div></div>`).join('') + `<div class="heatmap-row"><div class="heatmap-cell" style="background:rgba(56,189,248,0.2); color:var(--accent);">— PRICE ${price.toFixed(pd)} —</div></div>` + heatBids.map(r => `<div class="heatmap-row"><div class="heatmap-cell" style="background:${heatColor(r.qty,'bid')}">${r.lo.toFixed(pd)}</div><div class="heatmap-cell" style="background:${heatColor(r.qty,'bid')}; flex:0.5;">${r.qty > 0 ? r.qty.toFixed(qtyDec) : ''}</div></div>`).join('');
+
+    // Render area chart and SR summary
+    renderOBAreaChart(bidRows, askRows, price, pd);
+
+    // Update OB rows with SR tags
+    injectSRTagsIntoOBRows(pd);
+  }
+
+  // ─── Inject S1/S2/S3 R1/R2/R3 tags into rendered OB rows ─────────────────
+  function injectSRTagsIntoOBRows(pd) {
+    if (!state.lastPrice) return;
+    const tagMap = {};
+    if (srLevels.s1) tagMap[srLevels.s1.lo.toFixed(pd)] = 'S1';
+    if (srLevels.s2) tagMap[srLevels.s2.lo.toFixed(pd)] = 'S2';
+    if (srLevels.s3) tagMap[srLevels.s3.lo.toFixed(pd)] = 'S3';
+    if (srLevels.r1) tagMap[srLevels.r1.lo.toFixed(pd)] = 'R1';
+    if (srLevels.r2) tagMap[srLevels.r2.lo.toFixed(pd)] = 'R2';
+    if (srLevels.r3) tagMap[srLevels.r3.lo.toFixed(pd)] = 'R3';
+    ['obBidRows','obAskRows'].forEach(id => {
+      document.querySelectorAll(`#${id} .ob-row-item`).forEach(row => {
+        const priceSpan = row.querySelector('span:first-child');
+        if (!priceSpan) return;
+        const priceText = priceSpan.textContent.replace(/[^0-9.]/g,'');
+        // find matching tag
+        const key = Object.keys(tagMap).find(k => priceText.startsWith(k));
+        const existing = row.querySelector('.sr-level-tag');
+        if (existing) existing.remove();
+        if (key) {
+          const lbl = tagMap[key];
+          const isS = lbl.startsWith('S'), cls = `sr-tag-${lbl.toLowerCase()}`;
+          const tag = document.createElement('span');
+          tag.className = `sr-level-tag ${cls}`;
+          tag.textContent = lbl;
+          row.appendChild(tag);
+          row.style.background = isS ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)';
+        }
+      });
+    });
+  }
+
+  // ─── OB Area Chart (S3 → R3) ─────────────────────────────────────────────
+  function renderOBAreaChart(bidRows, askRows, price, pd) {
+    const canvas = $('obAreaCanvas');
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.parentElement.clientWidth - 32, H = 130;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Price range: S3.lo to R3.lo (fallback to all rows)
+    const s3 = srLevels.s3, r3 = srLevels.r3;
+    const minP = s3 ? s3.lo : (bidRows.length ? bidRows[bidRows.length-1].lo : price * 0.99);
+    const maxP = r3 ? (r3.lo + (r3.size||1)) : (askRows.length ? askRows[askRows.length-1].lo + (askRows[askRows.length-1].size||1) : price * 1.01);
+    const priceRange = maxP - minP || 1;
+
+    // Merge all rows sorted by price
+    const allRows = [
+      ...bidRows.map(r => ({...r, side:'bid'})),
+      ...askRows.map(r => ({...r, side:'ask'}))
+    ].sort((a,b) => a.lo - b.lo);
+
+    const filtered = allRows.filter(r => r.lo >= minP && r.lo <= maxP);
+    if (filtered.length < 2) return;
+
+    const maxQty = Math.max(...filtered.map(r => r.qty), 1);
+    const PAD_L = 42, PAD_R = 8, PAD_T = 8, PAD_B = 22;
+    const cW = W - PAD_L - PAD_R, cH = H - PAD_T - PAD_B;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(51,65,85,0.4)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+      const y = PAD_T + (cH / 4) * i;
+      ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + cW, y); ctx.stroke();
+    }
+
+    function priceToX(p) { return PAD_L + ((p - minP) / priceRange) * cW; }
+    function qtyToY(q) { return PAD_T + cH - (q / maxQty) * cH; }
+
+    // Draw bid area (green)
+    const bidFiltered = filtered.filter(r => r.side === 'bid');
+    if (bidFiltered.length > 0) {
+      ctx.beginPath();
+      ctx.moveTo(priceToX(bidFiltered[0].lo), PAD_T + cH);
+      bidFiltered.forEach(r => { ctx.lineTo(priceToX(r.lo), qtyToY(r.qty)); });
+      ctx.lineTo(priceToX(bidFiltered[bidFiltered.length-1].lo), PAD_T + cH);
+      ctx.closePath();
+      const bidGrad = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + cH);
+      bidGrad.addColorStop(0, 'rgba(34,197,94,0.55)');
+      bidGrad.addColorStop(1, 'rgba(34,197,94,0.05)');
+      ctx.fillStyle = bidGrad;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(34,197,94,0.85)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      bidFiltered.forEach((r,i) => i===0 ? ctx.moveTo(priceToX(r.lo),qtyToY(r.qty)) : ctx.lineTo(priceToX(r.lo),qtyToY(r.qty)));
+      ctx.stroke();
+    }
+
+    // Draw ask area (red)
+    const askFiltered = filtered.filter(r => r.side === 'ask');
+    if (askFiltered.length > 0) {
+      ctx.beginPath();
+      ctx.moveTo(priceToX(askFiltered[0].lo), PAD_T + cH);
+      askFiltered.forEach(r => { ctx.lineTo(priceToX(r.lo), qtyToY(r.qty)); });
+      ctx.lineTo(priceToX(askFiltered[askFiltered.length-1].lo), PAD_T + cH);
+      ctx.closePath();
+      const askGrad = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + cH);
+      askGrad.addColorStop(0, 'rgba(239,68,68,0.55)');
+      askGrad.addColorStop(1, 'rgba(239,68,68,0.05)');
+      ctx.fillStyle = askGrad;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(239,68,68,0.85)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      askFiltered.forEach((r,i) => i===0 ? ctx.moveTo(priceToX(r.lo),qtyToY(r.qty)) : ctx.lineTo(priceToX(r.lo),qtyToY(r.qty)));
+      ctx.stroke();
+    }
+
+    // Draw current price line
+    const px = priceToX(price);
+    if (px >= PAD_L && px <= PAD_L + cW) {
+      ctx.strokeStyle = 'rgba(56,189,248,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(px, PAD_T); ctx.lineTo(px, PAD_T + cH); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(56,189,248,0.9)';
+      ctx.font = '600 9px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('PRICE', px, PAD_T + 7);
+    }
+
+    // Draw S1/S2/S3 R1/R2/R3 lines
+    const srDraw = [
+      { lvl: srLevels.s3, lbl: 'S3', col: 'rgba(34,197,94,1)' },
+      { lvl: srLevels.s2, lbl: 'S2', col: 'rgba(34,197,94,0.7)' },
+      { lvl: srLevels.s1, lbl: 'S1', col: 'rgba(34,197,94,0.5)' },
+      { lvl: srLevels.r1, lbl: 'R1', col: 'rgba(239,68,68,0.5)' },
+      { lvl: srLevels.r2, lbl: 'R2', col: 'rgba(239,68,68,0.7)' },
+      { lvl: srLevels.r3, lbl: 'R3', col: 'rgba(239,68,68,1)' },
+    ];
+    srDraw.forEach(({ lvl, lbl, col }) => {
+      if (!lvl) return;
+      const x = priceToX(lvl.lo);
+      if (x < PAD_L || x > PAD_L + cW) return;
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + cH); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = col;
+      ctx.font = '700 8px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(lbl, x, PAD_T + cH + 14);
+    });
+
+    // Y-axis labels
+    ctx.fillStyle = 'rgba(148,163,184,0.7)';
+    ctx.font = '9px JetBrains Mono, monospace';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 3; i++) {
+      const q = (maxQty / 3) * i;
+      const y = PAD_T + cH - (q / maxQty) * cH;
+      ctx.fillText(q > 1000 ? (q/1000).toFixed(1)+'k' : q.toFixed(1), PAD_L - 4, y + 3);
+    }
+
+    // SR Summary
+    $('obSRSummary').innerHTML = [
+      { lbl:'S3', val: srLevels.s3 ? srLevels.s3.lo.toFixed(pd) : '—', col:'var(--green)' },
+      { lbl:'Price', val: price.toFixed(pd), col:'var(--accent)' },
+      { lbl:'R3', val: srLevels.r3 ? srLevels.r3.lo.toFixed(pd) : '—', col:'var(--red)' },
+    ].map(m=>`<div class="ob-stat-mini"><div class="ob-stat-mini-label">${m.lbl}</div><div class="ob-stat-mini-val" style="color:${m.col}">${m.val}</div></div>`).join('');
+  }
+
+  // ─── SMC / ICT Analysis Engine ────────────────────────────────────────────
+  const smcState = {
+    priceHistory: [],      // {price, time, side, qty}
+    highs: [],             // swing highs
+    lows: [],              // swing lows
+    lastBOS: null,         // 'bull' | 'bear'
+    lastCHoCH: null,       // 'bull' | 'bear'
+    fvgs: [],              // Fair Value Gaps
+    orderBlocks: [],       // Order Blocks
+    sweptLow: null,
+    sweptHigh: null,
+    sessionHigh: null,
+    sessionLow: null,
+    sessionStart: null,
+  };
+  const SMC_HISTORY = 120;
+
+  function updateSMC(price, qty, side) {
+    const now = Date.now();
+    smcState.priceHistory.push({ price, time: now, side, qty });
+    if (smcState.priceHistory.length > SMC_HISTORY) smcState.priceHistory.shift();
+
+    // Session tracking (reset every ~8h)
+    const sessionAge = smcState.sessionStart ? now - smcState.sessionStart : Infinity;
+    if (!smcState.sessionStart || sessionAge > 8 * 3600 * 1000) {
+      smcState.sessionStart = now;
+      smcState.sessionHigh = price;
+      smcState.sessionLow = price;
+    } else {
+      smcState.sessionHigh = Math.max(smcState.sessionHigh, price);
+      smcState.sessionLow = Math.min(smcState.sessionLow, price);
+    }
+
+    const hist = smcState.priceHistory;
+    if (hist.length < 20) return;
+
+    // Swing detection (simple: local max/min over 5-bar window)
+    smcState.highs = [];
+    smcState.lows = [];
+    for (let i = 5; i < hist.length - 5; i++) {
+      const slice = hist.slice(i - 5, i + 6).map(h => h.price);
+      if (hist[i].price === Math.max(...slice)) smcState.highs.push({ price: hist[i].price, idx: i });
+      if (hist[i].price === Math.min(...slice)) smcState.lows.push({ price: hist[i].price, idx: i });
+    }
+
+    // BOS / CHoCH detection
+    if (smcState.highs.length >= 2 && smcState.lows.length >= 2) {
+      const lastHH = smcState.highs[smcState.highs.length - 1];
+      const prevHH = smcState.highs[smcState.highs.length - 2];
+      const lastLL = smcState.lows[smcState.lows.length - 1];
+      const prevLL = smcState.lows[smcState.lows.length - 2];
+
+      if (price > lastHH.price) {
+        if (smcState.lastBOS === 'bear') { smcState.lastCHoCH = 'bull'; }
+        smcState.lastBOS = 'bull';
+      } else if (price < lastLL.price) {
+        if (smcState.lastBOS === 'bull') { smcState.lastCHoCH = 'bear'; }
+        smcState.lastBOS = 'bear';
+      }
+    }
+
+    // FVG detection (3-candle pattern approximation with trade clusters)
+    if (hist.length >= 10) {
+      smcState.fvgs = [];
+      for (let i = 2; i < Math.min(hist.length - 1, 30); i++) {
+        const gap = Math.abs(hist[i].price - hist[i-2].price);
+        const gapPct = gap / hist[i].price;
+        if (gapPct > 0.001) { // >0.1% gap = potential FVG
+          smcState.fvgs.push({
+            type: hist[i].price > hist[i-2].price ? 'bull' : 'bear',
+            lo: Math.min(hist[i].price, hist[i-2].price),
+            hi: Math.max(hist[i].price, hist[i-2].price),
+            idx: i
+          });
+        }
+      }
+    }
+
+    // Liquidity sweep detection
+    if (smcState.highs.length > 0 && smcState.lows.length > 0) {
+      const recentHigh = Math.max(...smcState.highs.map(h => h.price));
+      const recentLow = Math.min(...smcState.lows.map(l => l.price));
+      if (price > recentHigh * 1.001) smcState.sweptHigh = recentHigh;
+      if (price < recentLow * 0.999) smcState.sweptLow = recentLow;
+    }
+
+    // Order block detection (last impulse candle before BOS)
+    smcState.orderBlocks = [];
+    if (smcState.highs.length > 0 || smcState.lows.length > 0) {
+      const recentSwing = [...smcState.highs, ...smcState.lows].sort((a,b) => b.idx - a.idx)[0];
+      if (recentSwing) {
+        const obSlice = hist.slice(Math.max(0, recentSwing.idx - 5), recentSwing.idx);
+        const largestBar = obSlice.reduce((best, h) => !best || h.qty > best.qty ? h : best, null);
+        if (largestBar) smcState.orderBlocks.push({ price: largestBar.price, side: smcState.lastBOS });
+      }
+    }
+
+    // Update SMC UI
+    if ($('panel-chart').classList.contains('active')) renderSMCPanel(price);
+  }
+
+  function renderSMCPanel(price) {
+    if (!price) return;
+
+    // Market structure
+    const struct = smcState.lastBOS === 'bull' ? 'Bullish' : smcState.lastBOS === 'bear' ? 'Bearish' : 'Neutral';
+    const structCls = smcState.lastBOS === 'bull' ? 'bull' : smcState.lastBOS === 'bear' ? 'bear' : 'neutral';
+    $('smcStructure').textContent = struct;
+    $('smcStructure').className = `smc-val ${structCls}`;
+
+    // CHoCH / BOS
+    const choch = smcState.lastCHoCH ? `CHoCH ${smcState.lastCHoCH === 'bull' ? '▲' : '▼'}` : smcState.lastBOS ? `BOS ${smcState.lastBOS === 'bull' ? '▲' : '▼'}` : '—';
+    $('smcChoch').textContent = choch;
+    $('smcChoch').className = `smc-val ${smcState.lastCHoCH === 'bull' || smcState.lastBOS === 'bull' ? 'bull' : smcState.lastCHoCH === 'bear' || smcState.lastBOS === 'bear' ? 'bear' : 'neutral'}`;
+
+    // Order Block
+    const ob = smcState.orderBlocks[0];
+    $('smcOB').textContent = ob ? `${ob.side === 'bull' ? 'Bull' : 'Bear'} OB @ ${ob.price.toFixed(2)}` : '—';
+    $('smcOB').className = `smc-val ${ob ? (ob.side === 'bull' ? 'bull' : 'bear') : 'neutral'}`;
+
+    // FVG
+    const fvg = smcState.fvgs[smcState.fvgs.length - 1];
+    $('smcFVG').textContent = fvg ? `${fvg.type === 'bull' ? 'Bull' : 'Bear'} FVG ${fvg.lo.toFixed(2)}-${fvg.hi.toFixed(2)}` : 'No FVG';
+    $('smcFVG').className = `smc-val ${fvg ? (fvg.type === 'bull' ? 'bull' : 'bear') : 'neutral'}`;
+
+    // Premium / Discount (relative to session range)
+    let pdLabel = '—', pdCls = 'neutral';
+    if (smcState.sessionHigh && smcState.sessionLow) {
+      const range = smcState.sessionHigh - smcState.sessionLow || 1;
+      const pos = (price - smcState.sessionLow) / range;
+      if (pos > 0.618) { pdLabel = 'Premium Zone'; pdCls = 'bear'; }
+      else if (pos < 0.382) { pdLabel = 'Discount Zone'; pdCls = 'bull'; }
+      else { pdLabel = `Equilibrium ${(pos*100).toFixed(0)}%`; pdCls = 'neutral'; }
+    }
+    $('smcPD').textContent = pdLabel;
+    $('smcPD').className = `smc-val ${pdCls}`;
+
+    // Liquidity Sweep
+    const liqText = smcState.sweptHigh ? `High sweep @ ${smcState.sweptHigh.toFixed(2)}` : smcState.sweptLow ? `Low sweep @ ${smcState.sweptLow.toFixed(2)}` : 'No sweep detected';
+    $('smcLiq').textContent = liqText;
+    $('smcLiq').className = `smc-val ${smcState.sweptHigh ? 'bear' : smcState.sweptLow ? 'bull' : 'neutral'}`;
+
+    // Session Bias
+    const sessionBias = smcState.sessionHigh && smcState.sessionLow
+      ? (price > (smcState.sessionHigh + smcState.sessionLow) / 2 ? 'Bullish Session' : 'Bearish Session')
+      : 'Accumulating';
+    const sbCls = sessionBias === 'Bullish Session' ? 'bull' : sessionBias === 'Bearish Session' ? 'bear' : 'neutral';
+    $('smcSession').textContent = sessionBias;
+    $('smcSession').className = `smc-val ${sbCls}`;
+
+    // OB Confirmation (using live OB data)
+    const totalBids = Object.values(rawOB.bids).reduce((a, b) => a + b, 0);
+    const totalAsks = Object.values(rawOB.asks).reduce((a, b) => a + b, 0);
+    const total = totalBids + totalAsks || 1;
+    const bidDom = totalBids / total;
+    let confText = '—', confCls = 'neutral';
+    if (ob) {
+      const confirmed = (ob.side === 'bull' && bidDom > 0.52) || (ob.side === 'bear' && bidDom < 0.48);
+      confText = confirmed ? `Confirmed ${ob.side === 'bull' ? '✓ Bull' : '✓ Bear'}` : 'Unconfirmed OB';
+      confCls = confirmed ? (ob.side === 'bull' ? 'bull' : 'bear') : 'neutral';
+    }
+    $('smcConf').textContent = confText;
+    $('smcConf').className = `smc-val ${confCls}`;
+
+    // Signal list
+    const signals = [];
+    if (smcState.lastCHoCH) signals.push({ dot: smcState.lastCHoCH, txt: `CHoCH detected — trend reversal ${smcState.lastCHoCH === 'bull' ? '▲ Bullish' : '▼ Bearish'}` });
+    if (smcState.lastBOS) signals.push({ dot: smcState.lastBOS, txt: `BOS — ${smcState.lastBOS === 'bull' ? 'Bullish breakout structure' : 'Bearish breakdown structure'}` });
+    if (fvg) signals.push({ dot: fvg.type, txt: `FVG imbalance ${fvg.type === 'bull' ? '(buy zone)' : '(sell zone)'}: ${fvg.lo.toFixed(2)} – ${fvg.hi.toFixed(2)}` });
+    if (ob) signals.push({ dot: ob.side, txt: `Order Block @ ${ob.price.toFixed(2)} — ${ob.side === 'bull' ? 'institutional buy zone' : 'institutional sell zone'}` });
+    if (smcState.sweptHigh) signals.push({ dot: 'bear', txt: `Liquidity sweep above ${smcState.sweptHigh.toFixed(2)} — possible sell opportunity` });
+    if (smcState.sweptLow) signals.push({ dot: 'bull', txt: `Liquidity sweep below ${smcState.sweptLow.toFixed(2)} — possible buy opportunity` });
+    if (pdCls === 'bull') signals.push({ dot: 'bull', txt: 'Price in Discount Zone — ICT optimal buy window' });
+    if (pdCls === 'bear') signals.push({ dot: 'bear', txt: 'Price in Premium Zone — ICT optimal sell window' });
+    if (!signals.length) signals.push({ dot: 'neutral', txt: 'Accumulating data — SMC signals will appear shortly…' });
+    $('smcSignals').innerHTML = signals.map(s => `<div class="smc-signal"><div class="dot ${s.dot}"></div><span>${s.txt}</span></div>`).join('');
+
+    // Render SMC mini canvas
+    renderSMCCanvas(price);
+  }
+
+  function renderSMCCanvas(price) {
+    const canvas = $('smcCanvas');
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.parentElement.clientWidth - 32, H = 160;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    const hist = smcState.priceHistory;
+    if (hist.length < 5) return;
+
+    const PAD = { l: 44, r: 12, t: 12, b: 20 };
+    const cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
+    const prices = hist.map(h => h.price);
+    const minP = Math.min(...prices), maxP = Math.max(...prices);
+    const pRange = maxP - minP || 1;
+
+    function px(i) { return PAD.l + (i / (hist.length - 1)) * cW; }
+    function py(p) { return PAD.t + cH - ((p - minP) / pRange) * cH; }
+
+    // Grid
+    ctx.strokeStyle = 'rgba(51,65,85,0.5)'; ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+      const y = PAD.t + (cH / 4) * i;
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + cW, y); ctx.stroke();
+    }
+
+    // Area fill
+    const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + cH);
+    grad.addColorStop(0, smcState.lastBOS === 'bull' ? 'rgba(34,197,94,0.2)' : smcState.lastBOS === 'bear' ? 'rgba(239,68,68,0.2)' : 'rgba(56,189,248,0.15)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.moveTo(px(0), PAD.t + cH);
+    hist.forEach((h, i) => ctx.lineTo(px(i), py(h.price)));
+    ctx.lineTo(px(hist.length - 1), PAD.t + cH);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+
+    // Price line
+    ctx.beginPath();
+    hist.forEach((h, i) => i === 0 ? ctx.moveTo(px(i), py(h.price)) : ctx.lineTo(px(i), py(h.price)));
+    ctx.strokeStyle = smcState.lastBOS === 'bull' ? 'rgba(34,197,94,0.9)' : smcState.lastBOS === 'bear' ? 'rgba(239,68,68,0.9)' : 'rgba(56,189,248,0.9)';
+    ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Swing highs/lows dots
+    smcState.highs.forEach(h => {
+      ctx.beginPath(); ctx.arc(px(h.idx), py(h.price), 3, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(239,68,68,0.85)'; ctx.fill();
+    });
+    smcState.lows.forEach(l => {
+      ctx.beginPath(); ctx.arc(px(l.idx), py(l.price), 3, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(34,197,94,0.85)'; ctx.fill();
+    });
+
+    // FVG boxes
+    smcState.fvgs.slice(-3).forEach(f => {
+      const y1 = py(f.hi), y2 = py(f.lo);
+      ctx.fillStyle = f.type === 'bull' ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+      ctx.fillRect(PAD.l, Math.min(y1,y2), cW, Math.abs(y2-y1));
+    });
+
+    // Order block lines
+    smcState.orderBlocks.slice(-2).forEach(ob => {
+      const y = py(ob.price);
+      ctx.strokeStyle = ob.side === 'bull' ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)';
+      ctx.lineWidth = 1; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + cW, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = ob.side === 'bull' ? 'rgba(34,197,94,0.8)' : 'rgba(239,68,68,0.8)';
+      ctx.font = '700 8px JetBrains Mono, monospace'; ctx.textAlign = 'left';
+      ctx.fillText('OB', PAD.l + 2, y - 2);
+    });
+
+    // Price marker
+    const curY = py(price);
+    ctx.strokeStyle = 'rgba(56,189,248,0.8)'; ctx.lineWidth = 1; ctx.setLineDash([3,2]);
+    ctx.beginPath(); ctx.moveTo(PAD.l, curY); ctx.lineTo(PAD.l + cW, curY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Y labels
+    ctx.fillStyle = 'rgba(148,163,184,0.7)';
+    ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'right';
+    for (let i = 0; i <= 3; i++) {
+      const p = minP + (pRange / 3) * i;
+      ctx.fillText(p.toFixed(p > 100 ? 0 : 2), PAD.l - 3, py(p) + 3);
+    }
+
+    // Legend
+    const legendItems = [
+      { col:'rgba(239,68,68,0.85)', lbl:'Swing H' },
+      { col:'rgba(34,197,94,0.85)', lbl:'Swing L' },
+      { col:'rgba(56,189,248,0.7)', lbl:'FVG' },
+      { col:'rgba(245,158,11,0.8)', lbl:'OB' },
+    ];
+    ctx.font = '700 8px JetBrains Mono, monospace'; ctx.textAlign = 'left';
+    legendItems.forEach((l, i) => {
+      const x = PAD.l + i * 68;
+      ctx.fillStyle = l.col; ctx.fillRect(x, H - PAD.b + 6, 7, 7);
+      ctx.fillStyle = 'rgba(148,163,184,0.8)'; ctx.fillText(l.lbl, x + 10, H - PAD.b + 13);
+    });
+  }
+
+  function initTradingView() {
+    const container = $('tv-container');
+    if (container.innerHTML.includes('tradingview')) return;
+    container.innerHTML = `<div class="tradingview-widget-container" style="height:100%;width:100%"><div id="tradingview_widget" style="height:100%;width:100%"></div></div>`;
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = () => {
+      new TradingView.widget({
+        "autosize": true,
+        "symbol": `BINANCE:${state.binanceSymbol}`,
+        "interval": "15",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "enable_publishing": false,
+        "hide_side_toolbar": false,
+        "hide_top_toolbar": false,
+        "allow_symbol_change": false,
+        "save_image": false,
+        "container_id": "tradingview_widget",
+        "studies": [],
+        "withdateranges": true,
+        "hide_legend": false,
+        "backgroundColor": "rgba(15,23,42,1)",
+        "gridColor": "rgba(51,65,85,0.5)"
+      });
+    };
+    document.head.appendChild(script);
+  }
+
+  function toggleChartFs() {
+    const el = $('tv-container'), btn = $('chartFsBtn'), isFs = el.classList.toggle('chart-fullscreen');
+    btn.textContent = isFs ? '✕' : '⛶';
+    document.body.style.overflow = isFs ? 'hidden' : '';
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('tv-container').classList.contains('chart-fullscreen')) toggleChartFs(); });
+
+  // Initialize
+  handlePairChange(); // Sets default symbol (BTCUSDT) and starts live fetch
+  initObControls();
+  updateUI();
+</script>
+
+</body>
+</html>
