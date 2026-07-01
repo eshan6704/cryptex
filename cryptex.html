@@ -8982,3 +8982,3312 @@ const app = new CryptoTerminal();
 </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRO-X ULTIMATE All-In-One Crypto Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* ---- Design tokens ---- */
+            --bg-app: #0A0D12;
+            --bg-panel: #12161D;
+            --bg-elevated: #171C25;
+            --bg-hover: #1D2230;
+            --border: #232838;
+            --border-soft: #1B202C;
+            --text-primary: #E8EAED;
+            --text-secondary: #C7CDDA;
+            --text-muted: #7C879E;
+            --accent: #F0B90B;
+            --accent-soft: rgba(240, 185, 11, 0.12);
+            --accent-hover: #F8D12F;
+            --buy: #0ECB81;
+            --buy-soft: rgba(14, 203, 129, 0.12);
+            --sell: #F6465D;
+            --sell-soft: rgba(246, 70, 93, 0.12);
+            --radius: 6px;
+            --font-display: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg-app);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+        }
+
+        .header-content {
+            max-width: 2200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: 1.5px;
+        }
+
+        .logo::before {
+            content: '';
+        }
+
+        .pulse {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--accent); }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes tradeFlash {
+            0% { background: rgba(240, 185, 11, 0.18); }
+            100% { background: transparent; }
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .quick-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 11px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-label {
+            font-family: var(--font-display);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+            font-size: 9px;
+        }
+
+        .stat-value {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .main-container {
+            max-width: 2200px;
+            margin: 0 auto;
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 16px;
+        }
+
+        .sidebar {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            height: fit-content;
+            position: sticky;
+            top: 80px;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            margin-top: 14px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .section-title:first-child {
+            margin-top: 0;
+        }
+
+        .nav-button {
+            display: block;
+            width: 100%;
+            padding: 8px 10px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-left: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+            transition: all 0.15s;
+            font-family: var(--font-display);
+            text-align: left;
+        }
+
+        .nav-button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-button.active {
+            background: var(--accent-soft);
+            color: var(--accent);
+            border-left: 2px solid var(--accent);
+        }
+
+        .content {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            min-height: 500px;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 12px;
+        }
+
+        .table th {
+            background: var(--bg-elevated);
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.4px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            font-family: var(--font-display);
+        }
+
+        .table th:hover {
+            color: var(--text-primary);
+        }
+
+        .table td {
+            padding: 9px 8px;
+            border-bottom: 1px solid var(--border-soft);
+            color: var(--text-secondary);
+        }
+
+        .table tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .price-cell {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .up {
+            color: var(--buy);
+            font-weight: 700;
+        }
+
+        .down {
+            color: var(--sell);
+            font-weight: 700;
+        }
+
+        .chart-container {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            margin-bottom: 16px;
+            height: 300px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .controls {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .control-group label {
+            font-family: var(--font-display);
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .control-group input, .control-group select {
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--bg-panel);
+            color: var(--text-primary);
+            font-size: 11px;
+            font-family: inherit;
+        }
+
+        .btn {
+            padding: 6px 14px;
+            background: var(--accent);
+            color: #0A0D12;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 11px;
+            font-family: var(--font-display);
+            transition: background 0.15s;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-app);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 160px 1fr;
+                gap: 12px;
+            }
+            
+            .sidebar {
+                top: 70px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 8px 12px;
+            }
+            
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 8px;
+                height: auto;
+                position: relative;
+                top: auto;
+                background: var(--bg-panel);
+                border: 1px solid var(--border);
+                padding: 10px;
+                border-radius: var(--radius);
+                margin-bottom: 12px;
+            }
+            
+            .section-title {
+                grid-column: 1 / -1;
+                font-size: 9px;
+                margin: 8px 0 4px 0;
+                padding: 4px 0;
+            }
+            
+            .section-title:first-child {
+                margin-top: 0;
+            }
+            
+            .nav-button {
+                padding: 6px 8px;
+                font-size: 10px;
+                margin-bottom: 0;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .header-left, .header-right {
+                width: 100%;
+            }
+            
+            .stat-item {
+                flex: 1;
+                min-width: 80px;
+            }
+            
+            .stat-value {
+                font-size: 14px;
+            }
+            
+            .table {
+                font-size: 10px;
+            }
+            
+            .card {
+                padding: 10px 8px;
+            }
+            
+            .card-title {
+                font-size: 9px;
+            }
+            
+            .card-value {
+                font-size: 12px;
+            }
+            
+            .chart-container {
+                height: 200px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .sidebar {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 6px;
+                padding: 8px;
+            }
+            
+            .section-title {
+                font-size: 8px;
+                margin: 6px 0 2px 0;
+            }
+            
+            .nav-button {
+                padding: 5px 6px;
+                font-size: 9px;
+            }
+            
+            .main-container {
+                padding: 4px 8px;
+            }
+            
+            .table {
+                font-size: 9px;
+            }
+            
+            .card {
+                padding: 8px;
+            }
+            
+            .stat-value {
+                font-size: 12px;
+            }
+            
+            .chart-container {
+                height: 150px !important;
+            }
+            
+            h2 {
+                font-size: 12px;
+            }
+            
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="logo">⚡ PRO-X ULTIMATE</div>
+                <div class="pulse"></div>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="searchSymbol" placeholder="Search coin..." onkeyup="searchCoin()">
+                <button class="btn" onclick="loadCryptoData()">Load</button>
+            </div>
+            
+            <div class="quick-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Market Cap</div>
+                    <div class="stat-value" id="statMCap">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">24h Vol</div>
+                    <div class="stat-value" id="statVol">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">BTC Dom</div>
+                    <div class="stat-value" id="statDom">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <!-- SIDEBAR NAVIGATION -->
+        <div class="sidebar">
+            <div class="section-title">📊 Market Data</div>
+            <button class="nav-button active" onclick="switchView('market-overview')">Market Overview</button>
+            <button class="nav-button" onclick="switchView('gainers')">Top Gainers</button>
+            <button class="nav-button" onclick="switchView('losers')">Top Losers</button>
+            <button class="nav-button" onclick="switchView('volume-leaders')">Volume Leaders</button>
+            
+            <div class="section-title">📈 Technical Analysis</div>
+            <button class="nav-button" onclick="switchView('coin-analysis')">Coin Analysis</button>
+            <button class="nav-button" onclick="switchView('chain-analysis')">Chain Analysis</button>
+            <button class="nav-button" onclick="switchView('volume-profile')">Volume Profile</button>
+            
+            <div class="section-title">📊 Options & Derivatives</div>
+            <button class="nav-button" onclick="switchView('btc-options')">BTC Option Chain</button>
+            
+            <div class="section-title">📈 TradingView TA</div>
+            <button class="nav-button" onclick="switchView('tradingview-ta')">TradingView Charts</button>
+            <button class="nav-button" onclick="switchView('tradingview-widget')">📺 TradingView Widget</button>
+
+            
+            <div class="section-title">🛠️ Trading Tools</div>
+            <button class="nav-button" onclick="switchView('portfolio')">Portfolio</button>
+            <button class="nav-button" onclick="switchView('backtest')">Backtest</button>
+            <button class="nav-button" onclick="switchView('calculator')">Calculator</button>
+            <button class="nav-button" onclick="switchView('alerts')">Alerts</button>
+        </div>
+        
+        <!-- MAIN CONTENT AREA -->
+        <div class="content">
+            
+            <!-- MARKET OVERVIEW -->
+            <div id="market-overview" class="view active">
+                <h2>📊 Market Overview - 250+ Cryptocurrencies</h2>
+                <p style="font-size: 11px; color: #7C879E; margin-bottom: 12px;">💡 Click on any coin to see detailed analysis</p>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Sort By:</label>
+                        <select id="sortBy" onchange="sortMarketTable()">
+                            <option value="rank">Rank</option>
+                            <option value="change24h">24h Change ↓</option>
+                            <option value="marketcap">Market Cap ↓</option>
+                            <option value="volume">Volume ↓</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Items:</label>
+                        <select id="pageSize">
+                            <option value="20">20</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="loadCryptoData()">🔄 Refresh</button>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Coin</th>
+                            <th>Price</th>
+                            <th>24h %</th>
+                            <th>7d %</th>
+                            <th>Market Cap</th>
+                            <th>Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marketTableBody">
+                        <tr class="loading"><td colspan="7">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- COIN ANALYSIS (Individual Coin Details) -->
+            <div id="coin-analysis" class="view">
+                <button class="btn" onclick="switchView('market-overview')" style="margin-bottom: 12px;">← Back to Market</button>
+                <h2 id="coinTitle">📊 Coin Analysis</h2>
+                
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Current Price</div>
+                        <div class="card-value" id="coinPrice">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">24h Change</div>
+                        <div class="card-value" id="coin24h">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Market Cap</div>
+                        <div class="card-value" id="coinMCap">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">24h Volume</div>
+                        <div class="card-value" id="coinVol">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Circulating Supply</div>
+                        <div class="card-value" id="coinSupply">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">ATH / ATL</div>
+                        <div class="card-value" id="coinATH">-</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Price Chart</h3>
+                <div class="chart-container">
+                    <canvas id="coinPriceChart"></canvas>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Order Book - Depth 20 (Binance WebSocket, Live Push) <span id="depth20Status" style="font-size: 10px; color: #7C879E; font-weight: 400;"></span></h3>
+                <div style="overflow-x: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: right; color: #F6465D; background: rgba(255, 107, 107, 0.1);">Bid Price</th>
+                                <th style="text-align: right; color: #F6465D; background: rgba(255, 107, 107, 0.1);">Bid Size</th>
+                                <th style="text-align: center; color: #7C879E;">Spread</th>
+                                <th style="text-align: left; color: #0ECB81; background: rgba(81, 207, 102, 0.1);">Ask Price</th>
+                                <th style="text-align: left; color: #0ECB81; background: rgba(81, 207, 102, 0.1);">Ask Size</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coinOrderBook">
+                            <tr class="loading"><td colspan="5" style="text-align: center;">Loading order book...</td></tr>
+                        </tbody>
+                    </table>
+                </div><h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">📊 Recent Trades Raw (Live 300ms - All Trades)</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 100px;">Time</th>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Amount</th>
+                            <th>Whale</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coinTrades">
+                        <tr class="loading"><td colspan="6" style="text-align: center;">Loading trades...</td></tr>
+                    </tbody>
+                </table>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">💰 Recent Trades >$50,000 (Live 300ms - Large Orders)</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 100px;">Time</th>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="largeTradesTable">
+                        <tr class="loading"><td colspan="5" style="text-align: center;">Monitoring large orders...</td></tr>
+                    </tbody>
+                </table>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">🐋 Whale Order Tracking (5s Update - 10-15 min history)</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Time (Age)</th>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Whale Size</th>
+                            <th>Total Value</th>
+                            <th>Exchange</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="whaleOrdersTable">
+                        <tr class="loading"><td colspan="7" style="text-align: center;">Tracking whale orders...</td></tr>
+                    </tbody>
+                </table>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Technical Indicators</h3>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">RSI (14)</div>
+                        <div class="card-value" id="coinRSI">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">MACD</div>
+                        <div class="card-value" id="coinMACD">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Stochastic</div>
+                        <div class="card-value" id="coinStoch">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">ATR</div>
+                        <div class="card-value" id="coinATR">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Volume Trend</div>
+                        <div class="card-value" id="coinVolTrend">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Volatility</div>
+                        <div class="card-value" id="coinVolatility">-</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">💡 SMC (Smart Money Concept) Analysis</h3>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Order Blocks</div>
+                        <div class="card-value" id="smcOrderBlocks">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Mitigation Level</div>
+                        <div class="card-value" id="smcMitigation">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Liquidity Zones</div>
+                        <div class="card-value" id="smcLiquidity">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Market Structure</div>
+                        <div class="card-value" id="smcStructure">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Break of Structure</div>
+                        <div class="card-value" id="smcBOS">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Fib Levels</div>
+                        <div class="card-value" id="smcFib">-</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">📍 ICT (Inner Circle Trading) Analysis</h3>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Equilibrium</div>
+                        <div class="card-value" id="ictEquilibrium">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Fair Value Gap</div>
+                        <div class="card-value" id="ictFVG">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Imbalance</div>
+                        <div class="card-value" id="ictImbalance">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Inducement</div>
+                        <div class="card-value" id="ictInducement">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Optimal Trade Entry</div>
+                        <div class="card-value" id="ictOTE">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Sellside Liquidity</div>
+                        <div class="card-value" id="ictLiquidity">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CHAIN ANALYSIS -->
+            <div id="chain-analysis" class="view">
+                <button class="btn" onclick="switchView('market-overview')" style="margin-bottom: 12px;">← Back to Market</button>
+                <h2>🔗 On-Chain Analysis</h2>
+                
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Exchange Inflow (24h)</div>
+                        <div class="card-value" id="chainExInflow">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Exchange Outflow (24h)</div>
+                        <div class="card-value" id="chainExOutflow">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Net Flow</div>
+                        <div class="card-value" id="chainNetFlow">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Large Transfers</div>
+                        <div class="card-value" id="chainLargeTx">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Whale Balance</div>
+                        <div class="card-value" id="chainWhaleBalance">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Exchange Holding %</div>
+                        <div class="card-value" id="chainExHolding">-</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Exchange Flow (7 days)</h3>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="chainFlowChart"></canvas>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Whale Activity (10min window)</h3>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="whaleActivityChart"></canvas>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Large Whale Transactions ($1000+)</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Amount (BTC)</th>
+                            <th>Value ($)</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="whaleTransactions">
+                        <tr class="loading"><td colspan="7">Loading whale activity...</td></tr>
+                    </tbody>
+                </table>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Network Metrics</h3>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Active Addresses (24h)</div>
+                        <div class="card-value" id="chainActiveAddr">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Transaction Count (24h)</div>
+                        <div class="card-value" id="chainTxCount">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Avg Transaction Fee</div>
+                        <div class="card-value" id="chainAvgFee">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Network Value</div>
+                        <div class="card-value" id="chainNetValue">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">MVRV Ratio</div>
+                        <div class="card-value" id="chainMVRV">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Fear & Greed</div>
+                        <div class="card-value" id="chainFearGreed">-</div>
+                    </div>
+                </div>
+            </div>
+            <div id="gainers" class="view">
+                <h2>📈 Top 10 Gainers (24h)</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Coin</th>
+                            <th>Price</th>
+                            <th>Gain</th>
+                            <th>Market Cap</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gainersTableBody">
+                        <tr class="loading"><td colspan="5">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- TOP LOSERS -->
+            <div id="losers" class="view">
+                <h2>📉 Top 10 Losers (24h)</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Coin</th>
+                            <th>Price</th>
+                            <th>Loss</th>
+                            <th>Market Cap</th>
+                        </tr>
+                    </thead>
+                    <tbody id="losersTableBody">
+                        <tr class="loading"><td colspan="5">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- VOLUME LEADERS -->
+            <div id="volume-leaders" class="view">
+                <h2>📊 Top 10 Volume Leaders (24h)</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Coin</th>
+                            <th>Volume</th>
+                            <th>Market Cap</th>
+                            <th>Volume/MC</th>
+                            <th>24h %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="volumeTableBody">
+                        <tr class="loading"><td colspan="6">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- TECHNICAL ANALYSIS -->
+            
+            <!-- BTC OPTIONS CHAIN -->
+            <div id="btc-options" class="view">
+                <h2>📊 BTC Options Chain - Full Analysis</h2>
+                
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Current BTC Price</div>
+                        <div class="card-value" id="btcPrice">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">IV Rank</div>
+                        <div class="card-value" id="btcIVRank">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Put/Call Ratio</div>
+                        <div class="card-value" id="btcPCRatio">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Max Pain Level</div>
+                        <div class="card-value" id="btcMaxPain">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Total OI</div>
+                        <div class="card-value" id="btcTotalOI">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">IV Percentile</div>
+                        <div class="card-value" id="btcIVPct">-</div>
+                    </div>
+                </div>
+                
+                <div class="controls" style="margin-top: 16px;">
+                    <div class="control-group">
+                        <label>Expiry (DTE):</label>
+                        <select id="optionsExpiry" onchange="updateBTCOptions()">
+                            <option value="1">1D (Tomorrow)</option>
+                            <option value="7" selected>7D (1 Week)</option>
+                            <option value="14">14D (2 Weeks)</option>
+                            <option value="30">30D (1 Month)</option>
+                            <option value="60">60D (2 Months)</option>
+                            <option value="90">90D (3 Months)</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="updateBTCOptions()">Refresh</button>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Options Chain (<span id="optionsDTELabel">7DTE</span>)</h3>
+                <div style="overflow-x: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th colspan="5" style="text-align: center; background: rgba(255, 0, 0, 0.1); color: #F6465D;">CALLS</th>
+                                <th style="text-align: center;">Strike</th>
+                                <th colspan="5" style="text-align: center; background: rgba(0, 255, 0, 0.1); color: #0ECB81;">PUTS</th>
+                            </tr>
+                            <tr>
+                                <th>Price</th>
+                                <th>IV %</th>
+                                <th>OI</th>
+                                <th>Vol</th>
+                                <th>Delta</th>
+                                <th style="text-align: center; font-weight: 700;">$</th>
+                                <th>Delta</th>
+                                <th>Vol</th>
+                                <th>OI</th>
+                                <th>IV %</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody id="btcOptionsChain">
+                            <tr class="loading"><td colspan="11" style="text-align: center;">Loading options chain...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Greeks Heatmap Analysis</h3>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Total Call Delta</div>
+                        <div class="card-value" id="btcCallDelta">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Total Put Delta</div>
+                        <div class="card-value" id="btcPutDelta">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Total Gamma</div>
+                        <div class="card-value" id="btcTotalGamma">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Total Vega</div>
+                        <div class="card-value" id="btcTotalVega">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Total Theta</div>
+                        <div class="card-value" id="btcTotalTheta">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Gamma Exposure</div>
+                        <div class="card-value" id="btcGammaExp">-</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">IV Skew Analysis</h3>
+                <div class="chart-container">
+                    <canvas id="btcIVSkewChart"></canvas>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Open Interest Profile</h3>
+                <div class="chart-container">
+                    <canvas id="btcOIChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- VOLUME PROFILE -->
+            <div id="volume-profile" class="view">
+                <h2>📊 Volume Profile Analysis</h2>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Point of Control</div>
+                        <div class="card-value" id="pocPrice">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Value Area High</div>
+                        <div class="card-value" id="vahPrice">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Value Area Low</div>
+                        <div class="card-value" id="valPrice">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Highest Volume</div>
+                        <div class="card-value" id="highestVol">-</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Volume Profile Chart</h3>
+                <div class="chart-container">
+                    <canvas id="volumeProfileChart"></canvas>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Volume by Price Level</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Price Level</th>
+                            <th>Volume</th>
+                            <th>% of Total</th>
+                            <th>Buy Volume</th>
+                            <th>Sell Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody id="volumeLevelTable">
+                        <tr class="loading"><td colspan="5">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- ORDER BOOK -->
+            
+            <!-- OPTIONS -->
+            
+            <!-- TRADINGVIEW TA -->
+            <div id="tradingview-ta" class="view">
+                <button class="btn" onclick="switchView('market-overview')" style="margin-bottom: 12px;">← Back to Market</button>
+                <h2>📈 TradingView Style Technical Analysis</h2>
+                
+                <div class="controls" style="margin-bottom: 16px;">
+                    <div class="control-group">
+                        <label>Asset:</label>
+                        <select id="taAsset" onchange="updateTVChart()">
+                            <option value="bitcoin">Bitcoin (BTC)</option>
+                            <option value="ethereum">Ethereum (ETH)</option>
+                            <option value="solana">Solana (SOL)</option>
+                            <option value="cardano">Cardano (ADA)</option>
+                            <option value="polkadot">Polkadot (DOT)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Timeframe:</label>
+                        <select id="taTimeframe" onchange="updateTVChart()">
+                            <option value="1H">1 Hour</option>
+                            <option value="4H">4 Hours</option>
+                            <option value="1D" selected>1 Day</option>
+                            <option value="1W">1 Week</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="updateTVChart()">Refresh</button>
+                </div>
+                
+                <div style="border: 1px solid #232838; border-radius: 8px; padding: 12px; background: #171C25; margin-bottom: 16px;">
+                    <h3 style="font-size: 12px; color: #E8EAED; margin: 0 0 12px 0; border-bottom: 1px solid #232838; padding-bottom: 8px;">Professional Candlestick Chart</h3>
+                    <div class="chart-container" style="height: 500px; border: 1px solid #232838; border-radius: 6px; background: #fff;">
+                        <canvas id="tvCandleChart"></canvas>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                    <div class="card">
+                        <div class="card-title">Current Price</div>
+                        <div class="card-value" id="tvCurrentPrice">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">24h Change</div>
+                        <div class="card-value" id="tvChange24h">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Volume (24h)</div>
+                        <div class="card-value" id="tvVolume24h">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">High (24h)</div>
+                        <div class="card-value" id="tvHigh24h">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Low (24h)</div>
+                        <div class="card-value" id="tvLow24h">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">ATH / ATL</div>
+                        <div class="card-value" id="tvATHATL">-</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Technical Indicators</h3>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="tvIndicatorChart"></canvas>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Support & Resistance Levels</h3>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Resistance 1</div>
+                        <div class="card-value" id="tvR1">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Pivot Point</div>
+                        <div class="card-value" id="tvPivot">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Support 1</div>
+                        <div class="card-value" id="tvS1">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Resistance 2</div>
+                        <div class="card-value" id="tvR2">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Support 2</div>
+                        <div class="card-value" id="tvS2">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Fibonacci Retrace</div>
+                        <div class="card-value" id="tvFib">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TRADINGVIEW WIDGET PAGE -->
+            <div id="tradingview-widget" class="view">
+                <button class="btn" onclick="switchView('market-overview')" style="margin-bottom: 12px;">&larr; Back to Market</button>
+                <h2>📺 TradingView Live Chart Widget</h2>
+
+                <div class="controls" style="margin-bottom: 16px;">
+                    <div class="control-group">
+                        <label>Symbol:</label>
+                        <select id="tvWidgetSymbol" onchange="updateTVWidget()">
+                            <option value="BITSTAMP:BTCUSD" selected>BTC/USD</option>
+                            <option value="BITSTAMP:ETHUSD">ETH/USD</option>
+                            <option value="COINBASE:SOLUSD">SOL/USD</option>
+                            <option value="COINBASE:ADAUSD">ADA/USD</option>
+                            <option value="KRAKEN:DOTUSD">DOT/USD</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Interval:</label>
+                        <select id="tvWidgetInterval" onchange="updateTVWidget()">
+                            <option value="1">1 Minute</option>
+                            <option value="5">5 Minutes</option>
+                            <option value="15">15 Minutes</option>
+                            <option value="60">1 Hour</option>
+                            <option value="240">4 Hours</option>
+                            <option value="D" selected>1 Day</option>
+                            <option value="W">1 Week</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="updateTVWidget()">Load Chart</button>
+                </div>
+
+                <div style="border: 1px solid #232838; border-radius: 8px; padding: 12px; background: #171C25; margin-bottom: 16px;">
+                    <h3 style="font-size: 12px; color: #E8EAED; margin: 0 0 12px 0; border-bottom: 1px solid #232838; padding-bottom: 8px;">📺 Live TradingView Advanced Chart</h3>
+                    <div id="tv-widget-wrapper" style="width: 100%; height: 600px; border: 1px solid #232838; border-radius: 6px; background: #fff; overflow: hidden;">
+                        <!-- TradingView Widget BEGIN -->
+                        <div class="tradingview-widget-container" style="height:100%;width:100%;">
+                            <div id="tradingview-widget-container" style="height:calc(100% - 32px);width:100%;"></div>
+                            <div class="tradingview-widget-copyright">
+                                <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+                                    <span class="blue-text">Track all markets on TradingView</span>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- TradingView Widget END -->
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                    <div class="card">
+                        <div class="card-title">Widget Status</div>
+                        <div class="card-value" id="tvWidgetStatus">Ready</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Current Symbol</div>
+                        <div class="card-value" id="tvWidgetSymbolDisplay">BTC/USD</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Interval</div>
+                        <div class="card-value" id="tvWidgetIntervalDisplay">1 Day</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PORTFOLIO -->
+            <div id="portfolio" class="view">
+                <h2>💼 Portfolio Manager</h2>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Asset:</label>
+                        <select id="posAsset">
+                            <option value="BTC">BTC (200x, 0.012%)</option>
+                            <option value="PAXG">PAXG (50x, 0.01%)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Qty:</label>
+                        <input type="number" id="posQty" placeholder="0.5" step="0.0001" style="width: 80px;">
+                    </div>
+                    <div class="control-group">
+                        <label>Entry $:</label>
+                        <input type="number" id="posEntry" placeholder="0" step="0.01" style="width: 100px;">
+                    </div>
+                    <button class="btn" onclick="addPosition()">Add Position</button>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Qty</th>
+                            <th>Entry</th>
+                            <th>Current</th>
+                            <th>P&L $</th>
+                            <th>P&L %</th>
+                            <th>Margin %</th>
+                            <th>Liq Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portTableBody">
+                        <tr class="loading"><td colspan="8">No positions</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- BACKTEST -->
+            <div id="backtest" class="view">
+                <h2>🧪 Strategy Backtest Engine</h2>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Strategy:</label>
+                        <select id="btStrategy">
+                            <option value="mean_reversion">Mean Reversion</option>
+                            <option value="momentum">Momentum</option>
+                            <option value="swing">Swing Trading</option>
+                            <option value="grid">Grid Trading</option>
+                            <option value="rsi_oversold">RSI Oversold</option>
+                            <option value="breakout">Breakout</option>
+                            <option value="bollinger">Bollinger Bands</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Capital:</label>
+                        <input type="number" id="btCapital" value="10000" step="100" style="width: 100px;">
+                    </div>
+                    <div class="control-group">
+                        <label>Leverage:</label>
+                        <input type="number" id="btLev" value="1" step="1" style="width: 80px;">
+                    </div>
+                    <button class="btn" onclick="runBacktest()">RUN</button>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Total Trades</div>
+                        <div class="card-value" id="btTradesVal">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Win Rate</div>
+                        <div class="card-value" id="btWRVal">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Profit Factor</div>
+                        <div class="card-value" id="btPFVal">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Sharpe</div>
+                        <div class="card-value" id="btSharpeVal">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Total PnL</div>
+                        <div class="card-value" id="btPnLVal">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Max Drawdown</div>
+                        <div class="card-value" id="btMaxDDVal">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Avg Trade Win</div>
+                        <div class="card-value" id="btAvgWinVal">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Avg Trade Loss</div>
+                        <div class="card-value" id="btAvgLossVal">-</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">PnL Over Time</h3>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="backTestPnLChart"></canvas>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Trade Distribution</h3>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="tradeDistChart"></canvas>
+                </div>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 13px; color: #E8EAED; border-bottom: 1px solid #232838; padding-bottom: 8px;">Recent Trades</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Entry</th>
+                            <th>Exit</th>
+                            <th>Qty</th>
+                            <th>Entry Price</th>
+                            <th>Exit Price</th>
+                            <th>PnL $</th>
+                            <th>PnL %</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backTestTradesTable">
+                        <tr class="loading"><td colspan="9">Run backtest to see trades</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- CALCULATOR -->
+            <div id="calculator" class="view">
+                <h2>🧮 Position Size Calculator</h2>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Account:</label>
+                        <input type="number" id="calcAccount" value="10000" step="100" style="width: 100px;">
+                    </div>
+                    <div class="control-group">
+                        <label>Risk %:</label>
+                        <input type="number" id="calcRisk" value="2" step="0.1" style="width: 80px;">
+                    </div>
+                    <div class="control-group">
+                        <label>Entry $:</label>
+                        <input type="number" id="calcEntry" value="43000" step="0.01" style="width: 100px;">
+                    </div>
+                    <div class="control-group">
+                        <label>Stop $:</label>
+                        <input type="number" id="calcStop" value="42000" step="0.01" style="width: 100px;">
+                    </div>
+                    <button class="btn" onclick="calcPositionSize()">Calculate</button>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Position Size</div>
+                        <div class="card-value" id="calcPosVal">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Risk Amount $</div>
+                        <div class="card-value" id="calcRiskAmt">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Risk:Reward</div>
+                        <div class="card-value" id="calcRRVal">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ALERTS -->
+            <div id="alerts" class="view">
+                <h2>🔔 Price Alerts</h2>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Coin:</label>
+                        <input type="text" id="alertCoin" placeholder="BTC" style="width: 80px;">
+                    </div>
+                    <div class="control-group">
+                        <label>Alert Type:</label>
+                        <select id="alertType">
+                            <option value="above">Above Price</option>
+                            <option value="below">Below Price</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Price $:</label>
+                        <input type="number" id="alertPrice" placeholder="45000" step="0.01" style="width: 100px;">
+                    </div>
+                    <button class="btn" onclick="addAlert()">Set Alert</button>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Current</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertsTableBody">
+                        <tr class="loading"><td colspan="5">No alerts set</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </div>
+    
+    <script>
+        let allCoins = [];
+        let portfolio = JSON.parse(localStorage.getItem('portfolio_ultimate')) || [];
+        let alerts = JSON.parse(localStorage.getItem('alerts_ultimate')) || [];
+        let chartInstances = {};
+        
+        // Real trade history storage
+        let tradeHistory = [];  // All trades buffer (max 1000 most recent)
+        let selectedCoinId = null;  // Track current coin for WebSocket
+        let tradeWebSocket = null;  // WebSocket connection
+        
+        const assetConfig = {
+            'BTC': { leverage: 200, fee: 0.00012 },
+            'PAXG': { leverage: 50, fee: 0.0001 }
+        };
+        
+        function switchView(viewName) {
+            // Clear trade update interval when switching views
+            if (tradeUpdateInterval) {
+                clearInterval(tradeUpdateInterval);
+                tradeUpdateInterval = null;
+            }
+            
+            // Clear whale order interval when switching views
+            if (whaleOrderInterval) {
+                clearInterval(whaleOrderInterval);
+                whaleOrderInterval = null;
+            }
+            
+            // Clear orderbook polling (both independent pollers) when switching views
+            stopOrderBookPolling();
+            
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-button').forEach(b => b.classList.remove('active'));
+            document.getElementById(viewName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+        
+        async function loadCryptoData() {
+            try {
+                // Fetch 100 coins to filter out stablecoins
+                const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=true&price_change_percentage=24h,7d');
+                if (!response.ok) throw new Error('API Error');
+                
+                let coins = await response.json();
+                
+                // List of stablecoins to exclude (comprehensive list)
+                const stablecoins = ['usdt', 'usdc', 'busd', 'dai', 'usdp', 'eur', 'gbp', 'jpy', 'tusd', 'gusd', 'steth', 'beth', 'usds', 'usdx', 'ust', 'frax', 'lusd'];
+                
+                // Filter out stablecoins and get top 20 non-stablecoin coins
+                let nonStableCoins = coins.filter(coin => 
+                    !stablecoins.includes(coin.symbol.toLowerCase())
+                );
+                
+                // Keep only top 20 non-stablecoins
+                nonStableCoins = nonStableCoins.slice(0, 20);
+                
+                // Ensure BTC and PAXG are included
+                const btc = coins.find(c => c.symbol.toLowerCase() === 'btc');
+                const paxg = coins.find(c => c.symbol.toLowerCase() === 'paxg');
+                
+                let finalCoins = [...nonStableCoins];
+                
+                // Add BTC if not already present
+                if (btc && !finalCoins.find(c => c.id === 'bitcoin')) {
+                    finalCoins.unshift(btc);
+                }
+                
+                // Add PAXG if not already present (always include PAXG)
+                if (paxg && !finalCoins.find(c => c.id === 'pax-gold')) {
+                    finalCoins.push(paxg);
+                }
+                
+                // Remove duplicates if any
+                const seen = new Set();
+                finalCoins = finalCoins.filter(coin => {
+                    if (seen.has(coin.id)) return false;
+                    seen.add(coin.id);
+                    return true;
+                });
+                
+                allCoins = finalCoins;
+                updateAllViews();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load data');
+            }
+        }
+        
+        function updateAllViews() {
+            updateMarketStats();
+            displayMarketOverview();
+            displayGainers();
+            displayLosers();
+            displayVolumeLeaders();
+            updateBTCOptions();
+            updateVolumeProfile();
+            updatePortfolio();
+        }
+        
+        function updateMarketStats() {
+            const mcap = allCoins.reduce((s, c) => s + (c.market_cap || 0), 0);
+            const vol = allCoins.reduce((s, c) => s + (c.total_volume || 0), 0);
+            const btcDom = (allCoins[0]?.market_cap || 0) / mcap * 100;
+            
+            document.getElementById('statMCap').textContent = formatNum(mcap);
+            document.getElementById('statVol').textContent = formatNum(vol);
+            document.getElementById('statDom').textContent = `${btcDom.toFixed(1)}%`;
+        }
+        
+        let selectedCoin = null;
+        let tradeUpdateInterval = null;
+        let whaleOrderInterval = null;
+        let orderbookUpdateInterval = null;
+        
+        function displayMarketOverview() {
+            const pageSize = parseInt(document.getElementById('pageSize').value) || 50;
+            const coins = allCoins.slice(0, pageSize);
+            
+            let html = coins.map((c, i) => {
+                const change = c.price_change_percentage_24h || 0;
+                const change7d = c.price_change_percentage_7d_in_currency || 0;
+                const changeClass = change > 0 ? 'up' : 'down';
+                
+                return `<tr style="cursor: pointer;" onclick="viewCoinAnalysis('${c.id}')">
+                    <td>${i + 1}</td>
+                    <td style="font-weight: 600; color: #E8EAED;">${c.name} (${c.symbol.toUpperCase()})</td>
+                    <td class="price-cell">$${c.current_price?.toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
+                    <td class="${changeClass}">${change > 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}%</td>
+                    <td class="${change7d > 0 ? 'up' : 'down'}">${change7d > 0 ? '▲' : '▼'} ${Math.abs(change7d).toFixed(2)}%</td>
+                    <td>${formatNum(c.market_cap)}</td>
+                    <td>${formatNum(c.total_volume)}</td>
+                </tr>`;
+            }).join('');
+            
+            document.getElementById('marketTableBody').innerHTML = html || '<tr><td colspan="7">No data</td></tr>';
+        }
+        
+        function viewCoinAnalysis(coinId) {
+            const coin = allCoins.find(c => c.id === coinId);
+            if (!coin) return;
+            
+            selectedCoin = coin;
+            
+            // Update coin info
+            const ath = coin.ath || 0;
+            const atl = coin.atl || 0;
+            const athPercent = coin.current_price && ath ? ((coin.current_price / ath) * 100 - 100).toFixed(1) : 'N/A';
+            
+            document.getElementById('coinTitle').textContent = `📊 ${coin.name} (${coin.symbol.toUpperCase()})`;
+            document.getElementById('coinPrice').textContent = `$${coin.current_price?.toLocaleString('en-US', {maximumFractionDigits: 2})}`;
+            
+            const change24h = coin.price_change_percentage_24h || 0;
+            document.getElementById('coin24h').innerHTML = `<span style="color: ${change24h > 0 ? '#0ECB81' : '#F6465D'};">${change24h > 0 ? '▲' : '▼'} ${Math.abs(change24h).toFixed(2)}%</span>`;
+            
+            document.getElementById('coinMCap').textContent = formatNum(coin.market_cap);
+            document.getElementById('coinVol').textContent = formatNum(coin.total_volume);
+            document.getElementById('coinSupply').textContent = coin.circulating_supply ? coin.circulating_supply.toLocaleString('en-US', {maximumFractionDigits: 0}) : '-';
+            document.getElementById('coinATH').textContent = `$${ath.toFixed(2)} / $${atl.toFixed(2)} (${athPercent}%)`;
+            
+            // Generate mock data for analysis
+            updateCoinChart(coin);
+            generateOrderBook(coin);
+            generateRecentTrades(coin);
+            generateWhaleOrders(coin);
+            updateCoinIndicators(coin);
+            updateSMCAnalysis(coin);
+            updateICTAnalysis(coin);
+            
+            // Switch to coin analysis view
+            switchView('coin-analysis');
+        }
+        
+        function updateCoinChart(coin) {
+            if (chartInstances.coinPrice) chartInstances.coinPrice.destroy();
+            const ctx = document.getElementById('coinPriceChart');
+            if (ctx) {
+                const prices = Array.from({length: 30}, () => coin.current_price * (1 + (Math.random() - 0.5) * 0.05));
+                
+                chartInstances.coinPrice = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: 30}, (_, i) => i + 'h'),
+                        datasets: [{
+                            label: coin.symbol.toUpperCase(),
+                            data: prices,
+                            borderColor: '#2A3040',
+                            backgroundColor: 'rgba(29, 161, 242, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true } },
+                        scales: { y: { grid: { color: 'rgba(0, 0, 0, 0.05)' } } }
+                    }
+                });
+            }
+        }
+        
+        function generateOrderBook(coin) {
+            // Stop any previous connection before starting a fresh one
+            stopOrderBookPolling();
+
+            const symbol = getBinanceSymbol(coin.id).toLowerCase();
+            window.orderBookSymbol = symbol;
+            window.depth20Book = { bids: [], asks: [] };
+            window.orderBookReconnectAttempts = 0;
+            window.orderBookShouldRun = true;
+            window.orderBookWsConnected = false;
+            window.orderBookWsHosts = ['data-stream.binance.vision', 'stream.binance.com:9443'];
+            window.orderBookHostIndex = 0;
+
+            // Instant snapshot so the table shows real data immediately, then a safety-net REST poll
+            // (every 800ms, well inside rate limits) that runs ONLY while the WebSocket isn't connected —
+            // it self-disables the moment the socket opens, so you always get genuinely continuous updates
+            // even on networks where the WebSocket handshake never completes.
+            fetchDepth20SnapshotWithFallback(symbol);
+            window.orderBookSafetyNetInterval = setInterval(() => {
+                if (window.orderBookWsConnected || !window.orderBookShouldRun) return;
+                fetchDepth20SnapshotWithFallback(symbol);
+            }, 800);
+
+            connectDepth20WebSocket(symbol);
+        }
+
+        function fetchDepth20SnapshotWithFallback(symbol) {
+            const restHosts = ['https://data-api.binance.vision', 'https://api.binance.com'];
+            const tryHost = (i) => {
+                if (i >= restHosts.length) return;
+                fetch(`${restHosts[i]}/api/v3/depth?symbol=${symbol.toUpperCase()}&limit=20`)
+                    .then(res => res.ok ? res.json() : Promise.reject(new Error('HTTP ' + res.status)))
+                    .then(data => {
+                        if (!data || !window.orderBookShouldRun) return;
+                        window.depth20Book.bids = data.bids.map(b => [parseFloat(b[0]), parseFloat(b[1])]);
+                        window.depth20Book.asks = data.asks.map(a => [parseFloat(a[0]), parseFloat(a[1])]);
+                        renderDepth20Table();
+                        if (!window.orderBookWsConnected) {
+                            const statusEl = document.getElementById('depth20Status');
+                            if (statusEl) { statusEl.textContent = '● live · REST fallback (800ms, WS unavailable)'; statusEl.style.color = '#F0B90B'; }
+                        }
+                    })
+                    .catch(() => tryHost(i + 1));
+            };
+            tryHost(0);
+        }
+
+        function stopOrderBookPolling() {
+            window.orderBookShouldRun = false;
+            if (window.orderBookConnectTimeout) { clearTimeout(window.orderBookConnectTimeout); window.orderBookConnectTimeout = null; }
+            if (window.orderBookSafetyNetInterval) { clearInterval(window.orderBookSafetyNetInterval); window.orderBookSafetyNetInterval = null; }
+            if (window.orderBookWS) {
+                try { window.orderBookWS.onclose = null; window.orderBookWS.onerror = null; window.orderBookWS.close(); } catch (e) {}
+                window.orderBookWS = null;
+            }
+            if (window.orderBookReconnectTimer) { clearTimeout(window.orderBookReconnectTimer); window.orderBookReconnectTimer = null; }
+        }
+
+        // ---------- Depth 20 raw — real Binance WebSocket, pushes a fresh top-20 snapshot every 100ms ----------
+        // Alternates between data-stream.binance.vision and stream.binance.com on reconnect, since one or the
+        // other can be geo/network-blocked depending on the user's ISP/region. A hard 4s connect timeout forces
+        // a retry/host-switch instead of letting the browser hang on a silently-dropped handshake.
+        function connectDepth20WebSocket(symbol) {
+            const statusEl = document.getElementById('depth20Status');
+            const hosts = window.orderBookWsHosts || ['data-stream.binance.vision', 'stream.binance.com:9443'];
+            const host = hosts[(window.orderBookHostIndex || 0) % hosts.length];
+            if (statusEl) { statusEl.textContent = '● connecting to ' + host + '...'; statusEl.style.color = '#7C879E'; }
+
+            let settled = false;
+            const ws = new WebSocket(`wss://${host}/ws/${symbol}@depth20@100ms`);
+            window.orderBookWS = ws;
+
+            window.orderBookConnectTimeout = setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                console.warn('Depth20 WS connect timeout on ' + host + ' — forcing retry');
+                try { ws.onclose = null; ws.onerror = null; ws.close(); } catch (e) {}
+                handleOrderBookDisconnect(symbol, statusEl, 'timeout on ' + host);
+            }, 4000);
+
+            ws.onopen = () => {
+                settled = true;
+                window.orderBookWsConnected = true;
+                if (window.orderBookConnectTimeout) { clearTimeout(window.orderBookConnectTimeout); window.orderBookConnectTimeout = null; }
+                window.orderBookReconnectAttempts = 0;
+                if (statusEl) { statusEl.textContent = '● live · WebSocket (100ms push) · ' + host; statusEl.style.color = '#0ECB81'; }
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (!data.bids || !data.asks) return;
+                    window.depth20Book.bids = data.bids.map(b => [parseFloat(b[0]), parseFloat(b[1])]);
+                    window.depth20Book.asks = data.asks.map(a => [parseFloat(a[0]), parseFloat(a[1])]);
+                    renderDepth20Table();
+                } catch (e) {
+                    console.error('Depth20 WS parse error:', e);
+                }
+            };
+
+            ws.onerror = (err) => {
+                console.error('Depth20 WS error on ' + host + ':', err);
+            };
+
+            ws.onclose = (closeEvent) => {
+                if (settled) return; // timeout already handled cleanup/retry
+                settled = true;
+                if (window.orderBookConnectTimeout) { clearTimeout(window.orderBookConnectTimeout); window.orderBookConnectTimeout = null; }
+                const reason = 'code ' + closeEvent.code + (closeEvent.reason ? ' (' + closeEvent.reason + ')' : '') + ' on ' + host;
+                handleOrderBookDisconnect(symbol, statusEl, reason);
+            };
+        }
+
+        function handleOrderBookDisconnect(symbol, statusEl, reason) {
+            window.orderBookWsConnected = false;
+            if (!window.orderBookShouldRun) return; // intentional stop (view switched / coin changed)
+            window.orderBookReconnectAttempts = (window.orderBookReconnectAttempts || 0) + 1;
+            window.orderBookHostIndex = (window.orderBookHostIndex || 0) + 1; // try the other host next
+            const delay = Math.min(1000 * window.orderBookReconnectAttempts, 5000);
+            console.warn('Depth20 WS disconnected: ' + reason + ' — reconnecting in ' + delay + 'ms');
+            if (statusEl) { statusEl.textContent = '● disconnected (' + reason + ') — retrying in ' + Math.ceil(delay / 1000) + 's...'; statusEl.style.color = '#F6465D'; }
+            window.orderBookReconnectTimer = setTimeout(() => connectDepth20WebSocket(symbol), delay);
+        }
+
+        function renderDepth20Table() {
+            const book = window.depth20Book;
+            if (!book || (book.bids.length === 0 && book.asks.length === 0)) {
+                document.getElementById('coinOrderBook').innerHTML = '<tr class="loading"><td colspan="5" style="text-align: center;">Waiting for data from Binance...</td></tr>';
+                return;
+            }
+
+            const bids = book.bids;
+            const asks = book.asks;
+            const maxLevels = Math.max(bids.length, asks.length);
+            let html = '';
+
+            for (let i = 0; i < maxLevels; i++) {
+                const bid = bids[i] || [0, 0];
+                const ask = asks[i] || [0, 0];
+                const bidPrice = bid[0];
+                const bidSize = bid[1];
+                const askPrice = ask[0];
+                const askSize = ask[1];
+
+                const spread = (i === 0 && bidPrice && askPrice) ? ((askPrice - bidPrice) / bidPrice * 100).toFixed(4) + '%' : '';
+
+                html += '<tr>' +
+                    '<td style="text-align: right; color: #E8EAED; font-weight: 600; background: rgba(255, 107, 107, 0.05);">' + (bidPrice ? '$' + bidPrice.toFixed(2) : '-') + '</td>' +
+                    '<td style="text-align: right; color: #E8EAED; background: rgba(255, 107, 107, 0.05);">' + (bidSize ? bidSize.toFixed(4) : '-') + '</td>' +
+                    '<td style="text-align: center; color: #7C879E; font-size: 10px;">' + spread + '</td>' +
+                    '<td style="text-align: left; color: #E8EAED; font-weight: 600; background: rgba(81, 207, 102, 0.05);">' + (askPrice ? '$' + askPrice.toFixed(2) : '-') + '</td>' +
+                    '<td style="text-align: left; color: #E8EAED; background: rgba(81, 207, 102, 0.05);">' + (askSize ? askSize.toFixed(4) : '-') + '</td>' +
+                '</tr>';
+            }
+
+            document.getElementById('coinOrderBook').innerHTML = html;
+        }
+        
+        function generateRecentTrades(coin) {
+            selectedCoinId = coin.id;
+            
+            // Close existing WebSocket if any
+            if (tradeWebSocket) {
+                tradeWebSocket.close();
+                tradeWebSocket = null;
+            }
+            
+            // Get Binance symbol (e.g., bitcoin -> BTCUSDT)
+            const binanceSymbol = getBinanceSymbol(coin.id).toLowerCase();
+            
+            // Connect to Binance WebSocket for real trades
+            const wsUrl = `wss://data-stream.binance.vision/ws/${binanceSymbol}@aggTrade`;
+            
+            tradeWebSocket = new WebSocket(wsUrl);
+            
+            tradeWebSocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                // Add trade to history
+                const trade = {
+                    time: new Date(data.T).toLocaleTimeString() + '.' + String(data.T % 1000).padStart(3, '0'),
+                    type: data.m ? 'SELL' : 'BUY',  // m=true means maker was seller (market sell)
+                    price: parseFloat(data.p),
+                    qty: parseFloat(data.q),
+                    amount: parseFloat(data.p) * parseFloat(data.q),
+                    timestamp: data.T
+                };
+                
+                tradeHistory.unshift(trade);  // Add to front
+                if (tradeHistory.length > 1000) tradeHistory.pop();  // Keep max 1000
+                
+                // Update all three tables
+                updateRecentTradesDisplay(coin);
+                updateLargeTradesDisplay(coin);
+            };
+            
+            tradeWebSocket.onerror = (error) => {
+                console.log('WebSocket error, falling back to mock data');
+                // Fallback to mock data
+                updateRecentTradesDisplay(coin);
+                updateLargeTradesDisplay(coin);
+            };
+        }
+        
+        function getBinanceSymbol(coinId) {
+            const map = {
+                'bitcoin': 'BTCUSDT',
+                'ethereum': 'ETHUSDT',
+                'solana': 'SOLUSDT',
+                'cardano': 'ADAUSDT',
+                'polkadot': 'DOTUSDT',
+                'ripple': 'XRPUSDT',
+                'litecoin': 'LTCUSDT',
+                'dogecoin': 'DOGEUSDT'
+            };
+            return map[coinId] || 'BTCUSDT';
+        }
+        
+        function updateRecentTradesDisplay(coin) {
+            let html = '';
+            
+            // Display last 10 trades from history (most recent first)
+            const recentTrades = tradeHistory.slice(0, 10);
+            
+            if (recentTrades.length === 0) {
+                document.getElementById('coinTrades').innerHTML = '<tr class="loading"><td colspan="6" style="text-align: center;">Waiting for live trades...</td></tr>';
+                return;
+            }
+            
+            for (let trade of recentTrades) {
+                const isWhale = trade.amount >= 50000;
+                const whaleIndicator = isWhale ? '🐋 WHALE' : '—';
+                const rowStyle = isWhale ? 'background: rgba(255, 215, 0, 0.15); font-weight: 600;' : '';
+                
+                html += `<tr style="${rowStyle}">
+                    <td style="font-family: monospace; font-size: 10px; color: #666;">${trade.time}</td>
+                    <td style="color: ${trade.type === 'BUY' ? '#0ECB81' : '#F6465D'}; font-weight: 700; width: 50px; text-transform: uppercase;">${trade.type}</td>
+                    <td style="text-align: right; font-weight: 500;">$${trade.price.toFixed(2)}</td>
+                    <td style="text-align: right;">${trade.qty.toFixed(8)}</td>
+                    <td style="color: ${isWhale ? '#F0B90B' : '#E8EAED'}; font-weight: ${isWhale ? '700' : '400'}; text-align: right;">$${trade.amount.toFixed(2)}</td>
+                    <td style="color: ${isWhale ? '#F0B90B' : '#7C879E'}; text-align: center; font-size: 11px;">${whaleIndicator}</td>
+                </tr>`;
+            }
+            
+            document.getElementById('coinTrades').innerHTML = html || '<tr class="loading"><td colspan="6">No trades</td></tr>';
+        }
+        
+        function updateLargeTradesDisplay(coin) {
+            let html = '';
+            let largeTradeCount = 0;
+            
+            // Filter trades > $50,000 from real history (display max 10)
+            for (let trade of tradeHistory) {
+                if (largeTradeCount >= 10) break;
+                
+                if (trade.amount >= 50000) {
+                    html += `<tr style="background: rgba(255, 215, 0, 0.1); font-weight: 600;">
+                        <td style="font-family: monospace; font-size: 10px; color: #666;">${trade.time}</td>
+                        <td style="color: ${trade.type === 'BUY' ? '#0ECB81' : '#F6465D'}; font-weight: 700; width: 50px; text-transform: uppercase;">${trade.type}</td>
+                        <td style="text-align: right; font-weight: 500;">$${trade.price.toFixed(2)}</td>
+                        <td style="text-align: right;">${trade.qty.toFixed(8)}</td>
+                        <td style="color: #F0B90B; font-weight: 700; text-align: right;">$${trade.amount.toFixed(2)}</td>
+                    </tr>`;
+                    largeTradeCount++;
+                }
+            }
+            
+            document.getElementById('largeTradesTable').innerHTML = html || '<tr class="loading"><td colspan="5" style="text-align: center;">No large orders (&gt;$50,000) yet...</td></tr>';
+        }
+        function generateWhaleOrders(coin) {
+            // Clear existing interval
+            if (whaleOrderInterval) clearInterval(whaleOrderInterval);
+
+            window.liveWhaleTrades = [];
+            const symbol = getBinanceSymbol(coin.id).toLowerCase();
+
+            // Connect to Binance trade WebSocket for whale tracking
+            // Uses the existing aggTrade connection from generateRecentTrades
+
+            // Initial render
+            updateWhaleOrdersDisplay(coin);
+
+            // Update every 3 seconds for faster whale detection
+            whaleOrderInterval = setInterval(() => {
+                updateWhaleOrdersDisplay(coin);
+            }, 3000);
+        }
+
+        function updateWhaleOrdersDisplay(coin) {
+            let html = '';
+            const now = Date.now();
+            const whaleThreshold = 50000;  // $50,000+ orders
+
+            // Aggregate whale orders from live trade data
+            const allWhaleTrades = [];
+
+            // Add from Binance trade history (connected via aggTrade WS)
+            for (let trade of tradeHistory) {
+                if (trade.amount >= whaleThreshold) {
+                    const age = now - trade.timestamp;
+                    const minutesAgo = Math.floor(age / 60000);
+                    const secondsAgo = Math.floor((age % 60000) / 1000);
+                    allWhaleTrades.push({
+                        age: minutesAgo + 'm ' + secondsAgo + 's',
+                        type: trade.type,
+                        price: trade.price,
+                        qty: trade.qty,
+                        amount: trade.amount,
+                        exchange: 'Binance',
+                        status: 'Filled',
+                        timestamp: trade.timestamp
+                    });
+                }
+            }
+
+            // Sort by most recent, take top 15
+            allWhaleTrades.sort((a, b) => b.timestamp - a.timestamp);
+            const whaleOrders = allWhaleTrades.slice(0, 15);
+
+            if (whaleOrders.length === 0) {
+                document.getElementById('whaleOrdersTable').innerHTML = '<tr class="loading"><td colspan="7" style="text-align: center;">Tracking whale orders across exchanges...</td></tr>';
+                return;
+            }
+
+            for (let order of whaleOrders) {
+                const statusColor = order.status === 'Filled' ? '#0ECB81' : '#F0B90B';
+                const exchangeColor = {
+                    'Binance': '#F0B90B',
+                    'Coinbase': '#0052FF', 
+                    'Kraken': '#5741D9',
+                    'Bybit': '#F7A600',
+                    'OKX': '#2ED4C3'
+                }[order.exchange] || '#7C879E';
+
+                html += `<tr style="background: rgba(255, 215, 0, 0.1);">
+                    <td style="font-family: monospace; font-size: 11px; color: #7C879E;">${order.age}</td>
+                    <td style="color: ${order.type === 'BUY' ? '#0ECB81' : '#F6465D'}; font-weight: 700; width: 60px;">${order.type}</td>
+                    <td style="text-align: right; font-weight: 600;">$${order.price.toFixed(2)}</td>
+                    <td style="text-align: right; font-weight: 700; color: #F0B90B;">${order.qty.toFixed(4)}</td>
+                    <td style="text-align: right; font-weight: 700; color: #F0B90B;">$${order.amount.toFixed(0)}</td>
+                    <td style="color: ${exchangeColor}; font-weight: 700;">${order.exchange}</td>
+                    <td style="color: ${statusColor}; font-weight: 600;">${order.status}</td>
+                </tr>`;
+            }
+
+            document.getElementById('whaleOrdersTable').innerHTML = html;
+        }
+
+        function updateCoinIndicators(coin) {
+            const rsi = Math.random() * 100;
+            const macd = (Math.random() - 0.5) * 0.01;
+            const stoch = Math.random() * 100;
+            const atr = coin.current_price * (Math.random() * 0.05 + 0.01);
+            const volTrend = Math.random() > 0.5 ? '📈 Increasing' : '📉 Decreasing';
+            const volatility = (Math.random() * 50 + 10).toFixed(1);
+            
+            document.getElementById('coinRSI').innerHTML = `<span style="color: ${rsi > 70 ? '#F6465D' : rsi < 30 ? '#0ECB81' : '#E8EAED'};">${rsi.toFixed(1)}</span>`;
+            document.getElementById('coinMACD').textContent = macd.toFixed(5);
+            document.getElementById('coinStoch').innerHTML = `<span style="color: ${stoch > 80 ? '#F6465D' : stoch < 20 ? '#0ECB81' : '#E8EAED'};">${stoch.toFixed(1)}</span>`;
+            document.getElementById('coinATR').textContent = atr.toFixed(2);
+            document.getElementById('coinVolTrend').textContent = volTrend;
+            document.getElementById('coinVolatility').textContent = volatility + '%';
+        }
+        
+        function generateYearlyCandleChart(coin) {
+            if (chartInstances.yearlyCandle) chartInstances.yearlyCandle.destroy();
+            
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const basePrice = coin.current_price;
+            const candleData = [];
+            
+            for (let i = 0; i < 12; i++) {
+                const open = basePrice * (0.8 + Math.random() * 0.4);
+                const close = basePrice * (0.8 + Math.random() * 0.4);
+                const high = Math.max(open, close) * (1 + Math.random() * 0.05);
+                const low = Math.min(open, close) * (1 - Math.random() * 0.05);
+                candleData.push({ open, close, high, low, date: months[i] });
+            }
+            
+            const ctx = document.getElementById('yearlyCandleChart');
+            if (ctx) {
+                chartInstances.yearlyCandle = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Price Range',
+                            data: candleData.map(c => [c.low, c.high]),
+                            backgroundColor: candleData.map(c => c.close >= c.open ? 'rgba(81, 207, 102, 0.4)' : 'rgba(255, 107, 107, 0.4)'),
+                            borderColor: candleData.map(c => c.close >= c.open ? '#0ECB81' : '#F6465D'),
+                            borderWidth: 2,
+                            barPercentage: 0.5,
+                            categoryPercentage: 0.8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false },
+                            title: { display: false }
+                        },
+                        scales: { 
+                            y: { 
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                ticks: { callback: (v) => '$' + v.toFixed(0) }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updateSMCAnalysis(coin) {
+            const price = coin.current_price;
+            
+            document.getElementById('smcOrderBlocks').innerHTML = `
+                <span style="color: #F6465D; font-weight: 600;">$${(price * 0.95).toFixed(2)}</span><br>
+                <span style="font-size: 11px; color: #7C879E;">Resistance Block</span>
+            `;
+            
+            document.getElementById('smcMitigation').innerHTML = `
+                <span style="color: ${Math.random() > 0.5 ? '#0ECB81' : '#F6465D'}; font-weight: 600;">${Math.random() > 0.5 ? '✓ Mitigated' : 'Pending'}</span>
+            `;
+            
+            document.getElementById('smcLiquidity').innerHTML = `
+                <span style="color: #F0B90B; font-weight: 600;">$${(price * (0.9 + Math.random() * 0.2)).toFixed(2)}</span><br>
+                <span style="font-size: 11px; color: #7C879E;">Accumulation Zone</span>
+            `;
+            
+            document.getElementById('smcStructure').textContent = Math.random() > 0.5 ? '📈 Bullish' : '📉 Bearish';
+            
+            document.getElementById('smcBOS').innerHTML = `
+                <span style="color: ${Math.random() > 0.5 ? '#0ECB81' : '#F6465D'}; font-weight: 600;">
+                    ${Math.random() > 0.5 ? 'Break Up' : 'Break Down'}
+                </span>
+            `;
+            
+            const fib1 = price * 0.618;
+            const fib2 = price * 0.786;
+            document.getElementById('smcFib').innerHTML = `
+                $${fib1.toFixed(2)} / $${fib2.toFixed(2)}
+            `;
+        }
+        
+        function updateICTAnalysis(coin) {
+            const price = coin.current_price;
+            
+            document.getElementById('ictEquilibrium').innerHTML = `
+                <span style="color: #E8EAED; font-weight: 600;">$${(price * (1 + (Math.random() - 0.5) * 0.02)).toFixed(2)}</span><br>
+                <span style="font-size: 11px; color: #7C879E;">Mid Price</span>
+            `;
+            
+            document.getElementById('ictFVG').innerHTML = `
+                <span style="color: #F0B90B; font-weight: 600;">$${(price * (1 + (Math.random() - 0.5) * 0.03)).toFixed(2)}</span><br>
+                <span style="font-size: 11px; color: #7C879E;">Imbalance Zone</span>
+            `;
+            
+            document.getElementById('ictImbalance').innerHTML = `
+                <span style="color: #F6465D; font-weight: 600;">$${(price * 1.05).toFixed(2)}</span>
+            `;
+            
+            document.getElementById('ictInducement').innerHTML = `
+                <span style="color: #0ECB81; font-weight: 600;">$${(price * 0.98).toFixed(2)}</span><br>
+                <span style="font-size: 11px; color: #7C879E;">Liquidity Pool</span>
+            `;
+            
+            document.getElementById('ictOTE').innerHTML = `
+                <span style="color: #E8EAED; font-weight: 600;">$${(price * (1 + (Math.random() - 0.5) * 0.015)).toFixed(2)}</span><br>
+                <span style="font-size: 11px; color: #7C879E;">Entry Level</span>
+            `;
+            
+            document.getElementById('ictLiquidity').textContent = Math.random() > 0.5 ? '✓ Available' : '✗ Swept';
+        }
+        
+        function generateTradingViewChart(coin) {
+            if (chartInstances.tradingView) chartInstances.tradingView.destroy();
+            
+            const periods = 50;
+            const prices = [];
+            let price = coin.current_price;
+            
+            for (let i = 0; i < periods; i++) {
+                price = price * (1 + (Math.random() - 0.5) * 0.02);
+                prices.push(price);
+            }
+            
+            const ctx = document.getElementById('tradingViewChart');
+            if (ctx) {
+                chartInstances.tradingView = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: periods}, (_, i) => i),
+                        datasets: [
+                            {
+                                label: 'Price',
+                                data: prices,
+                                borderColor: '#2A3040',
+                                borderWidth: 2,
+                                fill: true,
+                                backgroundColor: 'rgba(51, 51, 51, 0.05)',
+                                tension: 0.2,
+                                pointRadius: 0,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'MA20',
+                                data: prices.map((p, i, arr) => {
+                                    if (i < 20) return null;
+                                    return arr.slice(i - 20, i).reduce((a, b) => a + b) / 20;
+                                }),
+                                borderColor: '#F6465D',
+                                borderWidth: 1.5,
+                                fill: false,
+                                pointRadius: 0,
+                                borderDash: [5, 5]
+                            },
+                            {
+                                label: 'MA50',
+                                data: prices.map((p, i, arr) => {
+                                    if (i < 50) return null;
+                                    return arr.slice(i - 50, i).reduce((a, b) => a + b) / 50;
+                                }),
+                                borderColor: '#0ECB81',
+                                borderWidth: 1.5,
+                                fill: false,
+                                pointRadius: 0,
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                display: true,
+                                labels: { usePointStyle: true, font: { size: 11 } }
+                            },
+                            filler: { propagate: true }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                ticks: { callback: (v) => '$' + v.toFixed(0) }
+                            },
+                            x: { grid: { display: false } }
+                        },
+                        interaction: { mode: 'index', intersect: false }
+                    }
+                });
+            }
+        }
+        
+        function updateTVChart() {
+            const asset = document.getElementById('taAsset').value;
+            const timeframe = document.getElementById('taTimeframe').value;
+            
+            // Fetch coin data
+            const coin = allCoins.find(c => c.id === asset) || allCoins[0];
+            if (!coin) return;
+            
+            // Update metrics
+            const change24h = coin.price_change_percentage_24h || 0;
+            document.getElementById('tvCurrentPrice').innerHTML = `$${coin.current_price.toFixed(2)}`;
+            document.getElementById('tvChange24h').innerHTML = `<span style="color: ${change24h >= 0 ? '#0ECB81' : '#F6465D'};">${change24h.toFixed(2)}%</span>`;
+            document.getElementById('tvVolume24h').textContent = '$' + (Math.random() * 10 + 5).toFixed(1) + 'B';
+            document.getElementById('tvHigh24h').textContent = '$' + (coin.current_price * 1.05).toFixed(2);
+            document.getElementById('tvLow24h').textContent = '$' + (coin.current_price * 0.95).toFixed(2);
+            document.getElementById('tvATHATL').textContent = '$' + (coin.current_price * 2).toFixed(0) + ' / $' + (coin.current_price * 0.5).toFixed(0);
+            
+            // Generate candlestick chart
+            generateTVCandleChart(coin, timeframe);
+            
+            // Generate indicator chart
+            generateTVIndicatorChart(coin);
+            
+            // Update support/resistance
+            updateSRLevels(coin);
+        }
+        
+        function generateTVCandleChart(coin, timeframe) {
+            if (chartInstances.tvCandle) chartInstances.tvCandle.destroy();
+            
+            let periods = 50;
+            let labels = [];
+            
+            if (timeframe === '1H') {
+                labels = Array.from({length: periods}, (_, i) => (i) + ':00');
+            } else if (timeframe === '4H') {
+                labels = Array.from({length: periods}, (_, i) => (i * 4) + ':00');
+            } else if (timeframe === '1D') {
+                labels = Array.from({length: periods}, (_, i) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - (periods - 1 - i));
+                    return (d.getMonth() + 1) + '/' + d.getDate();
+                });
+            } else if (timeframe === '1W') {
+                labels = Array.from({length: periods}, (_, i) => 'W' + i);
+            }
+            
+            const candleData = [];
+            let price = coin.current_price;
+            
+            for (let i = 0; i < periods; i++) {
+                const open = price;
+                price = price * (1 + (Math.random() - 0.5) * 0.03);
+                const close = price;
+                const high = Math.max(open, close) * (1 + Math.random() * 0.02);
+                const low = Math.min(open, close) * (1 - Math.random() * 0.02);
+                
+                candleData.push({
+                    o: open,
+                    c: close,
+                    h: high,
+                    l: low,
+                    color: close >= open ? '#0ECB81' : '#F6465D'
+                });
+            }
+            
+            const ctx = document.getElementById('tvCandleChart');
+            if (ctx) {
+                // Create candlestick visualization with lines
+                chartInstances.tvCandle = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'High',
+                                data: candleData.map(c => c.h),
+                                borderColor: 'rgba(0,0,0,0.1)',
+                                borderWidth: 0.5,
+                                fill: false,
+                                pointRadius: 0,
+                                tension: 0
+                            },
+                            {
+                                label: 'Low',
+                                data: candleData.map(c => c.l),
+                                borderColor: 'rgba(0,0,0,0.1)',
+                                borderWidth: 0.5,
+                                fill: false,
+                                pointRadius: 0,
+                                tension: 0
+                            },
+                            {
+                                label: 'Price',
+                                data: candleData.map(c => (c.o + c.c) / 2),
+                                borderColor: '#2A3040',
+                                borderWidth: 2.5,
+                                fill: true,
+                                backgroundColor: 'rgba(81, 207, 102, 0.05)',
+                                pointRadius: 0,
+                                tension: 0.3,
+                                segment: {
+                                    borderColor: ctx => candleData[ctx.p0DataIndex]?.c >= candleData[ctx.p0DataIndex]?.o ? '#0ECB81' : '#F6465D'
+                                }
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            filler: { propagate: true }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: true },
+                                ticks: { callback: (v) => '$' + v.toFixed(0) }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function generateTVIndicatorChart(coin) {
+            if (chartInstances.tvIndicator) chartInstances.tvIndicator.destroy();
+            
+            const periods = 50;
+            let rsiData = [];
+            let macdData = [];
+            let price = coin.current_price;
+            
+            for (let i = 0; i < periods; i++) {
+                price = price * (1 + (Math.random() - 0.5) * 0.02);
+                rsiData.push(Math.random() * 100);
+                macdData.push((Math.random() - 0.5) * 100);
+            }
+            
+            const ctx = document.getElementById('tvIndicatorChart');
+            if (ctx) {
+                chartInstances.tvIndicator = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({length: periods}, (_, i) => i),
+                        datasets: [
+                            {
+                                label: 'MACD',
+                                data: macdData,
+                                backgroundColor: macdData.map(v => v >= 0 ? 'rgba(81, 207, 102, 0.5)' : 'rgba(255, 107, 107, 0.5)'),
+                                borderColor: macdData.map(v => v >= 0 ? '#0ECB81' : '#F6465D'),
+                                borderWidth: 1,
+                                yAxisID: 'y1',
+                                barPercentage: 0.8
+                            },
+                            {
+                                label: 'RSI',
+                                data: rsiData,
+                                borderColor: '#2A3040',
+                                borderWidth: 2,
+                                fill: false,
+                                pointRadius: 0,
+                                tension: 0.3,
+                                yAxisID: 'y'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: true, position: 'top' }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                position: 'left',
+                                min: 0,
+                                max: 100,
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                title: { display: true, text: 'RSI' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                position: 'right',
+                                grid: { drawOnChartArea: false },
+                                title: { display: true, text: 'MACD' }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updateSRLevels(coin) {
+            const price = coin.current_price;
+            const atr = price * 0.02;
+            
+            const resistance2 = price + (atr * 2);
+            const resistance1 = price + atr;
+            const pivot = price;
+            const support1 = price - atr;
+            const support2 = price - (atr * 2);
+            
+            const fib0618 = price * 0.618;
+            const fib0786 = price * 0.786;
+            
+            document.getElementById('tvR1').innerHTML = `<span style="color: #F6465D; font-weight: 600;">$${resistance1.toFixed(2)}</span>`;
+            document.getElementById('tvPivot').innerHTML = `<span style="color: #E8EAED; font-weight: 600;">$${pivot.toFixed(2)}</span>`;
+            document.getElementById('tvS1').innerHTML = `<span style="color: #0ECB81; font-weight: 600;">$${support1.toFixed(2)}</span>`;
+            document.getElementById('tvR2').innerHTML = `<span style="color: #F6465D; font-weight: 600;">$${resistance2.toFixed(2)}</span>`;
+            document.getElementById('tvS2').innerHTML = `<span style="color: #0ECB81; font-weight: 600;">$${support2.toFixed(2)}</span>`;
+            document.getElementById('tvFib').innerHTML = `$${fib0618.toFixed(2)} / $${fib0786.toFixed(2)}`;
+        }
+        
+        function updateBTCOptions() {
+            const btc = allCoins.find(c => c.id === 'bitcoin') || allCoins[0];
+            const btcPrice = btc?.current_price || 43000;
+            
+            document.getElementById('btcPrice').textContent = `$${btcPrice.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            document.getElementById('btcIVRank').textContent = Math.floor(Math.random() * 100) + '%';
+            document.getElementById('btcPCRatio').textContent = (Math.random() * 0.8 + 0.6).toFixed(2);
+            document.getElementById('btcMaxPain').textContent = `$${(btcPrice * (1 + (Math.random() - 0.5) * 0.05)).toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            document.getElementById('btcTotalOI').textContent = '$' + Math.floor(Math.random() * 5 + 10) + 'B';
+            document.getElementById('btcIVPct').textContent = Math.floor(Math.random() * 100) + '%';
+            
+            generateBTCOptionsChain(btcPrice);
+            updateGreeksHeatmap(btcPrice);
+            updateIVSkew(btcPrice);
+            updateOIChart(btcPrice);
+        }
+        
+        function generateBTCOptionsChain(btcPrice) {
+            // Fetch LIVE options data from Deribit API
+            const expiry = document.getElementById('optionsExpiry').value || '7';
+            const expiryDays = parseInt(expiry);
+
+            // Calculate expiry date
+            const now = new Date();
+            const expiryDate = new Date(now);
+            expiryDate.setDate(now.getDate() + expiryDays);
+
+            document.getElementById('optionsDTELabel').textContent = expiry + 'DTE (' + expiryDate.toDateString() + ')';
+            document.getElementById('btcOptionsChain').innerHTML = '<tr class="loading"><td colspan="9" style="text-align: center;">Loading live options from Deribit...</td></tr>';
+
+            // Fetch from Deribit public API
+            fetch('https://www.deribit.com/api/v2/public/get_instruments?currency=BTC&kind=option&expired=false')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.result || data.result.length === 0) {
+                        document.getElementById('btcOptionsChain').innerHTML = '<tr class="loading"><td colspan="9" style="text-align: center;">No options data available</td></tr>';
+                        return;
+                    }
+
+                    // Filter options near selected expiry
+                    const allOptions = data.result.filter(opt => {
+                        const optExpiry = new Date(opt.expiration_timestamp);
+                        const daysDiff = (optExpiry - now) / (1000 * 60 * 60 * 24);
+                        return daysDiff >= expiryDays - 2 && daysDiff <= expiryDays + 2;
+                    }).sort((a, b) => a.strike - b.strike);
+
+                    if (allOptions.length === 0) {
+                        document.getElementById('btcOptionsChain').innerHTML = '<tr class="loading"><td colspan="9" style="text-align: center;">No options for selected expiry</td></tr>';
+                        return;
+                    }
+
+                    // Get unique strikes and find ATM
+                    const uniqueStrikes = [...new Set(allOptions.map(o => o.strike))].sort((a, b) => a - b);
+                    const atmIndex = uniqueStrikes.findIndex(s => s >= btcPrice);
+
+                    // Get exactly 10 strikes above and below ATM (21 total)
+                    const startIdx = Math.max(0, atmIndex - 10);
+                    const endIdx = Math.min(uniqueStrikes.length, atmIndex + 11);
+                    const selectedStrikes = uniqueStrikes.slice(startIdx, endIdx);
+
+                    // Get instrument names for selected strikes
+                    const selectedInstruments = [];
+                    for (const strike of selectedStrikes) {
+                        const call = allOptions.find(o => o.strike === strike && o.option_type === 'call');
+                        const put = allOptions.find(o => o.strike === strike && o.option_type === 'put');
+                        if (call) selectedInstruments.push(call.instrument_name);
+                        if (put) selectedInstruments.push(put.instrument_name);
+                    }
+
+                    // Fetch orderbook for all selected instruments
+                    const fetchPromises = selectedInstruments.map(inst => 
+                        fetch('https://www.deribit.com/api/v2/public/get_order_book?instrument_name=' + inst)
+                            .then(r => r.json())
+                            .then(d => ({ instrument: inst, book: d.result }))
+                            .catch(() => ({ instrument: inst, book: null }))
+                    );
+
+                    return Promise.all(fetchPromises).then(books => ({ books, selectedStrikes, allOptions }));
+                })
+                .then(({ books, selectedStrikes, allOptions }) => {
+                    if (!books) return;
+
+                    let html = '';
+
+                    selectedStrikes.forEach(strike => {
+                        const callOpt = allOptions.find(o => o.strike === strike && o.option_type === 'call');
+                        const putOpt = allOptions.find(o => o.strike === strike && o.option_type === 'put');
+
+                        const callBook = callOpt ? books.find(b => b.instrument === callOpt.instrument_name)?.book : null;
+                        const putBook = putOpt ? books.find(b => b.instrument === putOpt.instrument_name)?.book : null;
+
+                        // Deribit prices are in BTC, convert to USD
+                        const callPrice = callBook ? (callBook.ask_price || callBook.mark_price || 0) * btcPrice : 0;
+                        const putPrice = putBook ? (putBook.ask_price || putBook.mark_price || 0) * btcPrice : 0;
+                        const callIV = callBook ? (callBook.iv || 0).toFixed(1) : '-';
+                        const putIV = putBook ? (putBook.iv || 0).toFixed(1) : '-';
+                        const callOI = callBook ? (callBook.open_interest || 0).toLocaleString() : '-';
+                        const putOI = putBook ? (putBook.open_interest || 0).toLocaleString() : '-';
+                        const callDelta = callBook && callBook.greeks ? callBook.greeks.delta.toFixed(3) : '-';
+                        const putDelta = putBook && putBook.greeks ? putBook.greeks.delta.toFixed(3) : '-';
+                        const callVolume = callBook ? (callBook.stats?.volume || 0).toLocaleString() : '-';
+                        const putVolume = putBook ? (putBook.stats?.volume || 0).toLocaleString() : '-';
+
+                        const strikePercent = ((strike - btcPrice) / btcPrice * 100).toFixed(1);
+                        const isATM = Math.abs(parseFloat(strikePercent)) < 1;
+                        const strikeLabel = '$' + strike.toLocaleString() + ' (' + (strikePercent > 0 ? '+' : '') + strikePercent + '%)';
+
+                        html += '<tr>' +
+                            '<td style="color: #ff6600; font-weight: 600;">' + (callPrice ? '$' + callPrice.toFixed(2) : '-') + '</td>' +
+                            '<td style="color: #ff6600;">' + callIV + '%</td>' +
+                            '<td style="color: #ff6600;">' + callOI + '</td>' +
+                            '<td style="color: #ff6600;">' + callVolume + '</td>' +
+                            '<td style="color: #ff6600;">' + callDelta + '</td>' +
+                            '<td style="text-align: center; font-weight: 700; font-family: monospace; font-size: 12px; background: ' + (isATM ? '#F0B90B' : '#171C25') + '; color: ' + (isATM ? '#0A0D12' : '#E8EAED') + ';">' + strikeLabel + '</td>' +
+                            '<td style="color: #F8D12F;">' + putDelta + '</td>' +
+                            '<td style="color: #F8D12F;">' + putVolume + '</td>' +
+                            '<td style="color: #F8D12F;">' + putOI + '</td>' +
+                            '<td style="color: #F8D12F;">' + putIV + '%</td>' +
+                            '<td style="color: #F8D12F; font-weight: 600;">' + (putPrice ? '$' + putPrice.toFixed(2) : '-') + '</td>' +
+                        '</tr>';
+                    });
+
+                    document.getElementById('btcOptionsChain').innerHTML = html || '<tr class="loading"><td colspan="11" style="text-align: center;">No options data</td></tr>';
+                })
+                .catch(err => {
+                    console.error('Options fetch error:', err);
+                    document.getElementById('btcOptionsChain').innerHTML = '<tr class="loading"><td colspan="11" style="text-align: center;">Error loading live options data</td></tr>';
+                });
+        }
+
+        function updateGreeksHeatmap(btcPrice) {
+            document.getElementById('btcCallDelta').textContent = (Math.random() * 0.5 + 0.3).toFixed(3);
+            document.getElementById('btcPutDelta').textContent = (-(Math.random() * 0.5 + 0.3)).toFixed(3);
+            document.getElementById('btcTotalGamma').textContent = (Math.random() * 0.01).toFixed(5);
+            document.getElementById('btcTotalVega').textContent = (Math.random() * 50000).toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('btcTotalTheta').textContent = (-(Math.random() * 10000)).toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('btcGammaExp').textContent = (Math.random() * 0.1 + 0.05).toFixed(4);
+        }
+        
+        function updateIVSkew(btcPrice) {
+            if (chartInstances.ivSkew) chartInstances.ivSkew.destroy();
+            const ctx = document.getElementById('btcIVSkewChart');
+            if (ctx) {
+                const strikes = Array.from({length: 15}, (_, i) => btcPrice * (0.90 + i * 0.0133));
+                const ivs = strikes.map((s, i) => {
+                    const distance = Math.abs(s - btcPrice) / btcPrice;
+                    return 40 + distance * 50 + Math.random() * 5;
+                });
+                
+                chartInstances.ivSkew = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: strikes.map(s => '$' + s.toLocaleString('en-US', {maximumFractionDigits: 0})),
+                        datasets: [{
+                            label: 'Implied Volatility',
+                            data: ivs,
+                            borderColor: '#2A3040',
+                            backgroundColor: 'rgba(29, 161, 242, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true } }
+                    }
+                });
+            }
+        }
+        
+        function updateOIChart(btcPrice) {
+            if (chartInstances.oi) chartInstances.oi.destroy();
+            const ctx = document.getElementById('btcOIChart');
+            if (ctx) {
+                const strikes = Array.from({length: 15}, (_, i) => btcPrice * (0.90 + i * 0.0133));
+                const callOI = strikes.map(() => Math.floor(Math.random() * 50000 + 10000));
+                const putOI = strikes.map(() => Math.floor(Math.random() * 50000 + 10000));
+                
+                chartInstances.oi = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: strikes.map(s => '$' + s.toLocaleString('en-US', {maximumFractionDigits: 0})),
+                        datasets: [{
+                            label: 'Call OI',
+                            data: callOI,
+                            backgroundColor: 'rgba(255, 102, 0, 0.5)',
+                            borderColor: '#ff6600'
+                        }, {
+                            label: 'Put OI',
+                            data: putOI,
+                            backgroundColor: 'rgba(0, 153, 204, 0.5)',
+                            borderColor: '#F8D12F'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true } },
+                        scales: { x: { stacked: false } }
+                    }
+                });
+            }
+        }
+        
+        function updateVolumeProfile() {
+            const btc = allCoins.find(c => c.id === 'bitcoin') || allCoins[0];
+            const btcPrice = btc?.current_price || 43000;
+            
+            document.getElementById('pocPrice').textContent = `$${(btcPrice * (1 + (Math.random() - 0.5) * 0.02)).toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            document.getElementById('vahPrice').textContent = `$${(btcPrice * 1.02).toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            document.getElementById('valPrice').textContent = `$${(btcPrice * 0.98).toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            document.getElementById('highestVol').textContent = `$${(btcPrice * (1 + (Math.random() - 0.5) * 0.03)).toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            
+            generateVolumeProfileChart(btcPrice);
+            generateVolumeLevelTable(btcPrice);
+        }
+        
+        function generateVolumeProfileChart(btcPrice) {
+            if (chartInstances.volProfile) chartInstances.volProfile.destroy();
+            const ctx = document.getElementById('volumeProfileChart');
+            if (ctx) {
+                const levels = Array.from({length: 20}, (_, i) => btcPrice * (0.90 + i * 0.0105));
+                const volumes = levels.map(() => Math.floor(Math.random() * 5000 + 1000));
+                
+                chartInstances.volProfile = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: levels.map(l => '$' + l.toLocaleString('en-US', {maximumFractionDigits: 0})),
+                        datasets: [{
+                            label: 'Volume',
+                            data: volumes,
+                            backgroundColor: volumes.map(v => v > 3000 ? 'rgba(255, 0, 0, 0.6)' : 'rgba(29, 161, 242, 0.6)'),
+                            borderColor: 'rgba(0, 0, 0, 0.1)'
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        }
+        
+        function generateVolumeLevelTable(btcPrice) {
+            let html = '';
+            for (let i = 0; i < 10; i++) {
+                const price = btcPrice * (1 + (Math.random() - 0.5) * 0.05);
+                const volume = Math.floor(Math.random() * 10000 + 5000);
+                const buyVol = Math.floor(volume * (Math.random() * 0.4 + 0.3));
+                const sellVol = volume - buyVol;
+                
+                html += `<tr>
+                    <td>$${price.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+                    <td>${volume.toLocaleString()}</td>
+                    <td>${((volume / 50000) * 100).toFixed(2)}%</td>
+                    <td style="color: #0ECB81;">${buyVol.toLocaleString()}</td>
+                    <td style="color: #F6465D;">${sellVol.toLocaleString()}</td>
+                </tr>`;
+            }
+            
+            document.getElementById('volumeLevelTable').innerHTML = html;
+        }
+        
+        function displayGainers() {
+            const top = [...allCoins].sort((a, b) => (b.price_change_percentage_24h || 0) - (a.price_change_percentage_24h || 0)).slice(0, 10);
+            
+            let html = top.map((c, i) => {
+                const change = c.price_change_percentage_24h || 0;
+                const rank = allCoins.indexOf(c) + 1;
+                
+                return `<tr>
+                    <td>${rank}</td>
+                    <td>${c.name} (${c.symbol.toUpperCase()})</td>
+                    <td class="price-cell">$${c.current_price?.toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
+                    <td class="up">▲ ${change.toFixed(2)}%</td>
+                    <td>${formatNum(c.market_cap)}</td>
+                </tr>`;
+            }).join('');
+            
+            document.getElementById('gainersTableBody').innerHTML = html;
+        }
+        
+        function displayLosers() {
+            const top = [...allCoins].sort((a, b) => (a.price_change_percentage_24h || 0) - (b.price_change_percentage_24h || 0)).slice(0, 10);
+            
+            let html = top.map((c, i) => {
+                const change = c.price_change_percentage_24h || 0;
+                const rank = allCoins.indexOf(c) + 1;
+                
+                return `<tr>
+                    <td>${rank}</td>
+                    <td>${c.name} (${c.symbol.toUpperCase()})</td>
+                    <td class="price-cell">$${c.current_price?.toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
+                    <td class="down">▼ ${Math.abs(change).toFixed(2)}%</td>
+                    <td>${formatNum(c.market_cap)}</td>
+                </tr>`;
+            }).join('');
+            
+            document.getElementById('losersTableBody').innerHTML = html;
+        }
+        
+        function displayVolumeLeaders() {
+            const top = [...allCoins].sort((a, b) => (b.total_volume || 0) - (a.total_volume || 0)).slice(0, 10);
+            
+            let html = top.map((c, i) => {
+                const rank = allCoins.indexOf(c) + 1;
+                const change = c.price_change_percentage_24h || 0;
+                const ratio = ((c.total_volume || 0) / (c.market_cap || 1)).toFixed(3);
+                
+                return `<tr>
+                    <td>${rank}</td>
+                    <td>${c.name}</td>
+                    <td>${formatNum(c.total_volume)}</td>
+                    <td>${formatNum(c.market_cap)}</td>
+                    <td>${ratio}</td>
+                    <td class="${change > 0 ? 'up' : 'down'}">${change > 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}%</td>
+                </tr>`;
+            }).join('');
+            
+            document.getElementById('volumeTableBody').innerHTML = html;
+        }
+
+
+
+        
+        function updatePortfolio() {
+            if (portfolio.length === 0) {
+                document.getElementById('portTableBody').innerHTML = '<tr><td colspan="8">No positions</td></tr>';
+                return;
+            }
+            
+            const current = allCoins[0]?.current_price || 43000;
+            let html = portfolio.map(p => {
+                const posVal = p.qty * current;
+                const pnl = posVal - (p.qty * p.entry);
+                const pnlPct = (pnl / (p.qty * p.entry) * 100).toFixed(2);
+                const liq = p.entry * (1 - 1 / p.leverage);
+                
+                return `<tr>
+                    <td><strong>${p.asset}</strong></td>
+                    <td>${p.qty.toFixed(4)}</td>
+                    <td>$${p.entry.toFixed(2)}</td>
+                    <td>$${current.toFixed(2)}</td>
+                    <td style="color: ${pnl > 0 ? '#0ECB81' : '#F6465D'};">$${pnl.toFixed(2)}</td>
+                    <td style="color: ${pnl > 0 ? '#0ECB81' : '#F6465D'};">${pnlPct}%</td>
+                    <td>${((p.qty * p.entry / p.leverage) / current * 100).toFixed(2)}%</td>
+                    <td>$${liq.toFixed(2)}</td>
+                </tr>`;
+            }).join('');
+            
+            document.getElementById('portTableBody').innerHTML = html;
+        }
+        
+        function addPosition() {
+            const asset = document.getElementById('posAsset').value;
+            const qty = parseFloat(document.getElementById('posQty').value);
+            const entry = parseFloat(document.getElementById('posEntry').value);
+            
+            if (!qty || !entry) return alert('Enter qty and entry price');
+            
+            const config = assetConfig[asset];
+            portfolio.push({
+                id: Date.now(),
+                asset,
+                qty,
+                entry,
+                leverage: config.leverage,
+                fee: config.fee
+            });
+            
+            localStorage.setItem('portfolio_ultimate', JSON.stringify(portfolio));
+            updatePortfolio();
+            document.getElementById('posQty').value = '';
+            document.getElementById('posEntry').value = '';
+        }
+        
+        function runBacktest() {
+            const strategy = document.getElementById('btStrategy').value;
+            const capital = parseFloat(document.getElementById('btCapital').value) || 10000;
+            const leverage = parseFloat(document.getElementById('btLev').value) || 1;
+            
+            // Strategy-specific parameters
+            let trades, wr, pf, sharpe, pnl, maxDD, avgWin, avgLoss;
+            
+            switch(strategy) {
+                case 'mean_reversion':
+                    trades = Math.floor(Math.random() * 100 + 80);
+                    wr = Math.random() * 15 + 52;
+                    pf = Math.random() * 0.8 + 1.6;
+                    pnl = capital * (Math.random() * 0.4 + 0.15);
+                    break;
+                case 'momentum':
+                    trades = Math.floor(Math.random() * 120 + 100);
+                    wr = Math.random() * 20 + 48;
+                    pf = Math.random() * 1.2 + 1.4;
+                    pnl = capital * (Math.random() * 0.6 + 0.2);
+                    break;
+                case 'swing':
+                    trades = Math.floor(Math.random() * 50 + 30);
+                    wr = Math.random() * 25 + 50;
+                    pf = Math.random() * 1.5 + 1.8;
+                    pnl = capital * (Math.random() * 0.5 + 0.25);
+                    break;
+                case 'grid':
+                    trades = Math.floor(Math.random() * 200 + 150);
+                    wr = Math.random() * 10 + 55;
+                    pf = Math.random() * 0.6 + 1.2;
+                    pnl = capital * (Math.random() * 0.3 + 0.1);
+                    break;
+                case 'rsi_oversold':
+                    trades = Math.floor(Math.random() * 80 + 60);
+                    wr = Math.random() * 18 + 54;
+                    pf = Math.random() * 1.0 + 1.5;
+                    pnl = capital * (Math.random() * 0.35 + 0.12);
+                    break;
+                case 'breakout':
+                    trades = Math.floor(Math.random() * 70 + 40);
+                    wr = Math.random() * 22 + 46;
+                    pf = Math.random() * 1.8 + 1.6;
+                    pnl = capital * (Math.random() * 0.55 + 0.2);
+                    break;
+                case 'bollinger':
+                    trades = Math.floor(Math.random() * 90 + 70);
+                    wr = Math.random() * 16 + 51;
+                    pf = Math.random() * 0.9 + 1.4;
+                    pnl = capital * (Math.random() * 0.4 + 0.15);
+                    break;
+                default:
+                    trades = Math.floor(Math.random() * 150 + 50);
+                    wr = Math.random() * 30 + 50;
+                    pf = Math.random() * 1.5 + 1.5;
+                    pnl = capital * (Math.random() * 0.5 + 0.2);
+            }
+            
+            sharpe = Math.random() * 2.5 + 1.2;
+            maxDD = -(Math.random() * 15 + 5);
+            avgWin = pnl / (trades * (wr / 100)) * 1.2;
+            avgLoss = -(pnl / (trades * ((100 - wr) / 100)) * 0.8);
+            
+            // Update metrics
+            document.getElementById('btTradesVal').textContent = trades;
+            document.getElementById('btWRVal').textContent = wr.toFixed(1) + '%';
+            document.getElementById('btPFVal').textContent = pf.toFixed(2);
+            document.getElementById('btSharpeVal').textContent = sharpe.toFixed(2);
+            document.getElementById('btPnLVal').textContent = '$' + pnl.toFixed(2);
+            document.getElementById('btMaxDDVal').textContent = maxDD.toFixed(2) + '%';
+            document.getElementById('btAvgWinVal').textContent = '$' + avgWin.toFixed(2);
+            document.getElementById('btAvgLossVal').textContent = '$' + avgLoss.toFixed(2);
+            
+            // Generate PnL over time
+            generateBacktestPnLChart(trades, pnl);
+            
+            // Generate trade distribution
+            generateTradeDistChart(trades, wr);
+            
+            // Generate sample trades
+            generateBacktestTrades(trades, wr, capital);
+        }
+        
+        function generateBacktestPnLChart(trades, totalPnL) {
+            if (chartInstances.btPnL) chartInstances.btPnL.destroy();
+            
+            // Generate cumulative PnL data over time
+            const pnlData = [0];
+            let cumPnL = 0;
+            for (let i = 0; i < trades; i++) {
+                const tradeWin = Math.random() < 0.55 ? 1 : -1;
+                const tradeAmount = (totalPnL / trades) * (0.8 + Math.random() * 0.4);
+                cumPnL += tradeWin * tradeAmount;
+                pnlData.push(cumPnL);
+            }
+            
+            const ctx = document.getElementById('backTestPnLChart');
+            if (ctx) {
+                chartInstances.btPnL = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: pnlData.length}, (_, i) => 'T' + i),
+                        datasets: [{
+                            label: 'Cumulative PnL',
+                            data: pnlData,
+                            borderColor: pnlData[pnlData.length - 1] > 0 ? '#0ECB81' : '#F6465D',
+                            backgroundColor: pnlData[pnlData.length - 1] > 0 ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 2,
+                            pointBackgroundColor: '#E8EAED'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                ticks: { callback: (v) => '$' + v.toFixed(0) }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function generateTradeDistChart(trades, winRate) {
+            if (chartInstances.tradeDist) chartInstances.tradeDist.destroy();
+            
+            const wins = Math.floor(trades * (winRate / 100));
+            const losses = trades - wins;
+            
+            const ctx = document.getElementById('tradeDistChart');
+            if (ctx) {
+                chartInstances.tradeDist = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Winning Trades', 'Losing Trades'],
+                        datasets: [{
+                            label: 'Trade Count',
+                            data: [wins, losses],
+                            backgroundColor: ['rgba(0, 255, 0, 0.6)', 'rgba(255, 0, 0, 0.6)'],
+                            borderColor: ['#0ECB81', '#F6465D'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { grid: { color: 'rgba(0, 0, 0, 0.05)' } } }
+                    }
+                });
+            }
+        }
+        
+        function generateBacktestTrades(trades, wr, capital) {
+            let html = '';
+            const winCount = Math.floor(trades * (wr / 100));
+            
+            for (let i = 1; i <= Math.min(10, trades); i++) {
+                const isWin = i <= (10 * (wr / 100));
+                const entryTime = new Date(Date.now() - (trades - i) * 3600000).toLocaleString();
+                const exitTime = new Date(Date.now() - (trades - i - 1) * 3600000).toLocaleString();
+                const entryPrice = (40000 + Math.random() * 5000).toFixed(2);
+                const exitPrice = isWin ? 
+                    (parseFloat(entryPrice) * (1 + Math.random() * 0.03)).toFixed(2) :
+                    (parseFloat(entryPrice) * (1 - Math.random() * 0.03)).toFixed(2);
+                const qty = (Math.random() * 0.5 + 0.1).toFixed(4);
+                const pnl = ((parseFloat(exitPrice) - parseFloat(entryPrice)) * parseFloat(qty)).toFixed(2);
+                const pnlPct = (((parseFloat(exitPrice) / parseFloat(entryPrice)) - 1) * 100).toFixed(2);
+                const duration = Math.floor(Math.random() * 24 + 1) + 'h';
+                
+                html += `<tr style="${isWin ? 'background: rgba(0, 255, 0, 0.1)' : 'background: rgba(255, 0, 0, 0.1)'}">
+                    <td>${i}</td>
+                    <td>${entryTime.split(' ')[1]}</td>
+                    <td>${exitTime.split(' ')[1]}</td>
+                    <td>${qty}</td>
+                    <td>$${entryPrice}</td>
+                    <td>$${exitPrice}</td>
+                    <td style="color: ${isWin ? '#0ECB81' : '#F6465D'}; font-weight: 600;">$${pnl}</td>
+                    <td style="color: ${isWin ? '#0ECB81' : '#F6465D'}; font-weight: 600;">${pnlPct}%</td>
+                    <td>${duration}</td>
+                </tr>`;
+            }
+            
+            document.getElementById('backTestTradesTable').innerHTML = html;
+        }
+        
+        function calcPositionSize() {
+            const account = parseFloat(document.getElementById('calcAccount').value);
+            const risk = parseFloat(document.getElementById('calcRisk').value) / 100;
+            const entry = parseFloat(document.getElementById('calcEntry').value);
+            const stop = parseFloat(document.getElementById('calcStop').value);
+            
+            const riskAmt = account * risk;
+            const posSize = riskAmt / Math.abs(entry - stop);
+            
+            document.getElementById('calcPosVal').textContent = posSize.toFixed(4) + ' BTC';
+            document.getElementById('calcRiskAmt').textContent = '$' + riskAmt.toFixed(2);
+            document.getElementById('calcRRVal').textContent = '1:2';
+        }
+        
+        function addAlert() {
+            const coin = document.getElementById('alertCoin').value.toUpperCase();
+            const type = document.getElementById('alertType').value;
+            const price = parseFloat(document.getElementById('alertPrice').value);
+            
+            if (!coin || !price) return alert('Enter coin and price');
+            
+            alerts.push({ coin, type, price, id: Date.now() });
+            localStorage.setItem('alerts_ultimate', JSON.stringify(alerts));
+            document.getElementById('alertCoin').value = '';
+            document.getElementById('alertPrice').value = '';
+        }
+        
+        function sortMarketTable() {
+            // Placeholder
+        }
+        
+        function searchCoin() {
+            // Placeholder
+        }
+        
+        function formatNum(n) {
+            if (!n) return '$0';
+            if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+            if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+            if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
+            if (n >= 1e3) return `$${(n / 1e3).toFixed(2)}K`;
+            return `$${n.toFixed(2)}`;
+        }
+        
+        // CHAIN ANALYSIS FUNCTIONS
+        function updateChainAnalysis() {
+            // Exchange flows
+            const inflow = (Math.random() * 5000 + 2000).toFixed(2);
+            const outflow = (Math.random() * 5000 + 2000).toFixed(2);
+            const netFlow = (parseFloat(outflow) - parseFloat(inflow)).toFixed(2);
+            
+            document.getElementById('chainExInflow').textContent = inflow + ' BTC';
+            document.getElementById('chainExOutflow').textContent = outflow + ' BTC';
+            document.getElementById('chainNetFlow').innerHTML = `<span style="color: ${netFlow > 0 ? '#0ECB81' : '#F6465D'};">${netFlow > 0 ? '📤' : '📥'} ${Math.abs(netFlow)} BTC</span>`;
+            
+            // Large transfers
+            const largeTx = Math.floor(Math.random() * 50 + 20);
+            document.getElementById('chainLargeTx').textContent = largeTx + ' transfers';
+            
+            // Whale balance
+            const whaleBalance = (Math.random() * 500000 + 200000).toFixed(0);
+            document.getElementById('chainWhaleBalance').textContent = whaleBalance + ' BTC';
+            
+            // Exchange holding
+            const exHolding = (Math.random() * 5 + 1).toFixed(1);
+            document.getElementById('chainExHolding').textContent = exHolding + '%';
+            
+            // Network metrics
+            document.getElementById('chainActiveAddr').textContent = (Math.random() * 500000 + 600000).toFixed(0);
+            document.getElementById('chainTxCount').textContent = (Math.random() * 400000 + 250000).toFixed(0);
+            document.getElementById('chainAvgFee').textContent = '$' + (Math.random() * 5 + 2).toFixed(2);
+            document.getElementById('chainNetValue').textContent = '$' + formatNum(1200000000000);
+            document.getElementById('chainMVRV').textContent = (Math.random() * 2 + 1.2).toFixed(2);
+            document.getElementById('chainFearGreed').innerHTML = `<span style="color: ${Math.random() > 0.5 ? '#0ECB81' : '#F6465D'};">${Math.random() > 0.5 ? 'Greed' : 'Fear'}</span>`;
+            
+            // Generate charts
+            generateChainFlowChart();
+            generateWhaleActivityChart();
+            generateWhaleTransactions();
+        }
+        
+        function generateChainFlowChart() {
+            if (chartInstances.chainFlow) chartInstances.chainFlow.destroy();
+            
+            // 7-day data
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const inflows = Array.from({length: 7}, () => Math.random() * 5000 + 2000);
+            const outflows = Array.from({length: 7}, () => Math.random() * 5000 + 2000);
+            
+            const ctx = document.getElementById('chainFlowChart');
+            if (ctx) {
+                chartInstances.chainFlow = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: days,
+                        datasets: [
+                            {
+                                label: 'Inflow',
+                                data: inflows,
+                                borderColor: '#F6465D',
+                                backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                                tension: 0.3,
+                                fill: false
+                            },
+                            {
+                                label: 'Outflow',
+                                data: outflows,
+                                borderColor: '#0ECB81',
+                                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                                tension: 0.3,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true } },
+                        scales: { y: { grid: { color: 'rgba(0, 0, 0, 0.05)' }, ticks: { callback: (v) => v.toFixed(0) + ' BTC' } } }
+                    }
+                });
+            }
+        }
+        
+        function generateWhaleActivityChart() {
+            if (chartInstances.whaleActivity) chartInstances.whaleActivity.destroy();
+            
+            // 10-minute window - whale trades ($1000+)
+            const timeLabels = Array.from({length: 6}, (_, i) => (i * 2) + 'min');
+            const whaleTradeValues = Array.from({length: 6}, () => Math.floor(Math.random() * 15 + 5));
+            
+            const ctx = document.getElementById('whaleActivityChart');
+            if (ctx) {
+                chartInstances.whaleActivity = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: timeLabels,
+                        datasets: [{
+                            label: 'Whale Trades ($1000+)',
+                            data: whaleTradeValues,
+                            backgroundColor: 'rgba(255, 215, 0, 0.7)',
+                            borderColor: '#F0B90B',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true } },
+                        scales: { 
+                            y: { 
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                ticks: { callback: (v) => v + ' trades' }
+                            } 
+                        }
+                    }
+                });
+            }
+        }
+        
+        function generateWhaleTransactions() {
+            let html = '';
+            
+            for (let i = 0; i < 8; i++) {
+                const time = new Date(Date.now() - i * 120000).toLocaleTimeString();
+                const type = Math.random() > 0.5 ? 'Deposit' : 'Withdrawal';
+                const amount = (Math.random() * 50 + 10).toFixed(4);
+                const value = (amount * 43000).toFixed(0);
+                const from = Math.random() > 0.5 ? 'Wallet' : 'Exchange';
+                const to = from === 'Wallet' ? 'Exchange' : 'Wallet';
+                const status = Math.random() > 0.1 ? 'Confirmed' : 'Pending';
+                
+                html += `<tr style="background: rgba(255, 215, 0, 0.1);">
+                    <td>${time}</td>
+                    <td style="color: ${type === 'Deposit' ? '#F6465D' : '#0ECB81'}; font-weight: 600;">${type}</td>
+                    <td>${amount}</td>
+                    <td style="font-weight: 600;">$${value}</td>
+                    <td>${from}</td>
+                    <td>${to}</td>
+                    <td style="color: ${status === 'Confirmed' ? '#0ECB81' : '#F0B90B'};">${status}</td>
+                </tr>`;
+            }
+            
+            document.getElementById('whaleTransactions').innerHTML = html;
+        }
+        
+        // Update BTC options with expiry selection
+        function updateBTCOptionsExpiry() {
+            const expiry = document.getElementById('optionsExpiry').value;
+            document.getElementById('optionsDTELabel').textContent = expiry + 'DTE (' + 
+                (expiry == 1 ? '1 day' : expiry == 7 ? '1 week' : expiry == 14 ? '2 weeks' : 
+                 expiry == 30 ? '1 month' : expiry == 60 ? '2 months' : '3 months') + ')';
+            updateBTCOptions();
+        }
+        
+        // Load on startup
+        loadCryptoData();
+        updateChainAnalysis();
+        updateBTCOptions();
+        // Initialize TradingView TA after coins are loaded
+        setTimeout(() => updateTVChart(), 500);
+        
+        // Auto-refresh every 60 seconds
+        setInterval(loadCryptoData, 60000);
+        setInterval(updateChainAnalysis, 120000);
+        setInterval(updateBTCOptions, 120000);
+    
+        // TradingView Widget Loader
+        function updateTVWidget() {
+            const container = document.getElementById('tradingview-widget-container');
+            if (!container) return;
+            const symbol = document.getElementById('tvWidgetSymbol').value || 'BITSTAMP:BTCUSD';
+            const interval = document.getElementById('tvWidgetInterval').value || 'D';
+            container.innerHTML = '';
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+            script.async = true;
+            script.innerHTML = JSON.stringify({
+                "autosize": true,
+                "symbol": symbol,
+                "interval": interval,
+                "timezone": "Etc/UTC",
+                "theme": "light",
+                "style": "1",
+                "locale": "en",
+                "enable_publishing": false,
+                "allow_symbol_change": true,
+                "calendar": false,
+                "support_host": "https://www.tradingview.com"
+            });
+            container.appendChild(script);
+            document.getElementById('tvWidgetStatus').textContent = 'Loaded';
+            document.getElementById('tvWidgetSymbolDisplay').textContent = symbol;
+            document.getElementById('tvWidgetIntervalDisplay').textContent = interval;
+        }
+        const _origSwitchView = switchView;
+        switchView = function(viewName) {
+            _origSwitchView(viewName);
+            if (viewName === 'tradingview-widget') {
+                setTimeout(updateTVWidget, 300);
+            }
+        };
+</script>
+</body>
+</html>
