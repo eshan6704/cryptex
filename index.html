@@ -1,8 +1,3 @@
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3052,8 +3047,15 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
                     <div class="control-group">
                         <label>Asset:</label>
                         <select id="posAsset">
-                            <option value="BTC">BTC (200x, 0.012%)</option>
-                            <option value="PAXG">PAXG (50x, 0.01%)</option>
+                            <option value="BTC">BTC (200x)</option>
+                            <option value="PAXG">PAXG (50x)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Side:</label>
+                        <select id="posSide">
+                            <option value="long">Long</option>
+                            <option value="short">Short</option>
                         </select>
                     </div>
                     <div class="control-group">
@@ -3064,23 +3066,37 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
                         <label>Entry $:</label>
                         <input type="number" id="posEntry" placeholder="0" step="0.01" style="width: 100px;">
                     </div>
+                    <div class="control-group">
+                        <label>Start Fund $:</label>
+                        <input type="number" id="posFund" placeholder="100" step="1" style="width: 90px;">
+                    </div>
+                    <div class="control-group">
+                        <label>Trade Start:</label>
+                        <input type="datetime-local" id="posStartDate" style="width: 180px;">
+                    </div>
                     <button class="btn" onclick="addPosition()">Add Position</button>
                 </div>
+                <p style="font-size:11px; color:#6b7280; margin: 4px 0 12px;">Funding assumed at 0.01% / 8h (Delta-style), maker fee 0.02% for BTC and 0.01% for PAXG. Margin, fees, funding, and liquidation are recalculated live against the current market price.</p>
                 <table class="table">
                     <thead>
                         <tr>
                             <th>Asset</th>
+                            <th>Side</th>
                             <th>Qty</th>
                             <th>Entry</th>
                             <th>Current</th>
-                            <th>P&L $</th>
-                            <th>P&L %</th>
-                            <th>Margin %</th>
+                            <th>Start Fund</th>
+                            <th>Margin Req.</th>
+                            <th>Open Fee</th>
+                            <th>Funding Accrued</th>
+                            <th>Current Return</th>
+                            <th>Remaining Fund</th>
                             <th>Liq Price</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="portTableBody">
-                        <tr class="loading"><td colspan="8">No positions</td></tr>
+                        <tr class="loading"><td colspan="13">No positions</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -5518,6 +5534,7 @@ class CryptoTerminal {
       if(typeof pxDataInterval!=='undefined'&&!pxDataInterval&&typeof loadCryptoData==='function') pxDataInterval=setInterval(loadCryptoData,60000);
     }
     if(v==='px-sr'&&typeof renderSRSwing==='function'){ renderSRSwing(); }
+    if(v==='px-tools'&&typeof initPortfolioDefaults==='function'){ initPortfolioDefaults(); }
     if(v==='px-chain'&&typeof updateChainAnalysis==='function'){
       updateChainAnalysis();
       if(typeof pxChainInterval!=='undefined'&&!pxChainInterval) pxChainInterval=setInterval(updateChainAnalysis,120000);
@@ -10703,6 +10720,7 @@ window.addEventListener('orientationchange', () => { setTimeout(() => { if (app.
             if (btnEl) btnEl.classList.add('active');
 
             if (group === 'tools') {
+                if (name === 'portfolio' && typeof initPortfolioDefaults === 'function') initPortfolioDefaults();
                 if (name === 'liqcalc' && typeof initLiqCalcDefaults === 'function') initLiqCalcDefaults();
                 if (name === 'dcaplanner' && typeof initDCADefaults === 'function') initDCADefaults();
                 if (name === 'feecalc' && typeof initFeeCalcDefaults === 'function') initFeeCalcDefaults();
@@ -11791,53 +11809,171 @@ window.addEventListener('orientationchange', () => { setTimeout(() => { if (app.
         
         function updatePortfolio() {
             if (portfolio.length === 0) {
-                document.getElementById('portTableBody').innerHTML = '<tr><td colspan="8">No positions</td></tr>';
+                document.getElementById('portTableBody').innerHTML = '<tr><td colspan="13">No positions</td></tr>';
                 return;
             }
-            
-            const current = allCoins[0]?.current_price || 43000;
-            let html = portfolio.map(p => {
-                const posVal = p.qty * current;
-                const pnl = posVal - (p.qty * p.entry);
-                const pnlPct = (pnl / (p.qty * p.entry) * 100).toFixed(2);
-                const liq = p.entry * (1 - 1 / p.leverage);
-                
-                return `<tr>
+
+            const btcPrice = allCoins.find(c => c.id === 'bitcoin')?.current_price || allCoins[0]?.current_price || 43000;
+            const paxgPrice = allCoins.find(c => c.id === 'pax-gold')?.current_price;
+            const now = Date.now();
+
+            let html = '';
+            portfolio.forEach(p => {
+                const side = p.side || 'long';
+                const current = p.asset === 'PAXG' ? (paxgPrice || btcPrice) : btcPrice;
+                const notionalEntry = p.qty * p.entry;
+                const notionalNow = p.qty * current;
+                const feeRate = p.fee || PORTFOLIO_MAKER_FEE[p.asset] || 0.0001;
+
+                // 1) Margin required
+                const margin = notionalEntry / p.leverage;
+
+                // 2) Maker fee (opening)
+                const openFee = notionalEntry * feeRate;
+
+                // 3) Funding: whole 8h periods elapsed since trade start, x 0.01%/8h on current notional
+                const elapsedMs = Math.max(0, now - (p.startTs || now));
+                const periods8h = Math.floor(elapsedMs / (8 * 3600000));
+                const funding = notionalNow * FUNDING_RATE_8H * periods8h;
+                const avgFundingPer8h = periods8h > 0 ? funding / periods8h : 0;
+
+                // 4) Current return (raw unrealized PnL, before fees/funding)
+                const pnl = side === 'long' ? (current - p.entry) * p.qty : (p.entry - current) * p.qty;
+                const pnlPct = notionalEntry > 0 ? (pnl / notionalEntry * 100) : 0;
+
+                // 5) Remaining fund = fund - margin - open fee - funding + current return
+                const remainingFund = p.fund - margin - openFee - funding + pnl;
+
+                // 6) Exit fee at current market price + net return after full round trip + funding
+                const exitFee = notionalNow * feeRate;
+                const netReturn = pnl - openFee - exitFee - funding;
+
+                // 7) Liquidation price — usable buffer method (fund minus maintenance margin & round-trip fees)
+                const maintMarginRate = 1 / (2 * p.leverage);
+                const maintMargin = notionalEntry * maintMarginRate;
+                const usableBuffer = p.fund - maintMargin - openFee - exitFee;
+                const priceMoveToLiq = usableBuffer / p.qty;
+                const liqPrice = usableBuffer <= 0
+                    ? p.entry
+                    : (side === 'long' ? p.entry - priceMoveToLiq : p.entry + priceMoveToLiq);
+                const liqWarning = usableBuffer <= 0;
+
+                const rowColor = pnl >= 0 ? '#059669' : '#dc2626';
+
+                html += `<tr>
                     <td><strong>${p.asset}</strong></td>
+                    <td style="color:${side==='long'?'#059669':'#dc2626'};text-transform:capitalize;">${side}</td>
                     <td>${p.qty.toFixed(4)}</td>
                     <td>$${p.entry.toFixed(2)}</td>
                     <td>$${current.toFixed(2)}</td>
-                    <td style="color: ${pnl > 0 ? '#059669' : '#dc2626'};">$${pnl.toFixed(2)}</td>
-                    <td style="color: ${pnl > 0 ? '#059669' : '#dc2626'};">${pnlPct}%</td>
-                    <td>${((p.qty * p.entry / p.leverage) / current * 100).toFixed(2)}%</td>
-                    <td>$${liq.toFixed(2)}</td>
+                    <td>$${p.fund.toFixed(2)}</td>
+                    <td>$${margin.toFixed(2)}</td>
+                    <td>$${openFee.toFixed(2)}</td>
+                    <td>$${funding.toFixed(2)} <span style="color:#6b7280;font-size:10px;">(${periods8h}×8h)</span></td>
+                    <td style="color:${rowColor};">$${pnl.toFixed(2)} (${pnlPct.toFixed(2)}%)</td>
+                    <td style="color:${remainingFund>=0?'#111827':'#dc2626'};">$${remainingFund.toFixed(2)}</td>
+                    <td style="color:${liqWarning?'#dc2626':'#111827'};">${liqWarning ? 'At Risk' : '$'+liqPrice.toFixed(2)}</td>
+                    <td>
+                        <button class="btn" style="padding:3px 8px;font-size:11px;" onclick="togglePositionDetails(${p.id})">Details</button>
+                        <button class="btn" style="padding:3px 8px;font-size:11px;background:#dc2626;" onclick="closePosition(${p.id})">Close</button>
+                    </td>
+                </tr>
+                <tr id="pos-details-${p.id}" style="display:none;background:#f9fafb;">
+                    <td colspan="13" style="padding:12px;">
+                        ${renderPositionDetails(p, { current, notionalEntry, notionalNow, margin, openFee, funding, avgFundingPer8h, periods8h, pnl, exitFee, netReturn, liqPrice, liqWarning, feeRate, side })}
+                    </td>
                 </tr>`;
-            }).join('');
-            
+            });
+
             document.getElementById('portTableBody').innerHTML = html;
         }
+
+        function renderPositionDetails(p, d) {
+            // 8) PnL estimation from -10% to +10% of current price
+            const moves = [-10, -5, -2, -1, 0, 1, 2, 5, 10];
+            const rangeRows = moves.map(m => {
+                const price = d.current * (1 + m / 100);
+                const rawPnl = d.side === 'long' ? (price - p.entry) * p.qty : (p.entry - price) * p.qty;
+                const exitFeeAtPrice = p.qty * price * d.feeRate;
+                const netAtPrice = rawPnl - d.openFee - exitFeeAtPrice - d.funding;
+                return `<tr>
+                    <td>${m > 0 ? '+' : ''}${m}%</td>
+                    <td>$${price.toFixed(2)}</td>
+                    <td style="color:${rawPnl>=0?'#059669':'#dc2626'};">$${rawPnl.toFixed(2)}</td>
+                    <td style="color:${netAtPrice>=0?'#059669':'#dc2626'};">$${netAtPrice.toFixed(2)}</td>
+                </tr>`;
+            }).join('');
+
+            return `
+                <div class="grid" style="margin-bottom:10px;">
+                    <div class="card"><div class="card-title">Avg Funding / 8h</div><div class="card-value">$${d.avgFundingPer8h.toFixed(2)}</div></div>
+                    <div class="card"><div class="card-title">Exit Fee (current price)</div><div class="card-value">$${d.exitFee.toFixed(2)}</div></div>
+                    <div class="card"><div class="card-title">Net Return (after all costs)</div><div class="card-value" style="color:${d.netReturn>=0?'#059669':'#dc2626'};">$${d.netReturn.toFixed(2)}</div></div>
+                    <div class="card"><div class="card-title">8h Periods Elapsed</div><div class="card-value">${d.periods8h}</div></div>
+                </div>
+                <table class="table" style="margin:0;">
+                    <thead><tr><th>Move</th><th>Price</th><th>PnL (gross)</th><th>Net PnL (after fees+funding)</th></tr></thead>
+                    <tbody>${rangeRows}</tbody>
+                </table>
+            `;
+        }
         
+        // Portfolio-specific rates (per explicit spec: BTC maker fee 0.02%, funding 0.01%/8h)
+        const PORTFOLIO_MAKER_FEE = { BTC: 0.0002, PAXG: 0.0001 };
+        const FUNDING_RATE_8H = 0.0001; // 0.01% per 8h
+
+        function initPortfolioDefaults() {
+            const dateEl = document.getElementById('posStartDate');
+            if (dateEl && !dateEl.value) {
+                const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+                dateEl.value = now.toISOString().slice(0, 16);
+            }
+            const fundEl = document.getElementById('posFund');
+            if (fundEl && !fundEl.value) fundEl.value = 100;
+        }
+
         function addPosition() {
             const asset = document.getElementById('posAsset').value;
+            const side = document.getElementById('posSide').value;
             const qty = parseFloat(document.getElementById('posQty').value);
             const entry = parseFloat(document.getElementById('posEntry').value);
-            
+            const fund = parseFloat(document.getElementById('posFund').value) || 100;
+            const startDateVal = document.getElementById('posStartDate').value;
+            const startTs = startDateVal ? new Date(startDateVal).getTime() : Date.now();
+
             if (!qty || !entry) return alert('Enter qty and entry price');
-            
+
             const config = assetConfig[asset];
             portfolio.push({
                 id: Date.now(),
                 asset,
+                side,
                 qty,
                 entry,
+                fund,
+                startTs,
                 leverage: config.leverage,
-                fee: config.fee
+                fee: PORTFOLIO_MAKER_FEE[asset] || config.fee
             });
-            
+
             localStorage.setItem('portfolio_ultimate', JSON.stringify(portfolio));
             updatePortfolio();
             document.getElementById('posQty').value = '';
             document.getElementById('posEntry').value = '';
+            document.getElementById('posFund').value = '';
+            document.getElementById('posStartDate').value = '';
+        }
+
+        function closePosition(id) {
+            if (!confirm('Close this position? This removes it from your portfolio.')) return;
+            portfolio = portfolio.filter(p => p.id !== id);
+            localStorage.setItem('portfolio_ultimate', JSON.stringify(portfolio));
+            updatePortfolio();
+        }
+
+        function togglePositionDetails(id) {
+            const row = document.getElementById('pos-details-' + id);
+            if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
         }
         
         function runBacktest() {
