@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarketAPI2 — Endpoint Console</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg-2:#f7f8fa; --bg-3:#eef0f4;
+    --line: #e4e7ee;
+    --text:#1a1d24; --muted:#6b7280;
+    --accent:#0d9488; --accent-dim: rgba(13,148,136,0.10); --accent-text:#ffffff;
+    --danger:#dc2626; --danger-dim: rgba(220,38,38,0.08);
+    --paper-alt:#f6f8fb;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    display:flex; flex-direction:column;
+    min-height:100vh;
+  }
+  ::selection{ background: var(--accent-dim); }
+
+  header.chrome{
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 18px;
+    flex-shrink:0;
+  }
+  .chrome-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .brand{
+    display:flex; align-items:center; gap:8px;
+    font-family: var(--mono); font-size: 0.82em; letter-spacing:0.03em;
+    color: var(--accent); font-weight:700; white-space:nowrap;
+  }
+  .brand .dot{ width:7px; height:7px; border-radius:50%; background: var(--accent); }
+  .brand .sep{ color: var(--muted); font-weight:400; }
+  .brand .count{ color: var(--muted); font-weight:400; }
+
+  select, input[type=text]{
+    background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: 7px; padding: 7px 10px; font-size: 0.85em; font-family: var(--sans);
+    outline:none; transition: border-color .15s, box-shadow .15s;
+  }
+  select:focus, input[type=text]:focus{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  optgroup{ font-weight:700; color: var(--accent); }
+
+  #endpoint-select{ min-width: 260px; flex:1 1 260px; font-family: var(--mono); }
+
+  .seg{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; flex-shrink:0; }
+  .seg button{
+    background: var(--bg); color: var(--muted); border:none; padding:7px 14px;
+    font-size:0.8em; font-weight:700; cursor:pointer; font-family: var(--mono);
+    transition: all .15s;
+  }
+  .seg button + button{ border-left:1px solid var(--line); }
+  .seg button.active{ background: var(--accent); color: var(--accent-text); }
+  .seg button:hover:not(.active){ background: var(--bg-2); color: var(--text); }
+
+  .btn{
+    border:none; border-radius:7px; padding:7px 16px; font-size:0.85em; font-weight:700;
+    cursor:pointer; transition: all .15s; white-space:nowrap; font-family: var(--sans);
+  }
+  .btn-run{ background: var(--accent); color: var(--accent-text); }
+  .btn-run:hover{ filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(13,148,136,0.28); }
+  .btn-ghost{ background: var(--bg); border:1px solid var(--line); color: var(--muted); }
+  .btn-ghost:hover{ color: var(--text); border-color: var(--accent); }
+  .btn-ghost.on{ color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+  .param-row{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding: 9px 18px;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--line);
+    flex-shrink:0;
+  }
+  .param-row .none{ color: var(--muted); font-size:0.8em; font-style:italic; }
+  .pfield{ display:flex; align-items:center; gap:6px; }
+  .pfield label{ font-family: var(--mono); font-size:0.72em; color: var(--muted); text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+  .pfield input, .pfield select{ width:auto; min-width:110px; padding:6px 8px; font-size:0.82em; }
+  .pfield.path label{ color: var(--accent); }
+
+  #info-panel{
+    max-height:0; overflow:hidden; transition: max-height .22s ease;
+    background: var(--bg-3); border-bottom: 1px solid var(--line);
+  }
+  #info-panel.open{ max-height: 440px; overflow-y:auto; }
+  .info-inner{ padding: 16px 18px; display:grid; gap:14px; }
+  .info-block .k{ font-family: var(--mono); font-size:0.7em; color: var(--accent); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; font-weight:700; }
+  .info-desc{ color: var(--text); font-size:0.88em; line-height:1.5; }
+  .url-box, .curl-box{
+    font-family: var(--mono); font-size:0.78em; color:#0f172a;
+    background:#ffffff; border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px; word-break:break-all; line-height:1.6;
+  }
+  .curl-box{ color:#0d5b52; }
+  .copy-mini{
+    background: var(--bg); color: var(--muted); border:1px solid var(--line);
+    border-radius:5px; padding:3px 9px; font-size:0.72em; cursor:pointer; margin-top:6px;
+  }
+  .copy-mini:hover{ color: var(--accent); border-color: var(--accent); }
+  .tips-grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:8px; font-size:0.78em; color: var(--muted); }
+  .tips-grid code{ background:#ffffff; border:1px solid var(--line); color:#0d5b52; padding:1px 5px; border-radius:4px; }
+
+  main{ flex:1; display:flex; flex-direction:column; min-height:0; }
+  .status-strip{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding: 8px 18px; background: var(--bg); border-bottom:1px solid var(--line);
+    font-family: var(--mono); font-size:0.78em; color: var(--muted); flex-shrink:0;
+  }
+  .status-strip .pill{ padding:3px 10px; border-radius:20px; font-weight:700; }
+  .pill.ok{ background: var(--accent-dim); color: var(--accent); }
+  .pill.err{ background: var(--danger-dim); color: var(--danger); }
+  .pill.idle{ background: var(--bg-3); color: var(--muted); }
+  .status-strip .search-box{ margin-left:auto; display:flex; align-items:center; gap:6px; }
+  .status-strip .search-box input{ width:200px; }
+
+  .response-wrap{ flex:1; overflow:auto; background: var(--bg); }
+  .empty-state{
+    height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#9aa1b0; gap:8px; font-family: var(--mono); font-size:0.9em;
+  }
+  .empty-state .big{ font-size:2.4em; opacity:0.3; }
+
+  table.data-grid{ width:100%; border-collapse:collapse; font-size:0.85em; color: var(--text); }
+  table.data-grid thead th{
+    position:sticky; top:0; z-index:2;
+    background: var(--bg-3); color:#48506a;
+    text-align:left; padding:9px 14px; font-size:0.78em; text-transform:uppercase;
+    letter-spacing:0.03em; border-bottom:2px solid var(--line); white-space:nowrap;
+    font-family: var(--mono); font-weight:700;
+  }
+  table.data-grid tbody td{
+    padding:8px 14px; border-bottom:1px solid var(--line); white-space:nowrap;
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+  }
+  table.data-grid tbody tr:nth-child(even){ background: var(--paper-alt); }
+  table.data-grid tbody tr:hover{ background: var(--accent-dim); }
+  table.data-grid td.num{ text-align:right; }
+  td.pos{ color:#0a9d67; font-weight:600; } td.neg{ color:#d6412f; font-weight:600; }
+
+  .kv-table{ max-width:900px; margin:20px; border-collapse:collapse; font-size:0.88em; }
+  .kv-table tr td{ padding:9px 16px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .kv-table tr td:first-child{ font-family: var(--mono); color:#0d5b52; font-weight:700; white-space:nowrap; width:260px; }
+  .kv-table tr:nth-child(even){ background: var(--paper-alt); }
+
+  pre.raw-json{
+    margin:0; padding:20px; color: var(--text); font-family: var(--mono);
+    font-size:0.82em; white-space:pre-wrap; word-break:break-word;
+  }
+
+  ::-webkit-scrollbar{ width:9px; height:9px; }
+  ::-webkit-scrollbar-track{ background: transparent; }
+  ::-webkit-scrollbar-thumb{ background: #d3d8e2; border-radius:5px; }
+  ::-webkit-scrollbar-thumb:hover{ background: #b7bdcb; }
+
+  @media (max-width: 720px){
+    #endpoint-select{ min-width: 100%; }
+    .param-row{ gap:8px; }
+    .status-strip .search-box{ margin-left:0; width:100%; }
+    .status-strip .search-box input{ width:100%; }
+  }
+</style>
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+
+<header class="chrome">
+  <div class="chrome-row">
+    <div class="brand"><span class="dot"></span>MarketAPI2<span class="sep">/</span><span class="count" id="ep-count">— endpoints</span></div>
+    <a href="/fastinfo" style="font-size:0.78em;color:var(--accent);text-decoration:none;font-weight:600;padding:4px 10px;border:1px solid var(--accent);border-radius:6px;transition:all .15s;" onmouseover="this.style.background='var(--accent-dim)'" onmouseout="this.style.background='transparent'">📊 FastInfo</a>
+
+    <select id="endpoint-select" onchange="onEndpointChange()"></select>
+
+    <div class="seg" id="format-seg">
+      <button data-fmt="json" class="active" onclick="setFormat('json')">JSON</button>
+      <button data-fmt="csv" onclick="setFormat('csv')">CSV</button>
+    </div>
+
+    <button class="btn btn-run" onclick="testAPI()">▶ Run</button>
+    <button class="btn btn-ghost" id="info-toggle" onclick="toggleInfo()">ⓘ Info</button>
+  </div>
+</header>
+
+<div class="param-row" id="param-row">
+</div>
+
+<div id="info-panel">
+  <div class="info-inner">
+    <div class="info-block">
+      <div class="k">Description</div>
+      <div class="info-desc" id="info-desc">—</div>
+    </div>
+    <div class="info-block">
+      <div class="k">Full URL</div>
+      <div class="url-box" id="url-text">—</div>
+      <button class="copy-mini" onclick="copyURL()">Copy URL</button>
+    </div>
+    <div class="info-block">
+      <div class="k">cURL</div>
+      <div class="curl-box" id="curl-display">—</div>
+      <button class="copy-mini" onclick="copyCurl()">Copy cURL</button>
+    </div>
+    <div class="info-block">
+      <div class="k">Quick tips</div>
+      <div class="tips-grid">
+        <div>NSE dates → <code>DD-MM-YYYY</code></div>
+        <div>Yahoo dates → <code>YYYY-MM-DD</code></div>
+        <div>Indian stocks → add <code>.NS</code> (e.g. <code>ITC.NS</code>)</div>
+        <div>US stocks → direct symbol (e.g. <code>AAPL</code>)</div>
+        <div>Intraday intervals only cover the last 60 days</div>
+        <div>JSON renders a table here · CSV downloads to disk</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="status-strip">
+    <span class="pill idle" id="status-pill">idle</span>
+    <span id="status-meta"></span>
+    <div class="search-box" id="search-wrap" style="display:none;">
+      <span style="color:var(--muted)">filter</span>
+      <input type="text" id="table-filter" placeholder="type to filter rows…" oninput="filterTable()">
+    </div>
+  </div>
+  <div class="response-wrap" id="response-wrap">
+    <div class="empty-state">
+      <div class="big">◌</div>
+      <div>Pick an endpoint above and hit <b style="color:var(--accent)">Run</b></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const BASE_URL = "https://eshan6704-marketapi2.hf.space";
+let currentEndpoint = "quote";
+let currentFormat = "json";
+let lastRows = [];
+
+const endpoints = {
+  quote: { cat:"NSE", path:"/csv/quote/{symbol}", label:"Quote", params:{ symbol:"RELIANCE" }, desc:"Full stock quote (flattened nested data)." },
+  ltp: { cat:"NSE", path:"/csv/ltp/{symbol}", label:"LTP", params:{ symbol:"INFY" }, desc:"Last traded price only." },
+  stock_hist: { cat:"NSE", path:"/csv/stock_hist/{symbol}", label:"Stock History", params:{ symbol:"TCS", start:"01-01-2024", end:"31-12-2024", series:"EQ" }, desc:"Historical OHLCV from NSE.", options:{ series:["EQ","BE"] } },
+  option_chain: { cat:"NSE", path:"/csv/option_chain/{symbol}", label:"Option Chain", params:{ symbol:"NIFTY" }, desc:"Option chain with CE/PE columns and PCR." },
+  option_chain_df: { cat:"NSE", path:"/csv/option_chain_df/{symbol}", label:"Option Chain (DF)", params:{ symbol:"NIFTY" }, desc:"Option chain DataFrame (same data)." },
+  nse_index: { cat:"NSE", path:"/csv/nse_index", label:"NSE Index Watch", params:{}, desc:"Live NSE index watch from niftyindices.com." },
+  indices: { cat:"NSE", path:"/csv/indices", label:"All Indices", params:{ filter:"true" }, desc:"All NSE indices (filter=true for curated default list).", options:{ filter:["true","false"] } },
+  index_constituents: { cat:"NSE", path:"/csv/index_constituents", label:"Index Constituents", params:{ index:"NIFTY 50", noofrecords:"0" }, desc:"Live index constituents + weightage from NSE. noofrecords=0 returns all, or set a number for top N.", options:{ index:["NIFTY 50","NIFTY BANK","NIFTY IT","NIFTY AUTO","NIFTY FMCG","NIFTY PHARMA","NIFTY METAL","NIFTY ENERGY","NIFTY REALTY","NIFTY MEDIA","NIFTY NEXT 50","NIFTY 100","NIFTY 500","NIFTY MIDCAP 150","NIFTY SMALLCAP 250"], noofrecords:["0","10","20","50","100"] } },
+  index_pe_pb: { cat:"NSE", path:"/csv/index_pe_pb", label:"Index PE/PB", params:{ index_name:"NIFTY 50" }, desc:"Index PE, PB, and dividend yield.", options:{ index_name:["NIFTY 50","NIFTY 500","NIFTY BANK","NIFTY IT"] } },
+  index_hist: { cat:"NSE", path:"/csv/index_hist", label:"Index History", params:{ index_name:"NIFTY 50", start:"01-01-2024", end:"31-12-2024" }, desc:"Historical index data from niftyindices.com." },
+  preopen: { cat:"NSE", path:"/csv/preopen", label:"Pre-Open", params:{ key:"NIFTY" }, desc:"Pre-open market data.", options:{ key:["NIFTY","BANKNIFTY","FO","SME","ALL"] } },
+  gainers_losers: { cat:"NSE", path:"/csv/gainers_losers", label:"Gainers/Losers", params:{ index:"NIFTY", category:"gainers" }, desc:"Top gainers or losers by index.", options:{ index:["NIFTY","BANKNIFTY","NIFTY IT","NIFTY BANK","NIFTY 50"], category:["gainers","losers"] } },
+  most_active: { cat:"NSE", path:"/csv/most_active", label:"Most Active", params:{ type:"securities", sort:"value" }, desc:"Most active stocks by value or volume.", options:{ type:["securities","etf"], sort:["value","volume"] } },
+  sector_watch: { cat:"NSE", path:"/csv/sector_watch", label:"Sector Watch", params:{}, desc:"Sector indices snapshot with LTP and % change." },
+  circuit_breakers: { cat:"NSE", path:"/csv/circuit_breakers", label:"Circuit Breakers", params:{}, desc:"Combined upper+lower circuit hitters." },
+  price_band_hitters: { cat:"NSE", path:"/csv/price_band_hitters", label:"Price Band Hitters", params:{ band:"both", view:"AllSec" }, desc:"Stocks hitting upper/lower price bands.", options:{ band:["both","upper","lower"], view:["AllSec"] } },
+  bhavcopy: { cat:"NSE", path:"/csv/bhavcopy/{date}", label:"Bhavcopy", params:{ date:"05-07-2025" }, desc:"Daily bhavcopy with delivery data." },
+  delivery_heatmap: { cat:"NSE", path:"/csv/delivery_heatmap/{date}", label:"Delivery Heatmap", params:{ date:"05-07-2025" }, desc:"Top 50 stocks by delivery %." },
+  oi_spurts: { cat:"NSE", path:"/csv/oi_spurts", label:"OI Spurts", params:{ mode:"oi_spurts" }, desc:"Open interest spurts / decrease / price-volume.", options:{ mode:["oi_spurts","oi_decrease","price_volume_spurts"] } },
+  fno_lot_sizes: { cat:"NSE", path:"/csv/fno_lot_sizes", label:"F&O Lot Sizes", params:{}, desc:"F&O lot sizes from NSE." },
+  largedeals: { cat:"NSE", path:"/csv/largedeals", label:"Large Deals", params:{ mode:"bulk_deals" }, desc:"Bulk / Block / Short deals.", options:{ mode:["bulk_deals","block_deals","short_deals"] } },
+  bulkdeals: { cat:"NSE", path:"/csv/bulkdeals", label:"Bulk Deals", params:{}, desc:"Bulk deals from NSE archives." },
+  blockdeals: { cat:"NSE", path:"/csv/blockdeals", label:"Block Deals", params:{}, desc:"Block deals from NSE archives." },
+  events: { cat:"NSE", path:"/csv/events", label:"Events Calendar", params:{}, desc:"Corporate events calendar." },
+  nse_results: { cat:"NSE", path:"/csv/nse_results", label:"NSE Results", params:{ index:"equities", period:"Quarterly" }, desc:"Financial results.", options:{ index:["equities","debt","sme"], period:["Quarterly","Annual","Half-Yearly","Others"] } },
+  nse_holidays: { cat:"NSE", path:"/csv/nse_holidays", label:"NSE Holidays", params:{ type:"trading" }, desc:"NSE trading/clearing holidays.", options:{ type:["trading","clearing"] } },
+  fiidii: { cat:"NSE", path:"/csv/fiidii", label:"FII/DII", params:{}, desc:"FII/DII trading activity." },
+  market_status: { cat:"NSE", path:"/csv/market_status", label:"Market Status", params:{}, desc:"Current market open/close status." },
+  eq_symbols: { cat:"NSE", path:"/csv/eq_symbols", label:"All Symbols", params:{}, desc:"All NSE equity symbols." },
+  highlow: { cat:"NSE", path:"/csv/highlow/{date_str}", label:"Index High/Low", params:{ date_str:"05-07-2025" }, desc:"Index high/low data." },
+  stock_highlow: { cat:"NSE", path:"/csv/stock_highlow/{date_str}", label:"52W High/Low", params:{ date_str:"05-07-2025" }, desc:"52-week high/low stocks." },
+  today_str: { cat:"NSE", path:"/csv/today_str", label:"Today", params:{ fmt:"%d-%m-%Y" }, desc:"Today's date." },
+  last_trading_day: { cat:"NSE", path:"/csv/last_trading_day", label:"Last Trading Day", params:{}, desc:"Last trading day (handles weekends)." },
+
+  yf_info: { cat:"Yahoo", path:"/csv/yf_info/{symbol}", label:"Company Info", params:{ symbol:"ITC.NS" }, desc:"Complete company info (100+ fields)." },
+  yf_fast_info: { cat:"Yahoo", path:"/csv/yf_fast_info/{symbol}", label:"Fast Info", params:{ symbol:"ITC.NS" }, desc:"Lightweight metadata: price, volume, averages." },
+  yf_history: { cat:"Yahoo", path:"/csv/yf_history/{symbol}", label:"History", params:{ symbol:"ITC.NS", period:"1y", interval:"1d" }, desc:"Historical OHLCV.", options:{ period:["1d","5d","1mo","3mo","6mo","1y","2y","5y","10y","ytd","max"], interval:["1m","2m","5m","15m","30m","60m","90m","1h","1d","5d","1wk","1mo","3mo"] } },
+  yf_intraday: { cat:"Yahoo", path:"/csv/yf_intraday/{symbol}", label:"Intraday", params:{ symbol:"ITC.NS", interval:"5m", period:"5d" }, desc:"Intraday candles (max 60 days for <1d intervals).", options:{ interval:["1m","2m","5m","15m","30m","60m","90m","1h"], period:["1d","5d","1mo","3mo"] } },
+  yf_daily_trend: { cat:"Yahoo", path:"/csv/yf_daily_trend/{symbol}", label:"Daily Trend", params:{ symbol:"ITC.NS", period:"1mo" }, desc:"OHLCV + SMA(5/10/20) + trend direction.", options:{ period:["1mo","3mo","6mo","1y"] } },
+  yf_actions: { cat:"Yahoo", path:"/csv/yf_actions/{symbol}", label:"Actions", params:{ symbol:"ITC.NS" }, desc:"Dividends + splits combined." },
+  yf_dividends: { cat:"Yahoo", path:"/csv/yf_dividends/{symbol}", label:"Dividends", params:{ symbol:"ITC.NS" }, desc:"Historical dividend payments." },
+  yf_splits: { cat:"Yahoo", path:"/csv/yf_splits/{symbol}", label:"Splits", params:{ symbol:"AAPL" }, desc:"Historical stock splits." },
+  yf_capital_gains: { cat:"Yahoo", path:"/csv/yf_capital_gains/{symbol}", label:"Capital Gains", params:{ symbol:"SPY" }, desc:"Capital gains distributions (ETFs/MFs)." },
+  yf_income_stmt: { cat:"Yahoo", path:"/csv/yf_income_stmt/{symbol}", label:"Income Statement", params:{ symbol:"ITC.NS", quarterly:"false" }, desc:"Revenue, Gross Profit, Net Income, EBITDA, EPS.", options:{ quarterly:["false","true"] } },
+  yf_balance_sheet: { cat:"Yahoo", path:"/csv/yf_balance_sheet/{symbol}", label:"Balance Sheet", params:{ symbol:"ITC.NS", quarterly:"false" }, desc:"Assets, Liabilities, Equity, Cash, Debt.", options:{ quarterly:["false","true"] } },
+  yf_cashflow: { cat:"Yahoo", path:"/csv/yf_cashflow/{symbol}", label:"Cash Flow", params:{ symbol:"ITC.NS", quarterly:"false" }, desc:"Operating / Investing / Financing CF, FCF.", options:{ quarterly:["false","true"] } },
+  yf_all_financials: { cat:"Yahoo", path:"/csv/yf_all_financials/{symbol}", label:"All Financials", params:{ symbol:"ITC.NS" }, desc:"All 6 statements: annual + quarterly." },
+  yf_earnings: { cat:"Yahoo", path:"/csv/yf_earnings/{symbol}", label:"Earnings", params:{ symbol:"ITC.NS", quarterly:"false" }, desc:"Earnings and revenue history.", options:{ quarterly:["false","true"] } },
+  yf_earnings_dates: { cat:"Yahoo", path:"/csv/yf_earnings_dates/{symbol}", label:"Earnings Dates", params:{ symbol:"ITC.NS" }, desc:"Upcoming and past earnings dates with EPS estimates." },
+  yf_earnings_estimate: { cat:"Yahoo", path:"/csv/yf_earnings_estimate/{symbol}", label:"EPS Estimate", params:{ symbol:"AAPL" }, desc:"Analyst earnings estimates." },
+  yf_revenue_estimate: { cat:"Yahoo", path:"/csv/yf_revenue_estimate/{symbol}", label:"Revenue Estimate", params:{ symbol:"AAPL" }, desc:"Analyst revenue estimates." },
+  yf_eps_trend: { cat:"Yahoo", path:"/csv/yf_eps_trend/{symbol}", label:"EPS Trend", params:{ symbol:"AAPL" }, desc:"EPS estimate trend (current, 7d/30d/60d/90d ago)." },
+  yf_eps_revisions: { cat:"Yahoo", path:"/csv/yf_eps_revisions/{symbol}", label:"EPS Revisions", params:{ symbol:"AAPL" }, desc:"EPS revision counts (up/down last week/month)." },
+  yf_growth_estimates: { cat:"Yahoo", path:"/csv/yf_growth_estimates/{symbol}", label:"Growth Estimates", params:{ symbol:"AAPL" }, desc:"Analyst growth estimates." },
+  yf_recommendations: { cat:"Yahoo", path:"/csv/yf_recommendations/{symbol}", label:"Recommendations", params:{ symbol:"ITC.NS" }, desc:"Analyst recommendations history." },
+  yf_recommendations_summary: { cat:"Yahoo", path:"/csv/yf_recommendations_summary/{symbol}", label:"Recs Summary", params:{ symbol:"ITC.NS" }, desc:"Buy/hold/sell counts summary." },
+  yf_analyst_price_targets: { cat:"Yahoo", path:"/csv/yf_analyst_price_targets/{symbol}", label:"Price Targets", params:{ symbol:"AAPL" }, desc:"Current, low, high, mean, median targets." },
+  yf_upgrades_downgrades: { cat:"Yahoo", path:"/csv/yf_upgrades_downgrades/{symbol}", label:"Up/Downgrades", params:{ symbol:"AAPL" }, desc:"Recent analyst upgrades and downgrades." },
+  yf_news: { cat:"Yahoo", path:"/csv/yf_news/{symbol}", label:"News", params:{ symbol:"ITC.NS" }, desc:"Latest news articles." },
+  yf_major_holders: { cat:"Yahoo", path:"/csv/yf_major_holders/{symbol}", label:"Major Holders", params:{ symbol:"ITC.NS" }, desc:"Insiders, institutions, float breakdown." },
+  yf_institutional_holders: { cat:"Yahoo", path:"/csv/yf_institutional_holders/{symbol}", label:"Institutional", params:{ symbol:"ITC.NS" }, desc:"Top institutional shareholders." },
+  yf_mutualfund_holders: { cat:"Yahoo", path:"/csv/yf_mutualfund_holders/{symbol}", label:"Mutual Funds", params:{ symbol:"ITC.NS" }, desc:"Top mutual fund holders." },
+  yf_insider_transactions: { cat:"Yahoo", path:"/csv/yf_insider_transactions/{symbol}", label:"Insider Txns", params:{ symbol:"AAPL" }, desc:"Recent insider buy/sell transactions." },
+  yf_insider_purchases: { cat:"Yahoo", path:"/csv/yf_insider_purchases/{symbol}", label:"Insider Purchases", params:{ symbol:"AAPL" }, desc:"Insider purchase summary." },
+  yf_insider_roster: { cat:"Yahoo", path:"/csv/yf_insider_roster/{symbol}", label:"Insider Roster", params:{ symbol:"AAPL" }, desc:"List of company insiders." },
+  yf_calendar: { cat:"Yahoo", path:"/csv/yf_calendar/{symbol}", label:"Calendar", params:{ symbol:"ITC.NS" }, desc:"Earnings and dividend calendar." },
+  yf_sustainability: { cat:"Yahoo", path:"/csv/yf_sustainability/{symbol}", label:"ESG Scores", params:{ symbol:"ITC.NS" }, desc:"Environmental, Social, Governance scores." },
+  yf_options: { cat:"Yahoo", path:"/csv/yf_options/{symbol}", label:"Option Dates", params:{ symbol:"RELIANCE.NS" }, desc:"Available option expiration dates." },
+  yf_option_chain: { cat:"Yahoo", path:"/csv/yf_option_chain/{symbol}", label:"Option Chain", params:{ symbol:"RELIANCE.NS", date:"" }, desc:"Full option chain — leave date empty for nearest expiry." },
+  yf_download: { cat:"Yahoo", path:"/csv/yf_download", label:"Multi Download", params:{ tickers:"ITC.NS,RELIANCE.NS,TCS.NS", period:"1mo", interval:"1d" }, desc:"Download multiple tickers at once.", options:{ period:["1d","5d","1mo","3mo","6mo","1y"], interval:["1d","1wk","1mo"] } },
+  yf_bulk_info: { cat:"Yahoo", path:"/csv/yf_bulk_info", label:"Bulk Info", params:{ tickers:"ITC.NS,RELIANCE.NS,TCS.NS" }, desc:"Info for multiple tickers — good for screening." },
+  yf_search: { cat:"Yahoo", path:"/csv/yf_search", label:"Search Tickers", params:{ query:"reliance", max_results:"8" }, desc:"Search for tickers by company name." },
+
+  unified_quote: { cat:"Unified", path:"/csv/unified_quote/{symbol}", label:"Unified Quote", params:{ symbol:"TCS", prefer:"nse" }, desc:"Quote with NSE→Yahoo fallback.", options:{ prefer:["nse","yahoo"] } },
+  unified_history: { cat:"Unified", path:"/csv/unified_history/{symbol}", label:"Unified History", params:{ symbol:"INFY", start:"01-01-2024", end:"31-12-2024", prefer:"nse" }, desc:"History with NSE→Yahoo fallback.", options:{ prefer:["nse","yahoo"] } }
+};
+
+// ── Last valid trading day: skip Sat/Sun, skip NSE holidays, and if it's
+//    before 18:00 IST treat today's data as not-yet-settled and step back one. ──
+
+const pad2 = n => String(n).padStart(2, '0');
+const dateKey = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+const formatNSE = d => pad2(d.getDate()) + '-' + pad2(d.getMonth() + 1) + '-' + d.getFullYear();
+
+const MONTH_MAP = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+
+function parseFlexibleDate(str){
+  if (!str) return null;
+  str = String(str).trim();
+  let m = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);           // 26-Jan-2026
+  if (m) return new Date(+m[3], MONTH_MAP[m[2]], +m[1]);
+  m = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);                    // 26-01-2026
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+  m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);                     // 2026-01-26
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+
+// In-memory only (session cache) — no browser storage per artifact rules.
+// Populated once per page load, reused for every default-date computation after that.
+let holidaySet = null;
+
+async function loadHolidaySet(){
+  if (holidaySet) return holidaySet;
+  holidaySet = new Set();
+  try {
+    const resp = await fetch(BASE_URL + '/json/nse_holidays?type=trading');
+    if (resp.ok){
+      const data = await resp.json();
+      (Array.isArray(data) ? data : []).forEach(rec => {
+        const raw = rec.tradingDate || rec.trading_date || rec.date || rec.holidayDate || rec.Date || '';
+        const d = parseFlexibleDate(raw);
+        if (d) holidaySet.add(dateKey(d));
+      });
+    }
+  } catch (e){
+    console.warn('NSE holiday fetch failed — falling back to weekend-only skip.', e);
+  }
+  return holidaySet;
+}
+
+function isWeekend(d){ const day = d.getDay(); return day === 0 || day === 6; }
+function isHoliday(d){ return holidaySet && holidaySet.has(dateKey(d)); }
+
+function computeLastValidTradingDay(){
+  // "now" in IST regardless of the browser's own timezone
+  const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  let candidate = new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
+
+  // Before 18:00 IST → today's session data isn't settled yet, use the prior day
+  if (nowIST.getHours() < 18) candidate.setDate(candidate.getDate() - 1);
+
+  // Walk back over weekends and NSE holidays
+  let guard = 0;
+  while ((isWeekend(candidate) || isHoliday(candidate)) && guard < 30){
+    candidate.setDate(candidate.getDate() - 1);
+    guard++;
+  }
+  return candidate;
+}
+
+function applyDefaultDates(){
+  const lastValid = computeLastValidTradingDay();
+  const NSE_LAST_VALID = formatNSE(lastValid);
+  const NSE_JAN1 = '01-01-' + new Date().getFullYear();
+
+  Object.keys(endpoints).forEach(key => {
+    const p = endpoints[key].params;
+    if ('start' in p) p.start = NSE_JAN1;
+    if ('end' in p) p.end = NSE_LAST_VALID;
+    if ('date' in p) p.date = NSE_LAST_VALID;
+    if ('date_str' in p) p.date_str = NSE_LAST_VALID;
+  });
+}
+
+function buildSelect(){
+  const sel = document.getElementById('endpoint-select');
+  const groups = {};
+  Object.keys(endpoints).forEach(key => {
+    const e = endpoints[key];
+    if (!groups[e.cat]) groups[e.cat] = [];
+    groups[e.cat].push(key);
+  });
+  let html = '';
+  let total = 0;
+  Object.keys(groups).forEach(cat => {
+    html += `<optgroup label="${cat}">`;
+    groups[cat].forEach(key => {
+      html += `<option value="${key}">${endpoints[key].label}</option>`;
+      total++;
+    });
+    html += `</optgroup>`;
+  });
+  sel.innerHTML = html;
+  sel.value = currentEndpoint;
+  document.getElementById('ep-count').textContent = total + ' endpoints';
+}
+
+function onEndpointChange(){
+  currentEndpoint = document.getElementById('endpoint-select').value;
+  renderParams();
+  updateURL();
+}
+
+let paramsTouched = false;
+function markTouched(){ paramsTouched = true; updateURL(); }
+
+function renderParams(){
+  paramsTouched = false;
+  const config = endpoints[currentEndpoint];
+  const row = document.getElementById('param-row');
+  document.getElementById('info-desc').textContent = config.desc;
+  const keys = Object.keys(config.params);
+  if (keys.length === 0){
+    row.innerHTML = '<span class="none">No parameters required for this endpoint.</span>';
+    return;
+  }
+  let html = '';
+  keys.forEach(key => {
+    const isPath = config.path.indexOf('{'+key+'}') !== -1;
+    const val = config.params[key];
+    html += `<div class="pfield ${isPath ? 'path' : ''}"><label>${key}</label>`;
+    if (config.options && config.options[key]){
+      html += `<select id="param-${key}" onchange="markTouched()">`;
+      config.options[key].forEach(opt => {
+        html += `<option value="${opt}" ${opt===val?'selected':''}>${opt}</option>`;
+      });
+      html += `</select>`;
+    } else {
+      html += `<input type="text" id="param-${key}" value="${val}" oninput="markTouched()">`;
+    }
+    html += `</div>`;
+  });
+  row.innerHTML = html;
+}
+
+function setFormat(fmt){
+  currentFormat = fmt;
+  document.querySelectorAll('#format-seg button').forEach(b => b.classList.toggle('active', b.dataset.fmt === fmt));
+  updateURL();
+}
+
+function toggleInfo(){
+  const panel = document.getElementById('info-panel');
+  const btn = document.getElementById('info-toggle');
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('on', isOpen);
+}
+
+function buildURL(){
+  const config = endpoints[currentEndpoint];
+  let path = config.path;
+  const query = [];
+  Object.keys(config.params).forEach(key => {
+    const input = document.getElementById('param-'+key);
+    const val = input ? input.value : config.params[key];
+    if (path.indexOf('{'+key+'}') !== -1){
+      path = path.replace('{'+key+'}', encodeURIComponent(val));
+    } else if (val !== '' && val !== undefined) {
+      query.push(key + '=' + encodeURIComponent(val));
+    }
+  });
+  if (currentFormat === 'json') path = path.replace('/csv/', '/json/');
+  let url = BASE_URL + path;
+  if (query.length) url += '?' + query.join('&');
+  return url;
+}
+
+function updateURL(){
+  const url = buildURL();
+  document.getElementById('url-text').textContent = url;
+  let curl = 'curl "' + url + '"';
+  if (currentFormat === 'csv') curl += ' -o ' + currentEndpoint + '_output.csv';
+  document.getElementById('curl-display').textContent = curl;
+}
+
+function copyURL(){
+  navigator.clipboard.writeText(document.getElementById('url-text').textContent.trim()).then(()=>toast('URL copied'));
+}
+function copyCurl(){
+  navigator.clipboard.writeText(document.getElementById('curl-display').textContent.trim()).then(()=>toast('cURL copied'));
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#0d9488;color:#fff;padding:10px 18px;border-radius:8px;font-size:0.85em;font-weight:600;z-index:1000;box-shadow:0 6px 20px rgba(13,148,136,0.35);';
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 1800);
+}
+
+function testAPI(){
+  const url = buildURL();
+  setStatus('idle', 'Fetching…');
+  document.getElementById('search-wrap').style.display = 'none';
+  document.getElementById('response-wrap').innerHTML = '<div class="empty-state"><div class="big">◌</div><div>Loading…</div></div>';
+
+  const t0 = Date.now();
+  fetch(url).then(resp => {
+    const ms = Date.now() - t0;
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + resp.statusText);
+    return (currentFormat === 'csv' ? resp.text() : resp.json()).then(data => ({ data, ms, status: resp.status }));
+  }).then(({data, ms, status}) => {
+    setStatus('ok', status + ' · ' + ms + 'ms');
+    if (currentFormat === 'csv') renderCSV(data);
+    else renderJSON(data);
+  }).catch(err => {
+    setStatus('err', err.message);
+    document.getElementById('response-wrap').innerHTML = '<div class="empty-state" style="color:#dc2626"><div class="big">✕</div><div>' + escapeHtml(err.message) + '</div></div>';
+  });
+}
+
+function setStatus(type, meta){
+  const pill = document.getElementById('status-pill');
+  pill.className = 'pill ' + (type === 'ok' ? 'ok' : type === 'err' ? 'err' : 'idle');
+  pill.textContent = type === 'ok' ? 'success' : type === 'err' ? 'error' : 'idle';
+  document.getElementById('status-meta').textContent = meta || '';
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderJSON(data){
+  if (Array.isArray(data) && data.length && typeof data[0] === 'object' && data[0] !== null){
+    renderTable(data);
+  } else if (data && typeof data === 'object' && !Array.isArray(data)){
+    const values = Object.values(data);
+    const isMultiTable = values.length && values.every(v => Array.isArray(v));
+    if (isMultiTable){
+      const firstKey = Object.keys(data).find(k => Array.isArray(data[k]) && data[k].length);
+      if (firstKey) { renderTable(data[firstKey]); return; }
+    }
+    renderKV(data);
+  } else {
+    document.getElementById('response-wrap').innerHTML = '<pre class="raw-json">' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>';
+  }
+}
+
+function renderKV(obj){
+  let html = '<table class="kv-table"><tbody>';
+  Object.keys(obj).forEach(k => {
+    let v = obj[k];
+    if (v !== null && typeof v === 'object') v = JSON.stringify(v);
+    html += `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v === null || v === undefined ? '—' : v)}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('response-wrap').innerHTML = html;
+  document.getElementById('search-wrap').style.display = 'none';
+}
+
+function renderTable(rows){
+  lastRows = rows;
+  const cols = Array.from(rows.reduce((set, r) => { Object.keys(r).forEach(k => set.add(k)); return set; }, new Set()));
+  drawTable(rows, cols);
+  document.getElementById('search-wrap').style.display = 'flex';
+  document.getElementById('table-filter').value = '';
+}
+
+function drawTable(rows, cols){
+  let html = '<table class="data-grid"><thead><tr>';
+  cols.forEach(c => html += `<th>${escapeHtml(c)}</th>`);
+  html += '</tr></thead><tbody>';
+  rows.forEach(r => {
+    html += '<tr>';
+    cols.forEach(c => {
+      let v = r[c];
+      const isNum = typeof v === 'number';
+      let cls = isNum ? 'num' : '';
+      if (isNum && c.toLowerCase().includes('change')) cls += v > 0 ? ' pos' : v < 0 ? ' neg' : '';
+      if (v === null || v === undefined) v = '';
+      else if (typeof v === 'object') v = JSON.stringify(v);
+      html += `<td class="${cls}">${escapeHtml(v)}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('response-wrap').innerHTML = html;
+  document.getElementById('status-meta').textContent += ' · ' + rows.length + ' rows';
+}
+
+function filterTable(){
+  const q = document.getElementById('table-filter').value.toLowerCase();
+  if (!q){ renderTable(lastRows); return; }
+  const cols = Array.from(lastRows.reduce((set, r) => { Object.keys(r).forEach(k => set.add(k)); return set; }, new Set()));
+  const filtered = lastRows.filter(r => cols.some(c => String(r[c] ?? '').toLowerCase().includes(q)));
+  drawTable(filtered, cols);
+}
+
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/);
+  if (!lines.length) return [];
+  const splitLine = line => {
+    const out = []; let cur=''; let inQ=false;
+    for (let i=0;i<line.length;i++){
+      const ch = line[i];
+      if (ch === '"'){ inQ = !inQ; }
+      else if (ch === ',' && !inQ){ out.push(cur); cur=''; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out;
+  };
+  const headers = splitLine(lines[0]);
+  return lines.slice(1).filter(l => l.trim().length).map(line => {
+    const vals = splitLine(line);
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i] !== undefined ? vals[i] : '');
+    return obj;
+  });
+}
+
+function renderCSV(text){
+  if (!text || !text.trim()){
+    document.getElementById('response-wrap').innerHTML = '<div class="empty-state"><div class="big">—</div><div>No data returned</div></div>';
+    document.getElementById('search-wrap').style.display = 'none';
+    return;
+  }
+  const rows = parseCSV(text);
+  if (!rows.length){
+    document.getElementById('response-wrap').innerHTML = '<pre class="raw-json">' + escapeHtml(text) + '</pre>';
+    document.getElementById('search-wrap').style.display = 'none';
+    return;
+  }
+  renderTable(rows);
+}
+
+// ── Init ──
+// Paint immediately with weekend-only defaults so the UI isn't blocked on the network,
+// then refine to the holiday-aware last trading day once the holiday list arrives
+// (re-render only if the person hasn't already started editing that endpoint's fields).
+applyDefaultDates();
+buildSelect();
+renderParams();
+updateURL();
+
+loadHolidaySet().then(() => {
+  applyDefaultDates();
+  if (!paramsTouched){
+    renderParams();
+    updateURL();
+  }
+});
+</script>
+</body>
+</html>
