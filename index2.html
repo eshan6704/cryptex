@@ -6298,7 +6298,11 @@ class CryptoTerminal {
     // silently overwrite anything we set directly on #tv-chart once it inits.
     if (window.innerWidth > 768) return;
     const wrap = document.getElementById('tv-chart-wrap');
-    const chartHeight = 500; // fixed default chart height on mobile, per request
+    // Mobile chart height is explicitly tied to viewport width at a 5:2
+    // height:width ratio (height = 2.5 × width) rather than a flat 500px —
+    // a fixed height left extra vertical space unused on taller phones and
+    // was cramped on wider ones. Scales with the device instead.
+    const chartHeight = Math.round(window.innerWidth * 5 / 2);
     if (wrap) {
       wrap.style.setProperty('height', chartHeight + 'px', 'important');
       wrap.style.setProperty('min-height', chartHeight + 'px', 'important'); // the wrapper's own inline min-height:600px would otherwise clamp height back up
