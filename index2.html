@@ -88,6 +88,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text1);f
 .nav-btn i{font-size:15px;}
 .nav-btn span{font-size:8px;font-weight:600;letter-spacing:.3px;}
 .nav-divider{width:28px;height:1px;background:var(--border);margin:4px 0;}
+/* Sidebar group labels — tiny uppercase headers above each icon cluster.
+   Desktop only: the 52px vertical column has just enough room for these;
+   the mobile bottom bar (converted via media query below) is too tight,
+   so labels are hidden there and dividers alone separate groups. */
+.nav-group-label{width:100%;text-align:center;font-size:7px;font-weight:700;letter-spacing:.4px;color:var(--text3);margin:5px 0 1px;user-select:none;pointer-events:none;white-space:nowrap;}
+.nav-group-label:first-child{margin-top:0;}
 /* Inner sub-tab bar shared by grouped views */
 .sv-bar{display:flex;align-items:center;gap:0;background:var(--bg1);border-bottom:2px solid var(--border);padding:0 10px;flex-shrink:0;height:36px;}
 .sv-tab{padding:0 14px;height:36px;display:flex;align-items:center;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.4px;color:var(--text3);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .12s;gap:6px;}
@@ -611,6 +617,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
   #sidebar::-webkit-scrollbar { display: none; }
   .nav-btn { width: 44px; height: 44px; flex-shrink: 0; border-radius: 6px; }
   .nav-divider { display: block; width: 1px; height: 22px; align-self: center; margin: 0 2px; background: var(--border); flex-shrink: 0; }
+  .nav-group-label { display: none; } /* no room in the 52px-tall bottom bar; dividers alone separate groups here */
 
   /* App layout: full page height with padding for fixed bars */
   #app {
@@ -1174,17 +1181,22 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
 <!-- APP -->
 <div id="app">
   <nav id="sidebar">
+    <div class="nav-group-label">LIVE</div>
     <button class="nav-btn active" onclick="app.setView('market')" data-v="market"><i class="fa-solid fa-table-list"></i><span>MKTS</span></button>
     <button class="nav-btn" onclick="app.setView('orderbook')" data-v="orderbook"><i class="fa-solid fa-layer-group"></i><span>BOOK</span></button>
     <button class="nav-btn" onclick="app.setView('px-trades')" data-v="px-trades"><i class="fa-solid fa-right-left"></i><span>TRADES</span></button>
     <button class="nav-btn" onclick="app.setView('chart')" data-v="chart"><i class="fa-solid fa-chart-line"></i><span>CHART</span></button>
     <div class="nav-divider"></div>
+    <div class="nav-group-label">RESEARCH</div>
     <button class="nav-btn" onclick="app.setView('tv-overview')" data-v="tv-overview"><i class="fa-solid fa-circle-info"></i><span>INFO</span></button>
     <button class="nav-btn" onclick="app.setView('px-analysis')" data-v="px-analysis"><i class="fa-solid fa-magnifying-glass-chart"></i><span>ANALYSIS</span></button>
-    <button class="nav-btn" onclick="app.setView('px-chain')" data-v="px-chain"><i class="fa-solid fa-link"></i><span>CHAIN</span></button>
-    <button class="nav-btn" onclick="app.setView('px-options')" data-v="px-options"><i class="fa-solid fa-layer-group"></i><span>OPTIONS</span></button>
-    <button class="nav-btn" onclick="app.setView('px-sr')" data-v="px-sr"><i class="fa-solid fa-arrows-up-down"></i><span>S/R</span></button>
     <div class="nav-divider"></div>
+    <div class="nav-group-label">OPTIONS</div>
+    <button class="nav-btn" onclick="app.setView('px-options')" data-v="px-options"><i class="fa-solid fa-chart-pie"></i><span>OPTIONS</span></button>
+    <button class="nav-btn" onclick="app.setView('px-sr')" data-v="px-sr"><i class="fa-solid fa-arrows-up-down"></i><span>S/R</span></button>
+    <button class="nav-btn" onclick="app.setView('px-chain')" data-v="px-chain"><i class="fa-solid fa-link"></i><span>CHAIN</span></button>
+    <div class="nav-divider"></div>
+    <div class="nav-group-label">TOOLS</div>
     <button class="nav-btn" onclick="app.setView('px-tools')" data-v="px-tools"><i class="fa-solid fa-toolbox"></i><span>TOOLS</span></button>
     <a class="nav-btn" href="https://eshan6704-marketapi2.hf.space/" target="_blank" rel="noopener" data-v="nse-ext"><i class="fa-solid fa-building-columns"></i><span>NSE</span></a>
     <button class="nav-btn" onclick="app.setView('news')" data-v="news" style="margin-top:auto"><i class="fa-solid fa-rss"></i><span>NEWS</span></button>
