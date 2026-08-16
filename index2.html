@@ -4081,6 +4081,21 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:3p
 </div>
 
 <script>
+// ============ NETWORK CONTROL: shared fetch timeout helper ============
+// Wraps fetch() with a hard timeout via AbortController so a stalled connection can't
+// leave a request hanging indefinitely (and blocking whatever retry/refresh logic is
+// waiting on it). Declared once here, at the top of the first script block, so both
+// script blocks in this page can use the same global helper.
+async function fetchWithTimeout(url, opts = {}, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...opts, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 class CryptoTerminal {
   constructor() {
     this.sym = 'BTCUSDT';
@@ -4163,7 +4178,9 @@ class CryptoTerminal {
 
   async fetchMarkets() {
     try {
-      const r = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=80&page=1&sparkline=false');
+      // 8s timeout: previously a stalled (not failed) CoinGecko connection would hang
+      // this await forever, meaning the Binance fallback below never got a chance to run.
+      const r = await fetchWithTimeout('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=80&page=1&sparkline=false', {}, 8000);
       if (!r.ok) throw new Error();
       const STABLES=new Set(['usdt','usdc','dai','busd','tusd','usdp','gusd','frax','lusd','usdd','fdusd','pyusd','eurc','usde','susd','cusd','musd','ousd','husd','eurs','eurt','usdx','usd+','crvusd','gho','usdtb','bfusd','rlusd','buidl','usyc','usdm','usd0','usdy','usds','usdx','uxd','volt','zusd','dusd','flex','usd3','usdv','usdl','usdq','usdb']);
       const isStable=d=>STABLES.has(d.symbol?.toLowerCase())||(d.current_price>0.98&&d.current_price<1.02);
@@ -4173,7 +4190,7 @@ class CryptoTerminal {
       // sure it's always selectable from the coin search regardless of rank.
       if (!this.coins.find(c=>c.id==='pax-gold')) {
         try {
-          const pr = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=pax-gold&sparkline=false');
+          const pr = await fetchWithTimeout('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=pax-gold&sparkline=false', {}, 8000);
           if (pr.ok) {
             const paxg = await pr.json();
             if (paxg[0]) this.coins.push(paxg[0]);
@@ -4182,7 +4199,7 @@ class CryptoTerminal {
       }
     } catch {
       try {
-        const r = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+        const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/24hr', {}, 8000);
         const data = await r.json();
         const STABLES=new Set(['usdt','usdc','dai','busd','tusd','usdp','gusd','frax','lusd','usdd','fdusd','pyusd','eurc','usde','susd','cusd','musd','ousd','husd','eurs','eurt','usdx','usd+','crvusd','gho','usdtb','bfusd','rlusd','buidl','usyc','usdm','usd0','usdy','usds','usdx','uxd','volt','zusd','dusd','flex','usd3','usdv','usdl','usdq','usdb']);
         const isStable=d=>{const sym=d.symbol.replace('USDT','').toLowerCase();const p=parseFloat(d.lastPrice);return STABLES.has(sym)||(p>0.98&&p<1.02);};
@@ -4241,7 +4258,7 @@ class CryptoTerminal {
 
   async fetchFunding() {
     try {
-      const r = await fetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${this.sym}&limit=1`);
+      const r = await fetchWithTimeout(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${this.sym}&limit=1`, {}, 8000);
       const data = await r.json();
       if (data[0]) {
         const rate = parseFloat(data[0].fundingRate)*100;
@@ -4320,6 +4337,9 @@ class CryptoTerminal {
   }
 
   reconnect() {
+    // Don't burn a backoff cycle while the browser is fully offline — the page-level
+    // 'online' listener force-reconnects the instant connectivity actually returns.
+    if (!navigator.onLine) return;
     this.reconnAttempts++;
     setTimeout(() => this.connectWS(), Math.min(1000*Math.pow(2,this.reconnAttempts), 30000));
   }
@@ -4359,20 +4379,34 @@ class CryptoTerminal {
   startDiffStream() {
     if (this.diffWs) { try { this.diffWs.close(); } catch {} }
     const s = this.sym.toLowerCase();
+    this.diffReconnAttempts = 0;
     this.diffWs = new WebSocket(`wss://stream.binance.com:9443/ws/${s}@depth@100ms`);
+    this.diffWs.onopen = () => { this.diffReconnAttempts = 0; };
     this.diffWs.onmessage = e => {
       const data = JSON.parse(e.data);
       if (!this.obReady) this.bufferedUpdates.push(data);
       else this.applyDiff(data);
     };
+    this.diffWs.onerror = () => { console.warn('Order book diff stream error'); };
     this.diffWs.onclose = () => {
-      if (this.obReady && this.diffWs) setTimeout(() => this.startDiffStream(), 1000);
+      // Previously reconnected on a fixed 1s timer regardless of why the socket closed —
+      // fine for a one-off drop, but if the feed is persistently unreachable (bad network,
+      // temporary Binance block) it would hammer the endpoint once a second indefinitely.
+      // Exponential backoff (capped 30s) instead, and skip retrying entirely while the
+      // browser is offline — the page-level 'online' listener restarts it immediately.
+      if (!this.obReady || !this.diffWs) return;
+      if (!navigator.onLine) return;
+      this.diffReconnAttempts = (this.diffReconnAttempts || 0) + 1;
+      setTimeout(() => this.startDiffStream(), Math.min(1000 * Math.pow(2, this.diffReconnAttempts), 30000));
     };
   }
 
   async fetchSnapshot() {
     try {
-      const r = await fetch(`https://api.binance.com/api/v3/depth?symbol=${this.sym}&limit=5000`);
+      // 10s timeout via AbortController — a stalled connection here previously left the
+      // order book stuck on "loading" indefinitely with no retry, since the fetch promise
+      // would just hang rather than reject.
+      const r = await fetchWithTimeout(`https://api.binance.com/api/v3/depth?symbol=${this.sym}&limit=5000`, {}, 10000);
       const snap = await r.json();
       this.obMap.bids = {};
       this.obMap.asks = {};
@@ -5969,7 +6003,7 @@ class CryptoTerminal {
     let cgNews = [];
     if(!this._newsCache) {
       try {
-        const r = await fetch(`https://api.coingecko.com/api/v3/news?page=1`);
+        const r = await fetchWithTimeout(`https://api.coingecko.com/api/v3/news?page=1`, {}, 8000);
         if(r.ok){
           const d = await r.json();
           cgNews = (d.data||[]).slice(0,30).map(n=>({
@@ -6678,7 +6712,7 @@ class CryptoTerminal {
     const limit = 300;
 
     try {
-      const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${this.sym}&interval=${interval}&limit=${limit}`);
+      const r = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${this.sym}&interval=${interval}&limit=${limit}`, {}, 8000);
       const raw = await r.json();
       // [openTime, open, high, low, close, volume, ...]
       this.indCandles = raw.map(c => ({
@@ -7452,7 +7486,7 @@ class CryptoTerminal {
     const el = document.getElementById('tv-ov-fundamental');
     el.innerHTML = '<div style="color:var(--text3);font-family:var(--mono);font-size:11px;padding:8px;">Loading fundamental data…</div>';
     try {
-      const r = await fetch(`https://api.coingecko.com/api/v3/coins/${this.coinId}?localization=false&tickers=false&market_data=true&community_data=true&developer_data=true`);
+      const r = await fetchWithTimeout(`https://api.coingecko.com/api/v3/coins/${this.coinId}?localization=false&tickers=false&market_data=true&community_data=true&developer_data=true`, {}, 8000);
       if(!r.ok) throw new Error('');
       const d = await r.json();
       const md = d.market_data||{};
@@ -7608,7 +7642,7 @@ class CryptoTerminal {
   async _renderDominance() {
     const el = document.getElementById('tv-mkt-dominance');
     try {
-      const r = await fetch('https://api.coingecko.com/api/v3/global');
+      const r = await fetchWithTimeout('https://api.coingecko.com/api/v3/global', {}, 8000);
       if(r.ok){
         const d = await r.json();
         const dom = d.data.market_cap_percentage;
@@ -11334,6 +11368,39 @@ window.addEventListener('orientationchange', () => { setTimeout(() => { if (app.
         let tradeRestPollInterval = null;  // REST backstop — keeps the tape populated even if all sockets go quiet
         const seenTradeKeys = new Set();  // de-dupe key so REST backfill + live sockets don't double-count trades
 
+        // ============ NETWORK CONTROL ============
+        // Per-socket reconnect attempt counters (exponential backoff, capped at 30s) and
+        // a generation token per coin-switch so a stale reconnect from a previous coin
+        // can't resurrect itself after the user has already switched away.
+        let tradeSocketGen = 0;
+        const tradeReconnAttempts = { binance: 0, bybit: 0, okx: 0 };
+        function tradeBackoffMs(n) { return Math.min(1000 * Math.pow(2, n), 30000); }
+        // fetchWithTimeout is defined once, globally, near the top of the first
+        // inline script block above — reused here rather than redeclared.
+
+        // Browser-level connectivity: on 'offline' we stop burning reconnect attempts
+        // (they'd fail anyway); on 'online' we immediately retry live feeds instead of
+        // waiting out whatever backoff timer happened to be in flight.
+        window.addEventListener('offline', () => {
+            console.log('Network offline — pausing live feed reconnects until back online');
+        });
+        window.addEventListener('online', () => {
+            console.log('Network back online — reconnecting live feeds');
+            tradeReconnAttempts.binance = 0;
+            tradeReconnAttempts.bybit = 0;
+            tradeReconnAttempts.okx = 0;
+            // Force-reconnect the main ticker/trade/depth sockets immediately rather than
+            // waiting out whatever backoff timer happened to be pending when we went offline.
+            try { if (typeof app !== 'undefined' && app) { app.reconnAttempts = 0; app.connectWS(); if (app.diffWs) app.startDiffStream(); } } catch {}
+            // Re-arm the recent-trades tape sockets (Binance/Bybit/OKX) for whichever coin was active.
+            try {
+                if (selectedCoinId) {
+                    const c = (typeof allCoins !== 'undefined' ? allCoins.find(x => x.id === selectedCoinId) : null) || { id: selectedCoinId, current_price: 0 };
+                    generateRecentTrades(c);
+                }
+            } catch {}
+        });
+
         const assetConfig = {
             'BTC': { leverage: 200, fee: 0.00012 },
             'PAXG': { leverage: 50, fee: 0.0001 }
@@ -11366,7 +11433,7 @@ window.addEventListener('orientationchange', () => { setTimeout(() => { if (app.
         async function loadCryptoData() {
             try {
                 // Fetch 100 coins to filter out stablecoins
-                const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=80&page=1&sparkline=false');
+                const response = await fetchWithTimeout('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=80&page=1&sparkline=false', {}, 8000);
                 if (!response.ok) throw new Error('API Error');
 
                 let coins = await response.json();
@@ -12162,75 +12229,119 @@ window.addEventListener('orientationchange', () => { setTimeout(() => { if (app.
             const bybitSymbol = getBinanceSymbol(coin.id).toUpperCase();
             const okxSymbol = bybitSymbol.replace('USDT', '-USDT'); // e.g. PAXGUSDT -> PAXG-USDT
 
+            // Generation token: increments on every call to this function (coin switch or
+            // reconnect entry point). Reconnect callbacks below capture their own `myGen`
+            // and bail out if a newer generation has since started — otherwise a slow
+            // reconnect timer from a coin the user has already left could resurrect a
+            // socket for the wrong symbol.
+            const myGen = ++tradeSocketGen;
+
             // ── Source 1: Binance (live) ──
             const wsUrl = `wss://data-stream.binance.vision/ws/${binanceSymbol}@aggTrade`;
 
-            tradeWebSocket = new WebSocket(wsUrl);
+            function connectBinanceTrade() {
+                if (myGen !== tradeSocketGen) return;
+                tradeWebSocket = new WebSocket(wsUrl);
 
-            tradeWebSocket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
+                tradeWebSocket.onopen = () => { tradeReconnAttempts.binance = 0; };
 
-                // Add trade to history
-                const trade = {
-                    time: new Date(data.T).toLocaleTimeString() + '.' + String(data.T % 1000).padStart(3, '0'),
-                    type: data.m ? 'SELL' : 'BUY',  // m=true means maker was seller (market sell)
-                    price: parseFloat(data.p),
-                    qty: parseFloat(data.q),
-                    amount: parseFloat(data.p) * parseFloat(data.q),
-                    timestamp: data.T,
-                    exchange: 'Binance',
-                    tradeId: data.a
-                };
-
-                pushTrade(trade, coin);
-            };
-
-            tradeWebSocket.onerror = (error) => {
-                console.log('Binance WebSocket error, falling back to mock data');
-                // Fallback to mock data
-                updateRecentTradesDisplay(coin);
-                updateWhaleOrdersDisplay(coin);
-            };
-
-            // ── Source 2: Bybit (public spot trade stream, no API key required) ──
-            bybitTradeWebSocket = new WebSocket('wss://stream.bybit.com/v5/public/spot');
-
-            bybitTradeWebSocket.onopen = () => {
-                bybitTradeWebSocket.send(JSON.stringify({ op: 'subscribe', args: [`publicTrade.${bybitSymbol}`] }));
-            };
-
-            bybitTradeWebSocket.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
-                if (!msg.topic || !msg.topic.startsWith('publicTrade.') || !Array.isArray(msg.data)) return;
-
-                for (const t of msg.data) {
-                    const price = parseFloat(t.p);
-                    const qty = parseFloat(t.v);
+                tradeWebSocket.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
                     const trade = {
-                        time: new Date(t.T).toLocaleTimeString() + '.' + String(t.T % 1000).padStart(3, '0'),
-                        type: t.S === 'Sell' ? 'SELL' : 'BUY',
-                        price: price,
-                        qty: qty,
-                        amount: price * qty,
-                        timestamp: t.T,
-                        exchange: 'Bybit',
-                        tradeId: t.i
+                        time: new Date(data.T).toLocaleTimeString() + '.' + String(data.T % 1000).padStart(3, '0'),
+                        type: data.m ? 'SELL' : 'BUY',  // m=true means maker was seller (market sell)
+                        price: parseFloat(data.p),
+                        qty: parseFloat(data.q),
+                        amount: parseFloat(data.p) * parseFloat(data.q),
+                        timestamp: data.T,
+                        exchange: 'Binance',
+                        tradeId: data.a
                     };
                     pushTrade(trade, coin);
-                }
-            };
+                };
 
-            bybitTradeWebSocket.onerror = (error) => {
-                console.log('Bybit WebSocket error — continuing with other feeds');
-            };
+                tradeWebSocket.onerror = () => {
+                    console.log('Binance WebSocket error, falling back to mock data');
+                    updateRecentTradesDisplay(coin);
+                    updateWhaleOrdersDisplay(coin);
+                };
+
+                // No reconnect happened here before — a closed socket (network drop, tab
+                // sleep/resume, ISP hiccup) just went dead for the rest of the session.
+                // Now it retries with exponential backoff (capped 30s), same pattern as
+                // the main ticker socket, and stands down cleanly if superseded by a
+                // coin switch or the browser going offline (the 'online' listener above
+                // re-triggers immediately once connectivity returns).
+                tradeWebSocket.onclose = () => {
+                    if (myGen !== tradeSocketGen) return;
+                    if (!navigator.onLine) return;
+                    tradeReconnAttempts.binance++;
+                    setTimeout(() => connectBinanceTrade(), tradeBackoffMs(tradeReconnAttempts.binance));
+                };
+            }
+            connectBinanceTrade();
+
+            // ── Source 2: Bybit (public spot trade stream, no API key required) ──
+            function connectBybitTrade() {
+                if (myGen !== tradeSocketGen) return;
+                bybitTradeWebSocket = new WebSocket('wss://stream.bybit.com/v5/public/spot');
+
+                bybitTradeWebSocket.onopen = () => {
+                    tradeReconnAttempts.bybit = 0;
+                    bybitTradeWebSocket.send(JSON.stringify({ op: 'subscribe', args: [`publicTrade.${bybitSymbol}`] }));
+                };
+
+                bybitTradeWebSocket.onmessage = (event) => {
+                    const msg = JSON.parse(event.data);
+                    if (!msg.topic || !msg.topic.startsWith('publicTrade.') || !Array.isArray(msg.data)) return;
+
+                    for (const t of msg.data) {
+                        const price = parseFloat(t.p);
+                        const qty = parseFloat(t.v);
+                        const trade = {
+                            time: new Date(t.T).toLocaleTimeString() + '.' + String(t.T % 1000).padStart(3, '0'),
+                            type: t.S === 'Sell' ? 'SELL' : 'BUY',
+                            price: price,
+                            qty: qty,
+                            amount: price * qty,
+                            timestamp: t.T,
+                            exchange: 'Bybit',
+                            tradeId: t.i
+                        };
+                        pushTrade(trade, coin);
+                    }
+                };
+
+                bybitTradeWebSocket.onerror = () => {
+                    console.log('Bybit WebSocket error — continuing with other feeds');
+                };
+
+                bybitTradeWebSocket.onclose = () => {
+                    if (myGen !== tradeSocketGen) return;
+                    if (!navigator.onLine) return;
+                    tradeReconnAttempts.bybit++;
+                    setTimeout(() => connectBybitTrade(), tradeBackoffMs(tradeReconnAttempts.bybit));
+                };
+            }
+            connectBybitTrade();
 
             // ── Source 3: OKX (public spot trade stream) — third source, mainly helps
             // thinner pairs like PAXG where Binance/Bybit alone can look too quiet ──
-            okxTradeWebSocket = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
+            function connectOkxTrade() {
+                if (myGen !== tradeSocketGen) return;
+                okxTradeWebSocket = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
 
-            okxTradeWebSocket.onopen = () => {
-                okxTradeWebSocket.send(JSON.stringify({ op: 'subscribe', args: [{ channel: 'trades', instId: okxSymbol }] }));
-            };
+                okxTradeWebSocket.onopen = () => {
+                    tradeReconnAttempts.okx = 0;
+                    okxTradeWebSocket.send(JSON.stringify({ op: 'subscribe', args: [{ channel: 'trades', instId: okxSymbol }] }));
+                };
+
+                okxTradeWebSocket.onclose = () => {
+                    if (myGen !== tradeSocketGen) return;
+                    if (!navigator.onLine) return;
+                    tradeReconnAttempts.okx++;
+                    setTimeout(() => connectOkxTrade(), tradeBackoffMs(tradeReconnAttempts.okx));
+                };
 
             okxTradeWebSocket.onmessage = (event) => {
                 let msg;
@@ -12255,9 +12366,11 @@ window.addEventListener('orientationchange', () => { setTimeout(() => { if (app.
                 }
             };
 
-            okxTradeWebSocket.onerror = (error) => {
-                console.log('OKX WebSocket error — continuing with other feeds');
-            };
+                okxTradeWebSocket.onerror = () => {
+                    console.log('OKX WebSocket error — continuing with other feeds');
+                };
+            }
+            connectOkxTrade();
 
             // ── REST backstop: seed immediately with the latest trades so the tape
             // isn't empty while waiting for the first live tick, and keep polling in
@@ -12268,9 +12381,11 @@ window.addEventListener('orientationchange', () => { setTimeout(() => { if (app.
 
         // One-shot REST fetch of the most recent trades for a symbol — used both to
         // populate the tape instantly on load/switch and as a periodic backstop.
+        // Wrapped with an 8s timeout so a stalled connection can't leave this hanging
+        // (the 5s poll interval would otherwise stack up in-flight requests forever).
         async function seedRecentTradesREST(coin, binanceSymbol) {
             try {
-                const r = await fetch(`https://data-api.binance.vision/api/v3/trades?symbol=${binanceSymbol.toUpperCase()}&limit=50`);
+                const r = await fetchWithTimeout(`https://data-api.binance.vision/api/v3/trades?symbol=${binanceSymbol.toUpperCase()}&limit=50`, {}, 8000);
                 if (!r.ok) return;
                 const data = await r.json();
                 data.forEach(t => {
@@ -13937,7 +14052,7 @@ window.addEventListener('orientationchange', () => { setTimeout(() => { if (app.
             try {
                 const results = await Promise.all(fundingSymbols.map(async sym => {
                     try {
-                        const res = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${sym}`);
+                        const res = await fetchWithTimeout(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${sym}`, {}, 8000);
                         if (!res.ok) throw new Error('bad response');
                         return await res.json();
                     } catch (e) {
