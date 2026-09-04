@@ -128,7 +128,7 @@
         <label>XAUUSD mini leverage (1:x)<input id="cfgLeverageXauMini" type="number" value="500" step="1" min="1"></label>
       </div>
       <div class="source-note">
-        <b>Data source:</b> BTCDana public XAUUSD quote page, polled as the browser can access it.
+        <b>Data source:</b> Binance live WebSocket trade stream — BTCUSDT for BTC, PAXGUSDT (PAX Gold) for XAUUSD / XAUUSD mini, tracking spot gold closely.
         <span>Direction model: fixed price change is the mandatory trigger; UP/DOWN/FLAT sequence, movement dominance and flips determine trend confidence. The change threshold is set per symbol (default 1 for BTCUSDT, 0.1 for XAUUSD and XAUUSD mini).</span>
         <span>Profit lock: once a trade's net profit (after its entry fee of $0.15) passes the "Profit-lock trigger" ($0.4 default), its SL is tightened so a reversal still banks at least the "Locked-in SL profit" ($0.1 default, i.e. a $0.25 gross buffer) — the stop only ever moves in the trade's favor, never loosens.</span>
         <span>Margin: computed live as price × contract size (0.01 BTC / 1oz XAUUSD / 0.2oz XAUUSD mini, per 0.01 lot) ÷ that symbol's leverage — matching BTCDana's real margin at 1:300 (BTC), 1:800 (XAUUSD) and 1:500 (XAUUSD mini).</span>
@@ -274,11 +274,13 @@ $('symbolTitle').textContent=symbol.replace('USDT','');startMinuteTracker();
 </script>
 <script>
 /* BTCDana Tick Auto-Trade Simulator
-   Paper only: it never sends an order to BTCDana/MT5. */
-const BTCDANA_URLS=[
-  'https://www.btcdana.com/products/quotes/XAUUSD',
-  'https://www.btcdana.com/products/variety/3-11'
-];
+   Paper only: it never sends an order to BTCDana/MT5.
+   Live prices now come from Binance WebSocket trade streams for every
+   symbol — BTCUSDT trades directly, XAUUSD / XAUUSDmini track Binance's
+   PAXGUSDT (PAX Gold) stream, which is redeemable 1:1 for physical gold
+   and tracks spot XAUUSD closely. This replaces the old btcdana.com
+   HTML-scraping approach, which was unreliable and could latch onto a
+   stale/unrelated number on the page instead of the live quote. */
 let auto={
   running:false,balance:1000,equity:1000,realized:0,positions:[],logs:[],ticks:[],closedTrades:[],
   lastPrice:null,lastQuoteAt:0,lastDecision:'Waiting for 30 ticks',timer:null,tradeId:0,wins:0,closed:0,
@@ -762,6 +764,16 @@ function onAutoTick(price){
 let selectedTickSocket=null;
 let selectedTickSymbol='';
 
+// Every supported symbol now maps to a real Binance trade stream.
+// XAUUSD / XAUUSDmini both track PAXGUSDT (PAX Gold), which trades
+// closely in line with spot gold and is a genuine live market feed
+// rather than a scraped/guessed number.
+function streamFor(symbol){
+  if(symbol==='BTCUSDT')return 'btcusdt@trade';
+  if(symbol==='XAUUSD'||symbol==='XAUUSDmini')return 'paxgusdt@trade';
+  return null;
+}
+
 function closeSelectedTickSocket(){
   if(selectedTickSocket){
     try{selectedTickSocket.onclose=null;selectedTickSocket.close()}catch(e){}
@@ -773,20 +785,21 @@ function connectSelectedTickSocket(){
   closeSelectedTickSocket();
   const s=aq('autoSymbol').value;
   selectedTickSymbol=s;
+  const stream=streamFor(s);
+  if(!stream)return;
 
-  if(s!=='BTCUSDT')return;
-
-  selectedTickSocket=new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+  selectedTickSocket=new WebSocket('wss://stream.binance.com:9443/ws/'+stream);
 
   selectedTickSocket.onopen=()=>{
-    if(selectedTickSymbol===s){
-      aq('autoStatus').textContent='Running · BTCUSDT live ticks';
+    if(streamFor(aq('autoSymbol').value)===stream){
+      aq('autoStatus').textContent='Running · '+s+' live ticks';
       aq('autoDot').className='dot live';
     }
   };
 
   selectedTickSocket.onmessage=e=>{
-    if(!auto.running || aq('autoSymbol').value!=='BTCUSDT')return;
+    const current=aq('autoSymbol').value;
+    if(!auto.running || streamFor(current)!==stream)return;
     try{
       const d=JSON.parse(e.data);
       const p=Number(d.p);
@@ -794,53 +807,26 @@ function connectSelectedTickSocket(){
         onAutoTick(p);
         auto.lastQuoteAt=Date.now();
         updateAutoLiveHeader(p);
-        aq('autoStatus').textContent='Running · BTCUSDT live ticks';
+        aq('autoStatus').textContent='Running · '+current+' live ticks';
         aq('autoDot').className='dot live';
       }
     }catch(err){}
   };
 
   selectedTickSocket.onerror=()=>{
-    if(auto.running && aq('autoSymbol').value==='BTCUSDT'){
-      aq('autoStatus').textContent='BTCUSDT WebSocket error · reconnecting…';
+    if(auto.running && streamFor(aq('autoSymbol').value)===stream){
+      aq('autoStatus').textContent=aq('autoSymbol').value+' WebSocket error · reconnecting…';
       aq('autoDot').className='dot error';
     }
   };
 
   selectedTickSocket.onclose=()=>{
-    if(auto.running && aq('autoSymbol').value==='BTCUSDT'){
+    if(auto.running && streamFor(aq('autoSymbol').value)===stream){
       setTimeout(()=>{
-        if(auto.running && aq('autoSymbol').value==='BTCUSDT')connectSelectedTickSocket();
+        if(auto.running && streamFor(aq('autoSymbol').value)===stream)connectSelectedTickSocket();
       },1500);
     }
   };
-}
-
-async function getBtcdanaPrice(){
-  for(const url of BTCDANA_URLS){
-    try{
-      const r=await fetch(url,{cache:'no-store'});
-      if(!r.ok)continue;
-      const text=await r.text();
-      const patterns=[
-        /XAUUSD[\s\S]{0,500}?(?:price|lastPrice|quote)[^0-9]{0,20}([0-9]{3,5}(?:\.[0-9]+)?)/i,
-        /XAUUSD[\s\S]{0,300}?\b(4[0-9]{3}\.[0-9]{1,4})\b/i,
-        /"price"\s*:\s*"?(4[0-9]{3}\.[0-9]{1,4})"?/i
-      ];
-      for(const re of patterns){
-        const m=text.match(re);
-        if(m){
-          const p=Number(m[1]);
-          if(p>1000&&p<10000)return p;
-        }
-      }
-    }catch(e){}
-  }
-  return null;
-}
-
-function getSelectedAutoPrice(){
-  return getBtcdanaPrice();
 }
 
 function updateAutoLiveHeader(price){
@@ -858,30 +844,20 @@ async function autoPoll(){
   if(!auto.running)return;
 
   const selected=aq('autoSymbol').value;
+  const stream=streamFor(selected);
 
-  // BTC is driven directly by WebSocket; do not use HTTP polling for it.
-  if(selected==='BTCUSDT'){
-    if(!selectedTickSocket || selectedTickSymbol!=='BTCUSDT'){
+  // Every symbol (BTCUSDT, XAUUSD, XAUUSDmini) is driven directly by its
+  // Binance WebSocket trade stream now — no HTTP polling / scraping.
+  if(stream){
+    if(!selectedTickSocket || streamFor(selectedTickSymbol)!==stream){
       connectSelectedTickSocket();
     }
     if(auto.running)auto.timer=setTimeout(autoPoll,500);
     return;
   }
 
-  // XAUUSD / XAUUSDmini share the same broker quote feed — only the
-  // margin/point-value economics differ (handled in pointValueFor).
-  const p=await getBtcdanaPrice();
-  if(p!==null){
-    onAutoTick(p);
-    auto.lastQuoteAt=Date.now();
-    updateAutoLiveHeader(p);
-    aq('autoStatus').textContent='Running · '+selected+' live ticks';
-    aq('autoDot').className='dot live';
-  }else{
-    aq('autoStatus').textContent=selected+' live quote unavailable';
-    aq('autoDot').className='dot error';
-  }
-
+  aq('autoStatus').textContent=selected+' live quote unavailable';
+  aq('autoDot').className='dot error';
   if(auto.running)auto.timer=setTimeout(autoPoll, Math.max(20, Number(document.getElementById('cfgTickInterval')?.value || 100)));
 }
 
