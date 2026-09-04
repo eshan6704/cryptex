@@ -1,0 +1,1113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Market Pulse · Minute + Tick Auto-Trading Simulator</title>
+<style>
+:root{--ink:#18222d;--muted:#77818c;--line:#e4e8ec;--paper:#f7f9fa;--card:#fff;--green:#159570;--red:#d95764;--gold:#c58b2b;--navy:#152535;--shadow:0 18px 48px rgba(27,48,64,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}button,input{font:inherit}button{cursor:pointer;border:0;background:none;color:inherit}.app{min-height:100vh}.topbar{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:5}.brand{display:flex;align-items:center;gap:12px}.brand-mark{height:34px;width:34px;background:var(--navy);border-radius:8px;display:grid;place-items:center;color:#f5c45b;font-weight:800;font-size:17px}.brand small,.eyebrow,.section-label{display:block;color:#8b949e;text-transform:uppercase;letter-spacing:.15em;font:10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace}.brand strong{display:block;font-size:16px;letter-spacing:-.03em}.status{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:12px}.dot{height:8px;width:8px;border-radius:50%;background:#c4cbd1}.dot.live{background:#20a675;box-shadow:0 0 0 4px rgba(32,166,117,.11)}.dot.error{background:var(--red)}.workspace{display:grid;grid-template-columns:282px minmax(0,1fr);min-height:calc(100vh - 68px)}aside{background:#fff;border-right:1px solid var(--line);padding:28px 18px}.side-title{display:flex;justify-content:space-between;align-items:end;margin-bottom:10px}.side-title h1{font-size:22px;letter-spacing:-.06em;margin:5px 0 0}.count{background:#fff4d9;color:#a56e13;border-radius:99px;padding:5px 9px;font:11px ui-monospace,monospace}.side-copy{color:#8a929a;font-size:12px;margin:0 0 22px}.search{border:1px solid #d9dee3;border-radius:7px;padding:10px 11px;display:flex;gap:8px;align-items:center;margin-bottom:16px}.search input{border:0;outline:0;width:100%;color:var(--ink);background:transparent;font-size:12px}.selected{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}.chip{border:1px solid #d7a64b;color:#9c6d20;background:#fff9ea;border-radius:6px;padding:7px 10px;font-size:11px;font-weight:700}.market-head{display:flex;justify-content:space-between;color:#a3aab0;border-top:1px solid var(--line);padding:16px 8px 9px;font:10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.1em}.markets{max-height:calc(100vh - 260px);overflow:auto}.market{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 8px;border-radius:6px;text-align:left}.market:hover,.market.active{background:#f5f7f8}.market.active{box-shadow:inset 3px 0 var(--gold)}.mname{display:flex;align-items:baseline;gap:5px}.rank{color:#afb6bc;font:10px ui-monospace,monospace;width:20px}.mname strong{font-size:12px}.mname small{color:#9ea6ad;font-size:10px}.gain{color:var(--green)}.loss{color:var(--red)}.main{min-width:0;padding:32px 38px 60px}.toolbar{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px}.instrument{display:flex;align-items:baseline;gap:10px}.instrument h2{margin:5px 0 0;font-size:32px;letter-spacing:-.07em}.instrument span{color:#929ba3;font-size:13px}.price{text-align:right}.price strong{display:block;font:700 24px ui-monospace,SFMono-Regular,monospace;letter-spacing:-.04em}.price span{color:#8c959d;font:10px ui-monospace,monospace}.strip,.card,.chart-card{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:8px}.strip{display:grid;grid-template-columns:repeat(6,1fr);overflow:hidden;margin-bottom:14px}.readout{padding:15px 15px;border-right:1px solid var(--line)}.readout:last-child{border:0}.readout span{display:block;color:#9aa2a9;font:10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em}.readout strong{display:block;margin-top:8px;font:600 15px ui-monospace,monospace;white-space:nowrap}.chart-card{overflow:hidden}.chart-tools{height:48px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 15px}.intervals{display:flex;gap:4px}.intervals button{padding:6px 9px;border-radius:5px;color:#879098;font:10px ui-monospace,monospace}.intervals button.active{background:#fff1cf;color:#a56e13}.legend{display:flex;gap:14px;color:#879098;font-size:11px}.legend i{display:inline-block;height:7px;width:7px;margin-right:5px}.upbox{background:#159570}.downbox{background:#d95764}canvas{width:100%;height:360px;display:block}.section{margin-top:30px}.section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:12px}.section-head h3{margin:3px 0 0;font-size:18px;letter-spacing:-.04em}.note{color:#9099a1;font:11px ui-monospace,monospace}.pattern-grid{display:grid;grid-template-columns:1.45fr 1fr 1fr 1fr;gap:9px}.card{padding:16px;min-height:104px}.card span{display:block;color:#9ba3a9;text-transform:uppercase;letter-spacing:.1em;font:10px ui-monospace,monospace}.card strong{display:block;font:600 18px ui-monospace,monospace;margin-top:13px;letter-spacing:-.03em;overflow-wrap:anywhere}.card small{display:block;margin-top:7px;color:#919aa2;font-size:11px}.sequence{color:#9a6b1d!important}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.stat{background:#fff;border:1px solid var(--line);padding:13px;border-radius:7px}.stat label{color:#9ca4ab;font-size:10px}.stat b{display:block;margin-top:9px;font:600 17px ui-monospace,monospace}.actions{display:flex;gap:8px}.action{border:1px solid #dbe0e4;border-radius:6px;padding:8px 11px;color:#64717b;font-size:11px;background:#fff}.action:hover{border-color:#c58b2b;color:#9b6c1d}.table-wrap{overflow:auto;border:1px solid var(--line);background:#fff;border-radius:8px;box-shadow:var(--shadow)}table{border-collapse:collapse;width:100%;min-width:960px;font-size:11px}th{padding:12px;text-align:left;color:#9aa2a9;text-transform:uppercase;letter-spacing:.08em;font:10px ui-monospace,monospace;border-bottom:1px solid var(--line)}td{padding:12px;border-bottom:1px solid #f0f2f4;color:#57636d;white-space:nowrap}tr:last-child td{border:0}.empty{text-align:center;padding:30px;color:#a0a8af}.error{color:var(--red)!important}.footer-note{color:#9aa2a9;font-size:11px;margin-top:14px}@media(max-width:900px){.workspace{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line);padding:20px}.markets{max-height:210px}.main{padding:22px 16px 45px}.strip{grid-template-columns:repeat(3,1fr)}.readout:nth-child(3){border:0}.pattern-grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(3,1fr)}.topbar{padding:0 16px}.status{display:none}}@media(max-width:520px){.toolbar{align-items:start}.instrument h2{font-size:27px}.price strong{font-size:17px}.strip{grid-template-columns:repeat(2,1fr)}.readout:nth-child(odd){border-right:1px solid var(--line)}.readout:nth-child(even){border:0}.pattern-grid,.stats{grid-template-columns:1fr}.chart-tools{padding:0 9px}.legend{gap:7px}.section-head{align-items:start;gap:10px}.note{font-size:10px}}
+
+.tabbar{display:flex;gap:5px;align-items:center;margin-left:auto;margin-right:18px}
+.tab{padding:8px 12px;border:1px solid #dbe0e4;border-radius:6px;background:#fff;color:#69747d;font:11px ui-monospace,monospace}
+.tab:hover{border-color:#c58b2b;color:#9b6c1d}.tab.active{background:#fff1cf;color:#9b6c1d;border-color:#e3bd70}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.auto-wrap{padding:32px 38px 60px;max-width:1500px;margin:0 auto}
+.auto-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:20px}
+.auto-head h2{margin:5px 0 4px;font-size:30px;letter-spacing:-.06em}.auto-head p{margin:0;color:#89939b;font-size:12px}
+.auto-status{display:flex;align-items:center;gap:8px;color:#7d8790;font:11px ui-monospace,monospace}
+.control-card{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:8px;padding:18px;margin-bottom:14px}
+.control-grid{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px}
+.control-grid label{color:#7e8991;font:10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em}
+.control-grid input{display:block;width:100%;margin-top:6px;border:1px solid #dbe0e4;border-radius:6px;padding:9px;background:#fbfcfc;color:#25313b}
+.control-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}.action.primary{background:#152535;color:#fff;border-color:#152535}
+.source-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:#8b949c;font-size:11px}.source-note span{margin-left:10px}
+.config-toggle{display:inline-flex;align-items:center;gap:6px;border:1px solid #dbe0e4;border-radius:6px;padding:8px 11px;background:#fff;color:#64717b;font:11px ui-monospace,monospace;cursor:pointer;margin-bottom:0}
+.config-toggle:hover{border-color:#c58b2b;color:#9b6c1d}
+.config-toggle .chev{display:inline-block;transition:transform .15s}
+.config-toggle.open .chev{transform:rotate(90deg)}
+.config-body{display:none;margin-top:14px}
+.config-body.open{display:block}
+.auto-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:14px}
+.chart-mini{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:8px;padding:14px}
+.chart-mini .chart-mini-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.chart-mini .chart-mini-head span{color:#7e8991;font:10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em}
+.chart-mini canvas{width:100%;height:210px;display:block}
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:900px){.analytics-grid{grid-template-columns:1fr}}
+.signal-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+.signal-card{background:#fff;border:1px solid var(--line);border-radius:7px;padding:14px;box-shadow:var(--shadow)}
+.signal-card span{display:block;color:#9aa2a9;font:10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em}
+.signal-card strong{display:block;margin-top:9px;font:600 17px ui-monospace,monospace}.signal-card small{display:block;color:#929ba2;margin-top:6px;font-size:10px}
+.decision-box{background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:7px;padding:15px;color:#56636d;font-size:12px}
+.auto-table{min-width:1100px}.auto-table td{font-size:10px}.profit{color:var(--green)!important}.loss2{color:var(--red)!important}.warning{color:#a06d1b!important}
+@media(max-width:1100px){.control-grid{grid-template-columns:repeat(3,1fr)}.signal-grid{grid-template-columns:repeat(3,1fr)}.auto-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.tabbar{margin-right:8px}.auto-wrap{padding:22px 16px 45px}.auto-head{align-items:start;gap:10px}.auto-head h2{font-size:24px}.control-grid,.signal-grid,.auto-stats{grid-template-columns:1fr 1fr}.source-note span{display:block;margin:6px 0 0}}
+
+.auto-symbol-bar{display:flex;gap:14px;align-items:stretch;margin:14px 0;flex-wrap:wrap}
+.auto-symbol-bar label{min-width:210px}
+.auto-symbol-bar select{display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #ccc;border-radius:8px;background:#fff;font:inherit}
+.auto-live-price{min-width:220px}
+
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar"><div class="brand"><div class="brand-mark">▥</div><div><small>Minute-open analytics</small><strong>Minute Pulse</strong></div></div><div class="status"><i class="dot" id="statusDot"></i><span id="statusText">Connecting to Binance</span><span>·</span><span>one selected stream</span></div>
+<div class="tabbar"><button class="tab active" data-tab="minuteTab">Minute Tracker</button><button class="tab" data-tab="autoTab">Tick Auto Trade</button></div>
+<div class="section-label">UTC</div></header>
+<div class="tab-panel active" id="minuteTab"><div class="workspace">
+<aside><div class="side-title"><div><span class="eyebrow">Market universe</span><h1>Choose coin</h1></div><span class="count" id="marketCount">—</span></div><p class="side-copy">Top 500 tradable USDT spot markets ranked by 24h quote volume. One selected instrument is tracked at a time.</p><div class="search"><span>⌕</span><input id="marketSearch" placeholder="Search symbol or coin"></div><div class="selected"><button class="chip" id="selectedChip">BTC ×</button></div><div class="market-head"><span># / market</span><span>24h</span></div><div class="markets" id="markets"><div class="footer-note">Loading Binance markets…</div></div></aside>
+<main class="main">
+<div class="toolbar"><div><span class="eyebrow">Active instrument</span><div class="instrument"><h2 id="symbolTitle">BTC</h2><span>/ USDT</span></div></div><div class="price"><strong id="toolbarPrice">—</strong><span id="priceAge">USDT · waiting</span></div></div>
+<div class="strip"><div class="readout"><span>Open</span><strong id="open">—</strong></div><div class="readout"><span>High</span><strong class="gain" id="high">—</strong></div><div class="readout"><span>Low</span><strong class="loss" id="low">—</strong></div><div class="readout"><span>Live close</span><strong id="close">—</strong></div><div class="readout"><span>Body</span><strong id="body">—</strong></div><div class="readout"><span>Close position</span><strong id="closePos">—</strong></div></div>
+<div class="chart-card"><div class="chart-tools"><div class="intervals" id="intervals"><button class="active" data-interval="1m">1m</button><button data-interval="5m">5m</button><button data-interval="15m">15m</button><button data-interval="1h">1h</button><button data-interval="4h">4h</button><button data-interval="1d">1d</button></div><div class="legend"><span><i class="upbox"></i>Up</span><span><i class="downbox"></i>Down</span><span id="chartState">Loading…</span></div></div><canvas id="chart" width="1200" height="360"></canvas></div>
+<section class="section"><div class="section-head"><div><span class="eyebrow">Pattern reading</span><h3 id="patternLabel">Waiting for a complete pattern</h3></div><span class="note" id="patternSummary">Tick structure appears after the stream begins</span></div><div class="pattern-grid"><div class="card"><span>Tick sequence · impact</span><strong class="sequence" id="sequence">—</strong><small>Example: U32_17.00, D22_10.67 · count + cumulative USDT impact</small></div><div class="card"><span>Volatility regime</span><strong id="regime">—</strong><small id="regimeMeta">awaiting ticks</small></div><div class="card"><span>Candle anatomy</span><strong id="anatomy">—</strong><small id="wicks">high / low / body</small></div><div class="card"><span>Current run</span><strong id="run">—</strong><small id="runImpact">confirmed directional run</small></div></div>
+<button type="button" class="config-toggle" id="minuteConfigToggle"><span class="chev">▸</span> <span id="minuteConfigToggleLabel">Show configuration</span></button>
+<div class="config-body" id="minuteConfigBody">
+<label>Tick update interval (ms)<input id="cfgTickInterval" type="number" min="20" step="10" value="100"></label>
+      <label>Imbalance threshold<input id="cfgImbalanceThreshold" type="number" value="0.2" step="0.01" min="0"></label>
+<label>Movement threshold (points)<input id="cfgMovementThreshold" type="number" value="0" step="0.01" min="0"></label>
+<label>Consecutive ticks<input id="cfgTickStreak" type="number" value="1" step="1" min="1"></label>
+</div>
+</section>
+<section class="section"><div class="section-head"><div><span class="eyebrow" id="minuteLabel">Current UTC minute</span><h3>Current minute analysis</h3></div><div class="actions"><button class="action" id="exportBtn">⇩ Export CSV</button><button class="action" id="clearBtn">Clear history</button></div></div><div class="stats"><div class="stat"><label>Up ticks</label><b class="gain" id="upTicks">0</b></div><div class="stat"><label>Down ticks</label><b class="loss" id="downTicks">0</b></div><div class="stat"><label>No change</label><b id="flatTicks">0</b></div><div class="stat"><label>High–low range</label><b id="range">—</b></div><div class="stat"><label>Avg absolute tick</label><b id="avgMove">—</b></div><div class="stat"><label>Current streak</label><b id="streak">—</b></div></div></section>
+<section class="section"><div class="section-head"><div><span class="eyebrow">Completed minutes</span><h3>Minute ledger · <span id="ledgerSymbol">BTCUSDT</span></h3></div><span class="note" id="recordCount">0 records in this session</span></div><div class="table-wrap"><table><thead><tr><th>UTC</th><th>Open</th><th>Close</th><th>Net</th><th>Up / down / flat</th><th>Range</th><th>Avg tick</th><th>Pattern</th><th>Regime</th></tr></thead><tbody id="ledger"><tr><td colspan="9" class="empty">Completed minute records will appear here.</td></tr></tbody></table></div><div class="footer-note">Pattern runs are confirmed after two same-direction ticks. A one-tick flip is treated as neutral and omitted.</div></section>
+</main></div></div></div>
+<section class="tab-panel" id="autoTab">
+  <div class="auto-wrap">
+    <div class="auto-head">
+      <div>
+        <span class="eyebrow">Paper execution engine</span>
+        <h2>BTCDana XAUUSD · Tick Auto Trade</h2>
+        <p>Demo simulation only. Every quote is treated as a tick; no real BTCDana order is placed.</p>
+      </div>
+      <div class="auto-status"><i class="dot" id="autoDot"></i><span id="autoStatus">Stopped</span></div>
+    </div>
+
+    
+<div class="auto-symbol-bar">
+  <label>Tick simulator symbol
+    <select id="autoSymbol">
+      <option value="BTCUSDT">BTCUSDT</option>
+      <option value="XAUUSD">XAUUSD</option>
+      <option value="XAUUSDmini">XAUUSD mini</option>
+    </select>
+  </label>
+  <div class="signal-card auto-live-price">
+    <span id="autoSymbolLabel">BTCUSDT live price</span>
+    <strong id="autoLivePrice">—</strong>
+    <small id="autoLiveAge">waiting for live tick</small>
+  </div>
+</div>
+
+<div class="control-card">
+      <button type="button" class="config-toggle" id="autoConfigToggle"><span class="chev">▸</span> <span id="autoConfigToggleLabel">Show configuration</span></button>
+      <div class="config-body" id="autoConfigBody">
+      <div class="control-grid">
+        <label>Demo balance<input id="cfgBalance" type="number" value="1000" step="1" min="1"></label>
+        <label>Max loss / trade ($)<input id="cfgRisk" type="number" value="0.5" step="0.01" min="0.01"></label>
+        <label>Min profit before momentum exit ($)<input id="cfgMinProfitExit" type="number" value="0.5" step="0.01" min="0"></label>
+        <label>Max running trades<input id="cfgMaxTrades" type="number" value="10" step="1" min="1"></label>
+        <label>Time gap between trades (ms)<input id="cfgTradeGap" type="number" value="2000" step="50" min="0"></label>
+        <label>Cooldown after a losing trade (ms)<input id="cfgLossCooldown" type="number" value="5000" step="100" min="0"></label>
+        <label>Manual SL distance override (price, 0 = auto)<input id="cfgSlOverride" type="number" value="0" step="0.01" min="0"></label>
+        <label>Trailing TP giveback (%)<input id="cfgTrailPct" type="number" value="2.5" step="0.1" min="0.1"></label>
+        <label>Lot size<input id="cfgLot" type="number" value="0.01" step="0.01" min="0.01"></label>
+        <label>Commission / 0.01 lot ($)<input id="cfgComm" type="number" value="0.15" step="0.01" min="0"></label>
+        <label>Tick frame<input id="cfgWindow" type="number" value="1000" step="1" min="20"></label>
+        <label>Change threshold — BTCUSDT<input id="cfgChangeThresholdBtc" type="number" value="1" step="0.01" min="0"></label>
+        <label>Change threshold — XAUUSD<input id="cfgChangeThresholdXau" type="number" value="0.1" step="0.01" min="0"></label>
+        <label>Change threshold — XAUUSD mini<input id="cfgChangeThresholdXauMini" type="number" value="0.1" step="0.01" min="0"></label>
+        <label>Minimum trend confidence (%)<input id="cfgTrendConfidence" type="number" value="55" step="1" min="0" max="100"></label>
+        <label>Daily loss limit (%)<input id="cfgDailyLossPct" type="number" value="10" step="0.5" min="0.1" max="100"></label>
+        <label>Profit-lock trigger ($ net)<input id="cfgLockTrigger" type="number" value="0.4" step="0.01" min="0"></label>
+        <label>Locked-in SL profit ($ net)<input id="cfgLockProfit" type="number" value="0.1" step="0.01" min="0"></label>
+        <label>BTCUSDT leverage (1:x)<input id="cfgLeverageBtc" type="number" value="300" step="1" min="1"></label>
+        <label>XAUUSD leverage (1:x)<input id="cfgLeverageXau" type="number" value="800" step="1" min="1"></label>
+        <label>XAUUSD mini leverage (1:x)<input id="cfgLeverageXauMini" type="number" value="500" step="1" min="1"></label>
+      </div>
+      <div class="source-note">
+        <b>Data source:</b> BTCDana public XAUUSD quote page, polled as the browser can access it.
+        <span>Direction model: fixed price change is the mandatory trigger; UP/DOWN/FLAT sequence, movement dominance and flips determine trend confidence. The change threshold is set per symbol (default 1 for BTCUSDT, 0.1 for XAUUSD and XAUUSD mini).</span>
+        <span>Profit lock: once a trade's net profit (after its entry fee of $0.15) passes the "Profit-lock trigger" ($0.4 default), its SL is tightened so a reversal still banks at least the "Locked-in SL profit" ($0.1 default, i.e. a $0.25 gross buffer) — the stop only ever moves in the trade's favor, never loosens.</span>
+        <span>Margin: computed live as price × contract size (0.01 BTC / 1oz XAUUSD / 0.2oz XAUUSD mini, per 0.01 lot) ÷ that symbol's leverage — matching BTCDana's real margin at 1:300 (BTC), 1:800 (XAUUSD) and 1:500 (XAUUSD mini).</span>
+      </div>
+      </div>
+      <div class="control-actions">
+        <button class="action primary" id="startAuto">Start simulation</button>
+        <button class="action" id="stopAuto">Stop</button>
+        <button class="action" id="resetAuto">Reset demo</button>
+        <button class="action" id="exportAuto">⇩ Export trade log</button>
+        <button class="action" id="exportClosed">⇩ Export closed trades</button>
+      </div>
+    </div>
+
+    <div class="auto-stats">
+      <div class="stat"><label>Balance</label><b id="aBalance">$1,000.00</b></div>
+      <div class="stat"><label>Equity</label><b id="aEquity">$1,000.00</b></div>
+      <div class="stat"><label>Open trades</label><b id="aOpen">0 / 10</b></div>
+      <div class="stat"><label>Realized P/L</label><b id="aRealized">$0.00</b></div>
+      <div class="stat"><label>Win rate</label><b id="aWin">—</b></div>
+      <div class="stat"><label>Total trades</label><b id="aTrades">0</b></div><div class="stat"><label>Daily loss used</label><b id="aDailyLoss">$0.00 / $100.00</b></div>
+      <div class="stat"><label>Total fees paid</label><b id="aFeesPaid">$0.00</b></div>
+      <div class="stat"><label>Running profit (open)</label><b id="aRunningProfit">$0.00</b></div>
+      <div class="stat"><label>Closed trade return</label><b id="aClosedReturn">$0.00</b></div>
+      <div class="stat"><label>Margin blocked</label><b id="aMarginBlocked">$0.00</b></div>
+    </div>
+
+    <div class="signal-grid">
+      <div class="signal-card">
+        <span id="aPriceLabel">XAUUSD live price</span><strong id="aPrice">—</strong><small id="aQuoteAge">waiting for quote</small>
+      </div>
+      <div class="signal-card">
+        <span>Price change</span><strong id="aChange">—</strong><small>primary trade trigger</small>
+      </div>
+      <div class="signal-card">
+        <span>Tick structure</span><strong id="aStructure">—</strong><small>UP / DOWN / FLAT</small>
+      </div>
+      <div class="signal-card">
+        <span>Trend confidence</span><strong id="aTrendConfidence">—</strong><small>sequence confirmation only</small>
+      </div>
+      <div class="signal-card">
+        <span>Flip count</span><strong id="aFlips">—</strong><small>lower is better for a trend</small>
+      </div>
+      <div class="signal-card">
+        <span>Tick streak</span><strong id="aStreak">—</strong><small>latest directional run</small>
+      </div>
+      <div class="signal-card">
+        <span>Trend bias</span><strong id="aTrendBias">—</strong><small>movement-weighted direction</small>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div><span class="eyebrow">Live decision</span><h3 id="decisionTitle">Waiting for 30 ticks</h3></div>
+        <span class="note" id="decisionWhy">The engine will explain every entry, exit and rejection.</span>
+      </div>
+      <div class="decision-box" id="decisionBox">No trade decision yet.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div><span class="eyebrow">Open positions</span><h3>Simulated positions</h3></div>
+        <span class="note" id="openPosNote">Fixed 0.01 lot · max 10</span>
+      </div>
+      <div class="table-wrap"><table class="auto-table"><thead><tr>
+        <th>ID</th><th>Side</th><th>Lot</th><th>Entry</th><th>SL</th><th>TP (trail peak)</th><th>LTP</th><th>Margin</th><th>Return</th><th>Reason</th>
+      </tr></thead><tbody id="openTrades"><tr><td colspan="10" class="empty">No open positions.</td></tr></tbody></table></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div><span class="eyebrow">Trade history</span><h3>Closed trades</h3></div>
+        <span class="note" id="closedCount">0 closed</span>
+      </div>
+      <div class="table-wrap"><table class="auto-table"><thead><tr>
+        <th>ID</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>TP (peak reached)</th><th>SL</th><th>Exit</th><th>Fees</th><th>Return</th><th>Entry time</th><th>Exit time</th><th>Why entry</th><th>Why closed</th>
+      </tr></thead><tbody id="closedTrades"><tr><td colspan="14" class="empty">No closed trades yet.</td></tr></tbody></table></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div><span class="eyebrow">Trade analytics</span><h3>Running &amp; closed trade performance</h3></div>
+        <span class="note">Fees are booked at trade entry · recalculated every tick</span>
+      </div>
+      <div class="analytics-grid">
+        <div class="chart-mini">
+          <div class="chart-mini-head"><span>Time vs return</span><span id="returnTimeMeta">cumulative closed net P/L</span></div>
+          <canvas id="returnTimeChart" width="600" height="210"></canvas>
+        </div>
+        <div class="chart-mini">
+          <div class="chart-mini-head"><span>Return vs fees paid</span><span id="returnFeesMeta">per closed trade</span></div>
+          <canvas id="returnFeesChart" width="600" height="210"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div><span class="eyebrow">Audit trail</span><h3>Every decision / trade log</h3></div>
+        <span class="note" id="logCount">0 events</span>
+      </div>
+      <div class="table-wrap"><table class="auto-table"><thead><tr>
+        <th>Time</th><th>Event</th><th>Side</th><th>Price</th><th>TI</th><th>NM</th><th>Accel</th><th>P/L</th><th>Why</th>
+      </tr></thead><tbody id="tradeLog"><tr><td colspan="9" class="empty">Start the simulator to build the audit trail.</td></tr></tbody></table></div>
+      <div class="footer-note">Risk rule (lot fixed at 0.01): with $3 max loss and $0.15 commission, net risk is $2.85. XAUUSD (standard 100-oz lot, 0.01 lot = 1oz, $1 move = $1 P/L) → SL distance ≈ $2.85 price move. XAUUSD mini (same quote feed as XAUUSD, but margin and P/L are both ÷5, so $1 move = $0.20 P/L) → SL distance ≈ $14.25 price move (2.85 × 5). BTCUSDT (0.01 lot, $1 move = $0.01 P/L) → SL distance ≈ $285 price move. Either way a full SL hit is $2.85 gross + $0.15 commission = $3.00 maximum loss — or set "Manual SL distance override" above to use a fixed price distance instead of the $-risk calculation. TP is trailing, not a fixed target: it tracks the best price reached since entry ("TP" column) and exits once price gives back the configured "Trailing TP giveback %" (default 2.5%) from that peak — but only once net profit (after fees) is at least the "Min profit before momentum exit" amount, so a shallow pullback right after entry won't close the trade early. The same profit floor also gates the imbalance-based momentum-reversal exit. "Max running trades" caps concurrent open positions. Daily trading stops after realized losses reach 10% of the starting demo balance.</div>
+    </div>
+  </div>
+</section>
+<script>
+const API='https://api.binance.com/api/v3';let symbol='BTCUSDT',interval='1m',markets=[],socket=null,active=null,candles=[],history=JSON.parse(localStorage.getItem('minutePulseHistory')||'{}'),lastTick=0,minuteTabActive=true,minuteRenderTimer=null;
+const $=id=>document.getElementById(id), fmt=(n,d=2)=>n==null||Number.isNaN(n)?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}), pct=n=>n==null?'—':`${(n*100).toFixed(0)}%`, minuteLabel=t=>new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'UTC'}), esc=s=>String(s??'').replaceAll('"','""');
+function makeRecord(minute,price){return{minute,open:price,close:price,high:price,low:price,ticks:1,up:0,down:0,flat:1,absoluteMove:0,pattern:'',streakDirection:null,streakLength:0,pendingDirection:null,pendingLength:0,pendingImpact:0};}
+function applyTick(r,price){const dir=price>r.close?'up':price<r.close?'down':'flat',delta=Math.abs(price-r.close);if(dir==='up')r.up++;if(dir==='down')r.down++;if(dir==='flat')r.flat++;r.high=Math.max(r.high,price);r.low=Math.min(r.low,price);r.absoluteMove+=delta;r.ticks++;r.streakLength=r.streakDirection===dir?r.streakLength+1:1;r.streakDirection=dir;
+if(dir!=='flat'){const token=dir==='up'?'U':'D',m=r.pattern.match(/([UD])(\d*)_([\d.]+)$/),chainDir=m?.[1]||null,chainCount=m?Number(m[2]||1):0,chainImpact=m?Number(m[3]):0,format=(d,c,i)=>`${d}${c>1?c:''}_${i.toFixed(2)}`;if(r.pendingDirection){if(r.pendingDirection===dir){r.pendingLength++;r.pendingImpact+=delta;if(r.pendingLength>=2){r.pattern+=`${r.pattern?', ':''}${format(token,r.pendingLength,r.pendingImpact)}`;r.pendingDirection=null;r.pendingLength=0;r.pendingImpact=0}}else if(chainDir===token){r.pattern=r.pattern.slice(0,-m[0].length)+format(token,chainCount+1,chainImpact+delta);r.pendingDirection=null;r.pendingLength=0;r.pendingImpact=0}else{r.pendingDirection=dir;r.pendingLength=1;r.pendingImpact=delta}}else if(!chainDir){r.pendingDirection=dir;r.pendingLength=1;r.pendingImpact=delta}else if(chainDir===token){r.pattern=r.pattern.slice(0,-m[0].length)+format(token,chainCount+1,chainImpact+delta)}else{r.pendingDirection=dir;r.pendingLength=1;r.pendingImpact=delta}}
+r.close=price;return r}
+function calc(r){const range=r.high-r.low,avg=r.ticks>1?r.absoluteMove/(r.ticks-1):0,mean=r.close;let regime='building';if(r.ticks>=4){const ratio=range/Math.max(r.open,.000001);regime=range===0?'quiet':ratio>.004?'expanding':ratio<.0005?'compressed':'active'}const dir=r.close>r.open?'up':r.close<r.open?'down':'flat',loc=range?(r.close-r.low)/range:.5,body=Math.abs(r.close-r.open),upper=Math.max(0,r.high-Math.max(r.open,r.close)),lower=Math.max(0,Math.min(r.open,r.close)-r.low);let label='Balanced move';if(r.ticks<4)label='Building pattern';else if(dir==='flat'&&regime!=='quiet')label='Range-bound rotation';else if(dir==='up'&&r.streakLength>=3&&loc>.65)label='Steady upward drift';else if(dir==='down'&&r.streakLength>=3&&loc<.35)label='Steady downward drift';else if(body<(upper+lower)*.35)label='Indecision / wick-heavy';else label=`${dir==='up'?'Upward':dir==='down'?'Downward':'Balanced'} ${regime} move`;return{range,avg,regime,dir,loc,body,upper,lower,label}}
+function render(){const r=active;if(!r)return;const c=calc(r);$('open').textContent=fmt(r.open);$('high').textContent=fmt(r.high);$('low').textContent=fmt(r.low);$('close').textContent=fmt(r.close);$('body').textContent=fmt(c.body,4);$('closePos').textContent=pct(c.loc);$('toolbarPrice').textContent=fmt(r.close);$('priceAge').textContent=`USDT · ${lastTick?Math.floor((Date.now()-lastTick)/1000)+'s ago':'waiting'}`;$('minuteLabel').textContent=minuteLabel(r.minute)+' UTC';$('upTicks').textContent=r.up;$('downTicks').textContent=r.down;$('flatTicks').textContent=r.flat;$('range').textContent=fmt(c.range,4);$('avgMove').textContent=fmt(c.avg,4);$('streak').textContent=r.streakDirection?`${r.streakLength} ${r.streakDirection}`:'—';$('patternLabel').textContent=c.label;$('patternSummary').textContent=`${r.ticks} ticks · closes ${c.dir} · ${c.loc>.65?'near high':c.loc<.35?'near low':'inside range'}`;$('sequence').textContent=r.pattern||'—';$('regime').textContent=c.regime;$('regimeMeta').textContent=`${r.ticks} observations · ${fmt(c.range,4)} total range`;$('anatomy').textContent=`body ${fmt(c.body,4)}`;$('wicks').textContent=`upper ${fmt(c.upper,4)} · lower ${fmt(c.lower,4)}`;$('run').textContent=r.pendingDirection?`${r.pendingDirection} pending`:(r.streakDirection?`${r.streakLength} ${r.streakDirection}`:'—');$('runImpact').textContent=r.pendingDirection?`awaiting confirmation · ${fmt(r.pendingImpact,4)} USDT`:'confirmed directional run';$('ledgerSymbol').textContent=symbol;$('selectedChip').textContent=symbol.replace('USDT','')+' ×';$('recordCount').textContent=`${(history[symbol]||[]).length} records in this session`;renderLedger();}
+function renderLedger(){const rows=(history[symbol]||[]).slice().reverse(),body=$('ledger');if(!rows.length){body.innerHTML='<tr><td colspan="9" class="empty">Completed minute records will appear here.</td></tr>';return}body.innerHTML=rows.slice(0,50).map(r=>{const c=calc(r);return`<tr><td>${minuteLabel(r.minute)}</td><td>${fmt(r.open)}</td><td>${fmt(r.close)}</td><td class="${r.close>=r.open?'gain':'loss'}">${r.close>=r.open?'+':'−'}${fmt(Math.abs(r.close-r.open))}</td><td>${r.up} / ${r.down} / ${r.flat}</td><td>${fmt(c.range,4)}</td><td>${fmt(c.avg,4)}</td><td>${r.pattern||'—'}</td><td>${c.regime}</td></tr>`}).join('')}
+function draw(){const cv=$('chart'),ctx=cv.getContext('2d'),d=devicePixelRatio||1,w=cv.clientWidth,h=360;cv.width=w*d;cv.height=h*d;ctx.scale(d,d);ctx.clearRect(0,0,w,h);ctx.strokeStyle='#eef1f3';ctx.lineWidth=1;for(let i=1;i<5;i++){const y=i*h/5;ctx.beginPath();ctx.moveTo(10,y);ctx.lineTo(w-10,y);ctx.stroke()}if(!candles.length){ctx.fillStyle='#a0a8af';ctx.font='12px ui-monospace,monospace';ctx.textAlign='center';ctx.fillText('Candlestick data will appear when Binance responds.',w/2,h/2);return}const lo=Math.min(...candles.map(x=>x[3])),hi=Math.max(...candles.map(x=>x[2])),pad=(hi-lo)*.08||1,min=lo-pad,max=hi+pad,py=v=>h-35-(v-min)/(max-min)*(h-65),step=(w-50)/candles.length;ctx.font='10px ui-monospace,monospace';ctx.fillStyle='#9ba3aa';ctx.textAlign='right';for(let i=0;i<=4;i++){const v=max-(max-min)*i/4;ctx.fillText(fmt(v,2),w-8,25+i*(h-65)/4)}candles.forEach((x,i)=>{const xx=25+i*step+step/2,[,o,hh,ll,c]=x;const up=c>=o;ctx.strokeStyle=up?'#159570':'#d95764';ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(xx,py(hh));ctx.lineTo(xx,py(ll));ctx.stroke();const top=py(Math.max(o,c)),bot=py(Math.min(o,c)),bw=Math.max(2,step*.58);ctx.fillRect(xx-bw/2,top,bw,Math.max(2,bot-top))});}
+async function loadCandles(){try{$('chartState').textContent='Loading…';const r=await fetch(`${API}/klines?symbol=${symbol}&interval=${interval}&limit=90`);if(!r.ok)throw Error('Klines unavailable');candles=await r.json();$('chartState').textContent='Live chart';draw()}catch(e){$('chartState').textContent='Unavailable';draw()}}
+async function loadMarkets(){try{const [info,ticks]=await Promise.all([fetch(`${API}/exchangeInfo`).then(r=>r.json()),fetch(`${API}/ticker/24hr`).then(r=>r.json())]);const by=new Map(ticks.map(x=>[x.symbol,x]));markets=info.symbols.filter(x=>x.status==='TRADING'&&x.quoteAsset==='USDT').map(x=>{const t=by.get(x.symbol)||{};return{symbol:x.symbol,base:x.baseAsset,change:Number(t.priceChangePercent)||0,vol:Number(t.quoteVolume)||0,last:Number(t.lastPrice)||0}}).sort((a,b)=>b.vol-a.vol).slice(0,500);$('marketCount').textContent=markets.length;renderMarkets();$('statusText').textContent='Market data ready';$('statusDot').className='dot live'}catch(e){$('markets').innerHTML='<div class="footer-note error">Failed to fetch Binance markets</div>';setStatus('Binance market request failed','error')}}
+function renderMarkets(){const q=$('marketSearch').value.toLowerCase(),list=markets.filter(m=>(m.symbol+m.base).toLowerCase().includes(q)).slice(0,80);$('markets').innerHTML=list.map((m,i)=>`<button class="market ${m.symbol===symbol?'active':''}" data-symbol="${m.symbol}"><span class="mname"><b class="rank">${i+1}</b><strong>${m.base}</strong><small>/USDT</small></span><span class="${m.change>=0?'gain':'loss'}">${m.change>=0?'+':''}${m.change.toFixed(2)}%</span></button>`).join('')||'<div class="footer-note">No matching market</div>';document.querySelectorAll('.market').forEach(b=>b.onclick=()=>selectSymbol(b.dataset.symbol))}
+function setStatus(text,type=''){ $('statusText').textContent=text;$('statusDot').className='dot '+type}
+function connect(){if(socket)socket.close();setStatus('Connecting to Binance');const ws=`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@trade`;socket=new WebSocket(ws);socket.onopen=()=>setStatus('Live market data','live');socket.onclose=()=>{if(!minuteTabActive)return;setStatus('Stream disconnected','error');setTimeout(()=>{if(minuteTabActive)connect()},3000)};socket.onerror=()=>setStatus('Stream error','error');socket.onmessage=e=>{const t=JSON.parse(e.data),p=Number(t.p),ms=Number(t.T),m=Math.floor(ms/60000)*60000;lastTick=Date.now();if(!active||active.minute!==m){if(active){history[symbol]=[...(history[symbol]||[]),active].slice(-200);localStorage.setItem('minutePulseHistory',JSON.stringify(history))}active=makeRecord(m,p)}else active=applyTick(active,p);render()}}
+function startMinuteTracker(){
+  minuteTabActive=true;
+  if(!markets.length)loadMarkets();
+  if(!candles.length)loadCandles();
+  connect();
+  render();
+  if(!minuteRenderTimer)minuteRenderTimer=setInterval(()=>{if(lastTick)render()},1000);
+}
+function stopMinuteTracker(){
+  minuteTabActive=false;
+  if(socket){socket.close();socket=null;}
+  if(minuteRenderTimer){clearInterval(minuteRenderTimer);minuteRenderTimer=null;}
+  setStatus('Paused · switch back to Minute Tracker to resume','');
+}
+async function selectSymbol(s){symbol=s;$('symbolTitle').textContent=s.replace('USDT','');renderMarkets();active=null;lastTick=0;await loadCandles();connect();render()}
+$('marketSearch').oninput=renderMarkets;$('intervals').onclick=e=>{if(e.target.dataset.interval){interval=e.target.dataset.interval;document.querySelectorAll('.intervals button').forEach(b=>b.classList.toggle('active',b===e.target));loadCandles()}};window.onresize=draw;$('clearBtn').onclick=()=>{history[symbol]=[];localStorage.setItem('minutePulseHistory',JSON.stringify(history));render()};$('exportBtn').onclick=()=>{const rows=history[symbol]||[];const data=[['UTC','Open','Close','Net','Up','Down','Flat','Range','Avg tick','Pattern','Regime'],...rows.map(r=>{const c=calc(r);return[minuteLabel(r.minute),r.open,r.close,r.close-r.open,r.up,r.down,r.flat,c.range,c.avg,r.pattern,c.regime]})].map(row=>row.map(v=>`"${esc(v)}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/csv'}));a.download=`${symbol.toLowerCase()}-minute-ledger.csv`;a.click()};
+$('symbolTitle').textContent=symbol.replace('USDT','');startMinuteTracker();
+(function(){const t=$('minuteConfigToggle'),b=$('minuteConfigBody'),l=$('minuteConfigToggleLabel');t.onclick=()=>{const open=b.classList.toggle('open');t.classList.toggle('open',open);l.textContent=open?'Hide configuration':'Show configuration'};})();
+</script>
+<script>
+/* BTCDana Tick Auto-Trade Simulator
+   Paper only: it never sends an order to BTCDana/MT5. */
+const BTCDANA_URLS=[
+  'https://www.btcdana.com/products/quotes/XAUUSD',
+  'https://www.btcdana.com/products/variety/3-11'
+];
+let auto={
+  running:false,balance:1000,equity:1000,realized:0,positions:[],logs:[],ticks:[],closedTrades:[],
+  lastPrice:null,lastQuoteAt:0,lastDecision:'Waiting for 30 ticks',timer:null,tradeId:0,wins:0,closed:0,
+  startBalance:1000,dayLoss:0,dayLossLimit:100,lastLossAt:0
+};
+
+const aq=id=>document.getElementById(id);
+const nval=(id,def)=>{const x=Number(aq(id).value);return Number.isFinite(x)?x:def};
+const cfg=()=>({
+  balance:nval('cfgBalance',1000),risk:nval('cfgRisk',0.5),maxTrades:Math.max(1,Math.floor(nval('cfgMaxTrades',10))),
+  lot:Math.max(.01,nval('cfgLot',.01)),commPer001:nval('cfgComm',.15),
+  window:Math.max(20,Math.floor(nval('cfgWindow',1000))),
+  changeThresholdBtc:Math.max(0,nval('cfgChangeThresholdBtc',1)),
+  changeThresholdXau:Math.max(0,nval('cfgChangeThresholdXau',0.1)),
+  changeThresholdXauMini:Math.max(0,nval('cfgChangeThresholdXauMini',0.1)),
+  minProfitExit:Math.max(0,nval('cfgMinProfitExit',0.5)),
+  slOverride:Math.max(0,nval('cfgSlOverride',0)),
+  trailPct:Math.max(0.1,nval('cfgTrailPct',2.5)),
+  tradeGapMs:Math.max(0,nval('cfgTradeGap',2000)),
+  lossCooldownMs:Math.max(0,nval('cfgLossCooldown',5000)),
+  trendConfidence:Math.max(0,Math.min(100,nval('cfgTrendConfidence',55))),
+  dailyLossPct:Math.max(.1,Math.min(100,nval('cfgDailyLossPct',10))),
+  lockTrigger:Math.max(0,nval('cfgLockTrigger',0.4)),
+  lockProfit:Math.max(0,nval('cfgLockProfit',0.1)),
+  leverageBtc:Math.max(1,nval('cfgLeverageBtc',300)),
+  leverageXau:Math.max(1,nval('cfgLeverageXau',800)),
+  leverageXauMini:Math.max(1,nval('cfgLeverageXauMini',500))
+});
+function changeThresholdFor(symbol,c){
+  if(symbol==='BTCUSDT')return c.changeThresholdBtc;
+  if(symbol==='XAUUSDmini')return c.changeThresholdXauMini;
+  return c.changeThresholdXau;
+}
+
+function money(x){return Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function autoLog(event,side,price,metrics,pl,why){
+  auto.logs.push({time:new Date().toISOString(),event,side:side||'',price:price??'',ti:metrics?.ti??'',nm:metrics?.nm??'',accel:metrics?.accel??'',pl:pl??'',why});
+  if(auto.logs.length>2000)auto.logs.shift();
+}
+function metrics(){
+  const c=cfg(), a=auto.ticks.slice(-c.window);
+  if(a.length<2)return null;
+  const d=[]; for(let i=1;i<a.length;i++)d.push(a[i]-a[i-1]);
+  const up=d.filter(x=>x>0).length, down=d.filter(x=>x<0).length, denom=up+down;
+  const ti=denom?(up-down)/denom:0, total=d.reduce((s,x)=>s+x,0);
+  const mean=total/d.length;
+  const variance=d.reduce((s,x)=>s+(x-mean)*(x-mean),0)/Math.max(1,d.length-1);
+  const sigma=Math.sqrt(variance);
+  const nm=sigma?total/(sigma*Math.sqrt(d.length)):0;
+  const half=Math.floor(d.length/2);
+  const old=d.slice(0,half).reduce((s,x)=>s+x,0), recent=d.slice(-half).reduce((s,x)=>s+x,0), accel=recent-old;
+  let streak=0, dir=0;
+  for(let i=d.length-1;i>=0;i--){if(d[i]===0)continue;const q=d[i]>0?1:-1;if(!dir)dir=q;if(q!==dir)break;streak++}
+  return {ti,nm,accel,sigma,streak,dir,total,up,down,d};
+}
+function pointValueFor(symbol){
+  // Dollar P/L per $1.00 of price movement, per 0.01 lot (lot is fixed at 0.01).
+  // BTCUSDT, 0.01 lot: $1 price move = $0.01 gross -> $2.85 net risk needs a ~$285 move (285 "points").
+  // XAUUSD, 0.01 lot on a standard 100-oz lot (0.01 lot = 1oz): $1 price move = $1 gross -> $2.85 net risk needs a $2.85 move.
+  // XAUUSDmini: same quote/feed as XAUUSD, but margin and P/L are both /5 of standard
+  // -> $1 price move = $0.20 gross -> $2.85 net risk needs a $14.25 move (2.85 * 5).
+  if(symbol==='BTCUSDT')return 0.01;
+  if(symbol==='XAUUSDmini')return 0.2;
+  return 1;
+}
+function leverageFor(symbol,c){
+  // Real BTCDana margin leverage, back-calculated from live examples:
+  // BTCUSDT @81092 -> $2.70 margin/0.01 lot => 1:300
+  // XAUUSD  @4478  -> $5.60 margin/0.01 lot => 1:800
+  // XAUUSDmini @4479 -> $1.79 margin/0.01 lot => 1:500
+  if(symbol==='BTCUSDT')return c.leverageBtc;
+  if(symbol==='XAUUSDmini')return c.leverageXauMini;
+  return c.leverageXau;
+}
+function marginFor(symbol,price,lot,c){
+  if(!Number.isFinite(price)||price<=0)return 0;
+  const units=pointValueFor(symbol)*((lot||0.01)/0.01);
+  return (price*units)/leverageFor(symbol,c);
+}
+function grossPnlPoints(pos,price){
+  const direction=pos.side==='BUY'?1:-1;
+  const priceMove=(price-pos.entry)*direction;
+  const pv=pointValueFor(pos.symbol)*((pos.lot||0.01)/0.01);
+  return priceMove*pv;
+}
+function pnl(pos,price){return grossPnlPoints(pos,price)}
+function commission(c,lot){return c.commPer001*(lot/.01)}
+function stopDistance(m,c,symbol){
+  const comm=commission(c,c.lot),grossRisk=Math.max(0,c.risk-comm);
+  const pv=pointValueFor(symbol)*(c.lot/0.01);
+  const autoDistance=grossRisk/pv;
+  const priceDistance=c.slOverride>0?c.slOverride:autoDistance;
+  return {raw:priceDistance,maxDist:priceDistance,grossRisk,pointValue:pv,auto:autoDistance,manual:c.slOverride>0};
+}
+function currentEquity(){
+  return auto.balance+auto.positions.reduce((s,p)=>s+pnl(p,auto.lastPrice),0);
+}
+function dailyLossLimit(c){return auto.startBalance*(c.dailyLossPct/100)}
+function dailyLossUsed(c){
+  return Math.max(0,-auto.realized);
+}
+function dailyLossReached(c){
+  return dailyLossUsed(c)>=dailyLossLimit(c);
+}
+function trendMetrics(){
+  const c=cfg();
+  // Continuous rolling window: always the most recent c.window ticks,
+  // recomputed fresh every single tick. Nothing is bucketed or discarded
+  // at time boundaries — the window just slides forward by one tick each
+  // time a new price arrives.
+  const a=auto.ticks.slice(-c.window);
+  if(a.length<2)return null;
+
+  const first=Number(a[0]), last=Number(a[a.length-1]);
+  const change=last-first;
+  let up=0,down=0,flat=0,upMove=0,downMove=0,flips=0,lastDir=0,streak=0,streakDir=0;
+
+  for(let i=1;i<a.length;i++){
+    const d=Number(a[i])-Number(a[i-1]);
+    if(d>0){
+      up++; upMove+=d;
+      if(lastDir===-1)flips++;
+      lastDir=1;
+    }else if(d<0){
+      down++; downMove+=-d;
+      if(lastDir===1)flips++;
+      lastDir=-1;
+    }else{
+      flat++;
+    }
+  }
+
+  // Current directional streak, ignoring flat ticks.
+  for(let i=a.length-1;i>0;i--){
+    const d=Number(a[i])-Number(a[i-1]);
+    if(d===0)continue;
+    const q=d>0?1:-1;
+    if(!streakDir)streakDir=q;
+    if(q!==streakDir)break;
+    streak++;
+  }
+
+  const directional=up+down;
+  const totalMove=upMove+downMove;
+  const movementBias=totalMove ? (upMove-downMove)/totalMove : 0;
+  const countBias=directional ? (up-down)/directional : 0;
+  const flatRatio=flat/Math.max(1,a.length-1);
+  const flipRatio=flips/Math.max(1,directional-1);
+
+  // Trend efficiency: a clean trend has little backtracking.
+  const efficiency=totalMove ? Math.abs(change)/totalMove : 0;
+
+  // Dominance rewards cases such as 80U/20D or 10x more UP than DOWN.
+  const moveRatio=(upMove>0 && downMove>0)
+    ? Math.max(upMove/downMove,downMove/upMove)
+    : (totalMove>0 ? 10 : 1);
+  const countRatio=(up>0 && down>0)
+    ? Math.max(up/down,down/up)
+    : (directional>0 ? 10 : 1);
+
+  const moveDominance=Math.min(1,Math.log10(Math.max(1,moveRatio))/1);
+  const countDominance=Math.min(1,Math.log10(Math.max(1,countRatio))/1);
+
+  // Sequence confidence only: fewer flats, fewer flips, stronger dominance,
+  // and cleaner directional persistence all increase confidence.
+  const sequenceQuality=Math.max(0,1-(flatRatio*0.45)-(flipRatio*0.75));
+  const confidence=Math.max(0,Math.min(1,
+    Math.abs(movementBias)*0.35 +
+    efficiency*0.30 +
+    moveDominance*0.15 +
+    countDominance*0.10 +
+    sequenceQuality*0.10
+  ));
+
+  const bias=change>0?'BUY':change<0?'SELL':'FLAT';
+
+  return {
+    change,up,down,flat,upMove,downMove,flips,streak,streakDir,
+    movementBias,countBias,flatRatio,flipRatio,efficiency,
+    moveRatio,countRatio,confidence,bias
+  };
+}
+
+function decision(){
+  const c=cfg();
+  const symbol=aq('autoSymbol').value;
+  const changeThreshold=changeThresholdFor(symbol,c);
+  // Entry decisions come from a continuous rolling window of the last
+  // c.window ticks (default 1000) — it slides forward one tick at a time,
+  // recomputed fresh on every tick. Nothing is bucketed or thrown away at
+  // time boundaries; the post-entry gap below only rate-limits how often
+  // a trade may actually fire, it does not affect what data feeds the
+  // trend calculation. Exit handling for already-running trades is fully
+  // independent of all of this — see checkPositions(), called every tick
+  // regardless of entry state.
+  const m=trendMetrics();
+  auto.dayLoss=dailyLossUsed(c); auto.dayLossLimit=dailyLossLimit(c);
+
+  if(dailyLossReached(c))
+    return {signal:null,reason:`BLOCKED: daily loss limit reached. $${auto.dayLoss.toFixed(2)} / $${auto.dayLossLimit.toFixed(2)}.`,m};
+
+  const sinceLastTrade=auto.lastTradeAt?Date.now()-auto.lastTradeAt:Infinity;
+  if(sinceLastTrade<c.tradeGapMs)
+    return {signal:null,reason:`WAIT: minimum ${c.tradeGapMs}ms gap between trades (${(c.tradeGapMs-sinceLastTrade).toFixed(0)}ms remaining).`,m};
+
+  const sinceLastLoss=auto.lastLossAt?Date.now()-auto.lastLossAt:Infinity;
+  if(c.lossCooldownMs>0 && sinceLastLoss<c.lossCooldownMs)
+    return {signal:null,reason:`WAIT: cooldown after last losing trade (${(c.lossCooldownMs-sinceLastLoss).toFixed(0)}ms remaining).`,m};
+
+  if(!m)
+    return {signal:null,reason:`Need ${c.window} ticks; currently ${auto.ticks.length}.`,m};
+
+  if(auto.positions.length>=c.maxTrades)
+    return {signal:null,reason:`BLOCKED: maximum ${c.maxTrades} running trades reached (${auto.positions.length} open positions).`,m};
+
+  const sd=stopDistance(metrics()||m,c);
+  if(sd.maxDist<=0)
+    return {signal:null,reason:'BLOCKED: commission alone consumes the configured per-trade risk.',m};
+
+  // CHANGE HAS PRIORITY: without the fixed price change, no trade is allowed.
+  if(Math.abs(m.change)<changeThreshold){
+    return {
+      signal:null,
+      reason:`WAIT: change ${m.change.toFixed(4)} has not reached ±${changeThreshold.toFixed(4)}. Trend sequence is only confidence.`,
+      m
+    };
+  }
+
+  const confidencePct=m.confidence*100;
+  if(confidencePct<c.trendConfidence){
+    return {
+      signal:null,
+      reason:`WAIT: ${m.bias} change ${m.change.toFixed(4)} reached, but trend confidence is ${confidencePct.toFixed(0)}% < ${c.trendConfidence.toFixed(0)}%. ${m.up}U/${m.down}D/${m.flat}F, ${m.flips} flips.`,
+      m
+    };
+  }
+
+  const side=m.bias;
+  return {
+    signal:side,
+    reason:`${side}: change ${m.change.toFixed(4)} reached ±${changeThreshold.toFixed(4)}. Confidence ${confidencePct.toFixed(0)}%. ${m.up}U/${m.down}D/${m.flat}F; movement ${m.upMove.toFixed(4)}↑/${m.downMove.toFixed(4)}↓; ${m.flips} flips.`,
+    m
+  };
+}
+
+function openPosition(signal,why,m){
+  const c=cfg();
+  if(dailyLossReached(c)){
+    autoLog('BLOCKED','',auto.lastPrice,m,0,`Daily loss limit reached: $${dailyLossUsed(c).toFixed(2)} / $${dailyLossLimit(c).toFixed(2)}.`);
+    return undefined;
+  }
+  if(!Number.isFinite(auto.lastPrice)||auto.lastPrice<=0){
+    autoLog('BLOCKED',signal,auto.lastPrice,m,0,'No valid live price to open at.');
+    return undefined;
+  }
+  const symbol=aq('autoSymbol').value;
+  const sd=stopDistance(m,c,symbol), riskDist=sd.raw;
+  const entry=auto.lastPrice, comm=commission(c,c.lot);
+  // TP is trailing, not a fixed price: `tp` starts at entry and is updated
+  // every tick in checkPositions() to track the best price reached so far
+  // (the "peak"). Exit fires once price gives back cfgTrailPct% of that
+  // peak move AND the trade is net-profitable by at least cfgMinProfitExit.
+  const pos={id:++auto.tradeId,side:signal,lot:c.lot,entry,symbol,
+    sl:signal==='BUY'?entry-riskDist:entry+riskDist,
+    tp:entry,peakMove:0,current:entry,reason:why,commission:comm,
+    stopDistance:riskDist,slManual:sd.manual,opened:new Date().toISOString()};
+  auto.positions.push(pos);
+  autoLog('ENTRY',signal,entry,m,0,why+` Commission reserved/charged at close: $${comm.toFixed(2)}.`);
+  // Only a position that reached this line was actually opened AND logged
+  // — this is the sole "trade executed" confirmation the caller may rely
+  // on to arm the post-entry gap.
+  return pos;
+}
+function closePosition(pos,price,reason,m){
+  const c=cfg(),gross=grossPnlPoints(pos,price),net=gross-pos.commission;
+  auto.balance+=net;auto.realized+=net;auto.closed++;if(net>0)auto.wins++;else auto.lastLossAt=Date.now();
+  autoLog('EXIT',pos.side,price,m,net,`Trade #${pos.id} (${pos.symbol}) closed. Gross P/L $${gross.toFixed(2)} at $${pointValueFor(pos.symbol).toFixed(2)}/point, minus commission $${pos.commission.toFixed(2)}. ${reason}`);
+  if(!auto.closedTrades)auto.closedTrades=[];
+  auto.closedTrades.push({
+    id:pos.id,symbol:pos.symbol,side:pos.side,qty:pos.lot,
+    entry:pos.entry,tp:pos.tp,sl:pos.sl,fees:pos.commission,exit:price,
+    gross,net,entryTime:pos.opened,exitTime:new Date().toISOString(),
+    whyEntry:pos.reason,whyClosed:reason
+  });
+  if(auto.closedTrades.length>2000)auto.closedTrades.shift();
+  auto.positions=auto.positions.filter(x=>x.id!==pos.id);
+}
+function checkPositions(m){
+  if(!auto.lastPrice)return;
+  const c=cfg(), price=auto.lastPrice, exits=[];
+  for(const p of auto.positions){
+    p.current=price;
+    const direction=p.side==='BUY'?1:-1;
+    const currentMove=(price-p.entry)*direction;
+    // Trailing peak: the best favorable move seen since entry. Updated
+    // every tick regardless of whether an exit fires this tick.
+    if(typeof p.peakMove!=='number')p.peakMove=Math.max(0,currentMove);
+    else p.peakMove=Math.max(p.peakMove,currentMove);
+    p.tp=p.entry+p.peakMove*direction; // "TP" column now shows this live peak price
+    const floating=pnl(p,price);
+    const floatingNet=floating-p.commission;
+    const giveBack=p.peakMove-currentMove;
+    const trailThreshold=p.peakMove*(c.trailPct/100);
+
+    // Profit lock: once net profit (after the fee already reserved at
+    // entry) passes c.lockTrigger, tighten the SL so a reversal still
+    // banks at least c.lockProfit net. The stop only ever moves in the
+    // trade's favor — it can never loosen back toward the original risk.
+    if(floatingNet>c.lockTrigger){
+      const pv=pointValueFor(p.symbol)*((p.lot||0.01)/0.01);
+      const lockDist=(c.lockProfit+p.commission)/pv;
+      const lockedSl=p.side==='BUY'?p.entry+lockDist:p.entry-lockDist;
+      const improved=p.side==='BUY'?lockedSl>p.sl:lockedSl<p.sl;
+      if(improved){
+        const prevSl=p.sl;
+        p.sl=lockedSl;
+        p.slLocked=true;
+        autoLog('SL_LOCK',p.side,price,m,floatingNet,`Trade #${p.id} net profit $${floatingNet.toFixed(2)} passed $${c.lockTrigger.toFixed(2)} trigger. SL moved ${prevSl.toFixed(2)} → ${p.sl.toFixed(2)} to lock in ≥$${c.lockProfit.toFixed(2)} net.`);
+      }
+    }
+
+    if(p.side==='BUY' && price<=p.sl)exits.push([p,`SL hit at ${price.toFixed(2)}.${p.slLocked?' (profit-locked stop)':''}`]);
+    else if(p.side==='SELL' && price>=p.sl)exits.push([p,`SL hit at ${price.toFixed(2)}.${p.slLocked?' (profit-locked stop)':''}`]);
+    else if(p.peakMove>0 && giveBack>=trailThreshold && floatingNet>=c.minProfitExit){
+      exits.push([p,`Trailing TP: price gave back ${giveBack.toFixed(4)} (≥${c.trailPct}% of peak move ${p.peakMove.toFixed(4)}) from its best point. Net profit $${floatingNet.toFixed(2)} ≥ $${c.minProfitExit.toFixed(2)} minimum, locking it in.`]);
+    }
+    else if((p.side==='BUY'&&m&&m.ti<.10&&m.nm<0)||(p.side==='SELL'&&m&&m.ti>-.10&&m.nm>0)){
+      // Imbalance/momentum alone never closes a trade at a loss or at a
+      // trivial profit — it only ever gets to pull the trigger once the
+      // trade is already net ahead by at least cfgMinProfitExit (fees
+      // included). Below that bar we just keep riding toward SL or the
+      // trailing TP.
+      if(floatingNet>=c.minProfitExit){
+        exits.push([p,`Momentum reversal exit: tick imbalance weakened and normalized momentum reversed. Net profit $${floatingNet.toFixed(2)} ≥ $${c.minProfitExit.toFixed(2)} minimum, so locking it in.`]);
+      }
+    }
+  }
+  exits.forEach(([p,r])=>closePosition(p,price,r,m));
+}
+function runDecision(){
+  const d=decision();
+  if(d.m){
+    if(aq('aChange'))aq('aChange').textContent=d.m.change.toFixed(4);
+    if(aq('aStructure'))aq('aStructure').textContent=`${d.m.up}U / ${d.m.down}D / ${d.m.flat}F`;
+    if(aq('aTrendConfidence'))aq('aTrendConfidence').textContent=(d.m.confidence*100).toFixed(0)+'%';
+    if(aq('aFlips'))aq('aFlips').textContent=d.m.flips;
+    if(aq('aStreak'))aq('aStreak').textContent=(d.m.streakDir>0?'UP ':d.m.streakDir<0?'DOWN ':'')+d.m.streak;
+    if(aq('aTrendBias'))aq('aTrendBias').textContent=d.m.bias;
+  }
+  aq('decisionTitle').textContent=d.signal?`Signal: ${d.signal}`:'No entry';
+  aq('decisionWhy').textContent=d.reason;
+  aq('decisionBox').textContent=d.reason;
+  auto.lastDecision=d.reason;
+  return d;
+}
+
+function evaluateThresholdSignal(price){
+  const c=cfg();
+  const ticks=auto.ticks||[];
+  if(ticks.length<2)return {signal:'WAIT',reason:'Collecting ticks'};
+
+  const last=ticks[ticks.length-1];
+  const prev=ticks[ticks.length-2];
+
+  // Tick direction / movement.
+  const move=price-prev;
+  const movementPoints=Math.abs(move);
+
+  // Use the simulator's existing imbalance value when available.
+  // If no order-flow imbalance is available, estimate directional
+  // imbalance from the recent tick sequence so the simulator can trade.
+  let imbalance=Number(auto.imbalance);
+  if(!Number.isFinite(imbalance)){
+    const n=Math.min(ticks.length,20);
+    let up=0,down=0;
+    for(let i=ticks.length-n+1;i<ticks.length;i++){
+      if(ticks[i]>ticks[i-1])up++;
+      else if(ticks[i]<ticks[i-1])down++;
+    }
+    const total=up+down;
+    imbalance=total ? (up-down)/total : 0;
+  }
+
+  const imbThreshold=Math.abs(Number(c.imbalanceThreshold ?? c.imbalance ?? 0.2));
+  const movementThreshold=Math.abs(Number(c.movementThreshold ?? c.moveThreshold ?? 0));
+  const streakThreshold=Math.max(1,Number(c.tickStreak ?? c.consecutiveTicks ?? 1));
+
+  let upStreak=0,downStreak=0;
+  for(let i=ticks.length-1;i>0;i--){
+    if(ticks[i]>ticks[i-1])upStreak++;
+    else break;
+  }
+  for(let i=ticks.length-1;i>0;i--){
+    if(ticks[i]<ticks[i-1])downStreak++;
+    else break;
+  }
+
+  // If movement threshold is 0, any non-zero tick qualifies.
+  const movementOK=movementPoints>=movementThreshold;
+
+  const buyOK=imbalance>=imbThreshold && move>0 && movementOK && upStreak>=streakThreshold;
+  const sellOK=imbalance<=-imbThreshold && move<0 && movementOK && downStreak>=streakThreshold;
+
+  if(buyOK)return {
+    signal:'BUY',
+    reason:`Imbalance ${imbalance.toFixed(3)} ≥ ${imbThreshold.toFixed(3)}, movement ${movementPoints.toFixed(2)} ≥ ${movementThreshold.toFixed(2)}, up streak ${upStreak}`
+  };
+  if(sellOK)return {
+    signal:'SELL',
+    reason:`Imbalance ${imbalance.toFixed(3)} ≤ −${imbThreshold.toFixed(3)}, movement ${movementPoints.toFixed(2)} ≥ ${movementThreshold.toFixed(2)}, down streak ${downStreak}`
+  };
+
+  return {
+    signal:'WAIT',
+    reason:`Imbalance ${imbalance.toFixed(3)} | movement ${movementPoints.toFixed(2)} | up ${upStreak} / down ${downStreak}`
+  };
+}
+
+function processAutoThresholdTrade(price){
+  // Entry is handled only by onAutoTick() -> openPosition().
+  // This function is retained only for compatibility and never opens a trade.
+  return decision();
+}
+
+
+function onAutoTick(price){
+  manageThresholdPositions(price);
+  if(!Number.isFinite(price)||price<=0)return;
+  if(auto.lastPrice!==null && Math.abs(price-auto.lastPrice)<0.000001)return;
+  auto.lastPrice=price;auto.lastQuoteAt=Date.now();auto.ticks.push(price);
+  const c=cfg();if(auto.ticks.length>Math.max(500,c.window*10))auto.ticks.shift();
+
+  // auto.ticks is the continuous rolling buffer — every tick lands here,
+  // and trendMetrics() always reads the most recent c.window of them
+  // (default 1000), sliding forward one tick at a time. No bucketing.
+
+  const m=metrics();
+  // Exit handling for already-running trades always runs, every tick,
+  // no matter which mode we're in below.
+  if(m)checkPositions(m);
+
+  // THE RUNNING-TRADES TABLE CONTROLS ENTRY SEARCH ONLY (exits above are
+  // always independent of trade count): max trades is purely a ceiling on
+  // concurrent positions, never a target to fill.
+  if(auto.positions.length>=c.maxTrades){
+    // Book is at the ceiling — stop hunting entirely. Just fetch price and
+    // monitor the running trades for their exit rule (handled above via
+    // checkPositions). No trend/confidence calc, no signal search, no
+    // new entries until a slot frees up (a trade exits).
+    const why=`Ceiling reached: ${auto.positions.length}/${c.maxTrades} running trades. Monitoring open positions for exit only — not searching for new entries.`;
+    aq('decisionTitle').textContent='Monitoring';
+    aq('decisionWhy').textContent=why;
+    aq('decisionBox').textContent=why;
+    auto.lastDecision=why;
+    renderAuto();
+    return;
+  }
+
+  // A slot is open (0 up to maxTrades-1 running) — go find the next
+  // opportunity. Entries are opportunity-driven, not forced: a slot being
+  // free doesn't mean a trade fires, only that the search runs. If one
+  // fires and gets logged, the post-entry gap arms and this same branch
+  // runs again next tick.
+  const d=runDecision();
+  if(d.signal && !dailyLossReached(c)){
+    const pos=openPosition(d.signal,d.reason,d.m);
+    // A trade only counts as "executed" — and only arms the post-entry
+    // gap — once openPosition() has actually pushed it into
+    // auto.positions AND written its ENTRY line to the audit log. If
+    // openPosition() returned nothing, no trade fired, so the gap stays
+    // open and the very next tick may try again immediately. This is
+    // also what guarantees at most one trade fires per gap: the gap only
+    // starts ticking once a fire is confirmed logged, never
+    // speculatively beforehand.
+    if(pos)auto.lastTradeAt=Date.now();
+  }else if(m && auto.ticks.length>=c.window)autoLog('SIGNAL','',price,m,0,d.reason);
+  renderAuto();
+}
+
+
+let selectedTickSocket=null;
+let selectedTickSymbol='';
+
+function closeSelectedTickSocket(){
+  if(selectedTickSocket){
+    try{selectedTickSocket.onclose=null;selectedTickSocket.close()}catch(e){}
+    selectedTickSocket=null;
+  }
+}
+
+function connectSelectedTickSocket(){
+  closeSelectedTickSocket();
+  const s=aq('autoSymbol').value;
+  selectedTickSymbol=s;
+
+  if(s!=='BTCUSDT')return;
+
+  selectedTickSocket=new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+
+  selectedTickSocket.onopen=()=>{
+    if(selectedTickSymbol===s){
+      aq('autoStatus').textContent='Running · BTCUSDT live ticks';
+      aq('autoDot').className='dot live';
+    }
+  };
+
+  selectedTickSocket.onmessage=e=>{
+    if(!auto.running || aq('autoSymbol').value!=='BTCUSDT')return;
+    try{
+      const d=JSON.parse(e.data);
+      const p=Number(d.p);
+      if(Number.isFinite(p)&&p>0){
+        onAutoTick(p);
+        auto.lastQuoteAt=Date.now();
+        updateAutoLiveHeader(p);
+        aq('autoStatus').textContent='Running · BTCUSDT live ticks';
+        aq('autoDot').className='dot live';
+      }
+    }catch(err){}
+  };
+
+  selectedTickSocket.onerror=()=>{
+    if(auto.running && aq('autoSymbol').value==='BTCUSDT'){
+      aq('autoStatus').textContent='BTCUSDT WebSocket error · reconnecting…';
+      aq('autoDot').className='dot error';
+    }
+  };
+
+  selectedTickSocket.onclose=()=>{
+    if(auto.running && aq('autoSymbol').value==='BTCUSDT'){
+      setTimeout(()=>{
+        if(auto.running && aq('autoSymbol').value==='BTCUSDT')connectSelectedTickSocket();
+      },1500);
+    }
+  };
+}
+
+async function getBtcdanaPrice(){
+  for(const url of BTCDANA_URLS){
+    try{
+      const r=await fetch(url,{cache:'no-store'});
+      if(!r.ok)continue;
+      const text=await r.text();
+      const patterns=[
+        /XAUUSD[\s\S]{0,500}?(?:price|lastPrice|quote)[^0-9]{0,20}([0-9]{3,5}(?:\.[0-9]+)?)/i,
+        /XAUUSD[\s\S]{0,300}?\b(4[0-9]{3}\.[0-9]{1,4})\b/i,
+        /"price"\s*:\s*"?(4[0-9]{3}\.[0-9]{1,4})"?/i
+      ];
+      for(const re of patterns){
+        const m=text.match(re);
+        if(m){
+          const p=Number(m[1]);
+          if(p>1000&&p<10000)return p;
+        }
+      }
+    }catch(e){}
+  }
+  return null;
+}
+
+function getSelectedAutoPrice(){
+  return getBtcdanaPrice();
+}
+
+function updateAutoLiveHeader(price){
+  const s=aq('autoSymbol').value;
+  aq('autoSymbolLabel').textContent=s+' live price';
+  aq('aPriceLabel').textContent=s+' live price';
+  aq('autoLivePrice').textContent=price!=null?'$'+price.toFixed(2):'—';
+  aq('aPrice').textContent=price!=null?'$'+price.toFixed(2):'—';
+  const age=auto.lastQuoteAt?Math.floor((Date.now()-auto.lastQuoteAt)/1000)+'s ago':'waiting for live tick';
+  aq('autoLiveAge').textContent=age;
+  aq('aQuoteAge').textContent=age;
+}
+
+async function autoPoll(){
+  if(!auto.running)return;
+
+  const selected=aq('autoSymbol').value;
+
+  // BTC is driven directly by WebSocket; do not use HTTP polling for it.
+  if(selected==='BTCUSDT'){
+    if(!selectedTickSocket || selectedTickSymbol!=='BTCUSDT'){
+      connectSelectedTickSocket();
+    }
+    if(auto.running)auto.timer=setTimeout(autoPoll,500);
+    return;
+  }
+
+  // XAUUSD / XAUUSDmini share the same broker quote feed — only the
+  // margin/point-value economics differ (handled in pointValueFor).
+  const p=await getBtcdanaPrice();
+  if(p!==null){
+    onAutoTick(p);
+    auto.lastQuoteAt=Date.now();
+    updateAutoLiveHeader(p);
+    aq('autoStatus').textContent='Running · '+selected+' live ticks';
+    aq('autoDot').className='dot live';
+  }else{
+    aq('autoStatus').textContent=selected+' live quote unavailable';
+    aq('autoDot').className='dot error';
+  }
+
+  if(auto.running)auto.timer=setTimeout(autoPoll, Math.max(20, Number(document.getElementById('cfgTickInterval')?.value || 100)));
+}
+
+function btcCalc(b,c){
+ if(b.entry==null||b.ltp==null)return {points:0,gross:0,net:-c.btcComm};
+ const d=b.side==='BUY'?1:-1, points=(b.ltp-b.entry)*d, gross=points*(c.btcPer100/100);
+ return {points,gross,net:gross-c.btcComm};
+}
+let btcSocket=null;
+function updateBtc(price){
+ const c=cfg();
+ if(!auto.btc.active) auto.btc={active:true,side:'BUY',entry:price,ltp:price,points:0,gross:0,net:-c.btcComm,margin:c.btcMargin*(price/c.btcRef)};
+ else {auto.btc.ltp=price;const x=btcCalc(auto.btc,c);auto.btc.points=x.points;auto.btc.gross=x.gross;auto.btc.net=x.net;auto.btc.margin=c.btcMargin*(price/c.btcRef);}
+}
+function startBtcStream(){
+ 
+ btcSocket=new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+ btcSocket.onmessage=e=>{if(!auto.running)return;try{const p=Number(JSON.parse(e.data).p);if(Number.isFinite(p)&&p>0){updateBtc(p);renderAuto();}}catch(err){}};
+}
+function stopBtcStream(){if(btcSocket){try{btcSocket.close()}catch(e){}btcSocket=null;}}
+function renderBtc(){
+ // This BTC position-simulator widget has no matching markup in this
+ // build (no #btcLtp/#btcEntry/etc. elements, and auto.btc is never
+ // initialized) — it previously threw here on every call, which silently
+ // aborted the REST of renderAuto() before it could ever reach the code
+ // that paints auto.positions/auto.logs into the "Simulated positions"
+ // and "Every decision / trade log" tables. Guard it so it's a safe
+ // no-op instead, and only touches elements that actually exist.
+ if(!auto.btc)return;
+ const c=cfg(),b=auto.btc;
+ const set=(id,val)=>{const e=aq(id);if(e)e.textContent=val;};
+ set('btcLtp',b.ltp?'$'+b.ltp.toFixed(2):'—');
+ set('btcEntry',b.entry?'$'+b.entry.toFixed(2):'—');
+ set('btcPoints',b.active?((b.points>=0?'+':'')+b.points.toFixed(2)):'—');
+ set('btcGross',b.active?((b.gross>=0?'+':'−')+'$'+money(Math.abs(b.gross))):'—');
+ set('btcNet',b.active?((b.net>=0?'+':'−')+'$'+money(Math.abs(b.net))):'—');
+ set('btcMargin',b.active?'$'+money(b.margin):'$'+money(c.btcMargin));
+}
+
+
+function manageThresholdPositions(price){
+  // No-op: exits are fully handled by checkPositions()/closePosition(),
+  // which use the correct per-symbol point value (pointValueFor) and are
+  // the only code path that mutates auto.balance/auto.realized. This
+  // function is kept only so any old references to it don't throw; it
+  // must NOT also close positions or auto.realized would be double-counted.
+}
+
+function renderAuto(){
+renderBtc();
+  const c=cfg();auto.equity=currentEquity();
+  aq('aBalance').textContent='$'+money(auto.balance);
+  aq('aEquity').textContent='$'+money(auto.equity);
+  aq('aOpen').textContent=`${auto.positions.length} / ${c.maxTrades}`;
+  const posNote=aq('openPosNote');if(posNote)posNote.textContent=`Fixed ${c.lot.toFixed(2)} lot · max ${c.maxTrades}`;
+  aq('aRealized').textContent=(auto.realized>=0?'+':'−')+'$'+money(Math.abs(auto.realized));
+  aq('aWin').textContent=auto.closed?((auto.wins/auto.closed)*100).toFixed(1)+'%':'—';
+  aq('aTrades').textContent=auto.closed+auto.positions.length;
+  auto.dayLoss=dailyLossUsed(c); auto.dayLossLimit=dailyLossLimit(c);
+  aq('aDailyLoss').textContent='$'+money(auto.dayLoss)+' / $'+money(auto.dayLossLimit);
+  aq('aDailyLoss').className=auto.dayLoss>=auto.dayLossLimit?'loss2':'';
+  // Fees are reserved/charged at trade entry, so "total fees paid" counts
+  // both closed trades' fees and the fee already reserved on every still-
+  // open position.
+  const totalFeesPaid=(auto.closedTrades||[]).reduce((s,t)=>s+t.fees,0)+auto.positions.reduce((s,p)=>s+p.commission,0);
+  const totalRunningProfit=auto.positions.reduce((s,p)=>s+(pnl(p,auto.lastPrice||p.entry)-p.commission),0);
+  const totalClosedReturn=(auto.closedTrades||[]).reduce((s,t)=>s+t.net,0);
+  const marginBlocked=auto.positions.reduce((s,p)=>s+marginFor(p.symbol,auto.lastPrice||p.entry,p.lot,c),0);
+  aq('aFeesPaid').textContent='$'+money(totalFeesPaid);
+  aq('aRunningProfit').textContent=(totalRunningProfit>=0?'+':'−')+'$'+money(Math.abs(totalRunningProfit));
+  aq('aRunningProfit').className=totalRunningProfit>=0?'profit':'loss2';
+  aq('aClosedReturn').textContent=(totalClosedReturn>=0?'+':'−')+'$'+money(Math.abs(totalClosedReturn));
+  aq('aClosedReturn').className=totalClosedReturn>=0?'profit':'loss2';
+  aq('aMarginBlocked').textContent='$'+money(marginBlocked);
+  aq('aPrice').textContent=auto.lastPrice?'$'+auto.lastPrice.toFixed(2):'—';
+  aq('aQuoteAge').textContent=auto.lastQuoteAt?Math.floor((Date.now()-auto.lastQuoteAt)/1000)+'s ago':'waiting for quote';
+  const m=metrics();
+  // aTI/aNM/aAccel have no matching elements in this build's markup (same
+  // dead-widget pattern as the old renderBtc() crash) — guarding them so
+  // a missing element can't throw and abort the rest of renderAuto(),
+  // which is what was silently blocking the openTrades/tradeLog table
+  // updates below on every tick once auto.ticks.length reached 2.
+  if(m){
+    const setIf=(id,val)=>{const e=aq(id);if(e)e.textContent=val;};
+    setIf('aTI',m.ti.toFixed(3));
+    setIf('aNM',m.nm.toFixed(2));
+    setIf('aAccel',m.accel.toFixed(4));
+    setIf('aStreak',(m.dir>0?'UP ':m.dir<0?'DOWN ':'')+m.streak);
+  }
+  aq('openTrades').innerHTML=auto.positions.length?auto.positions.map(p=>{
+    const pl=pnl(p,auto.lastPrice||p.entry);
+    const margin=marginFor(p.symbol,auto.lastPrice||p.entry,p.lot,c);
+    return `<tr><td>#${p.id}</td><td class="${p.side==='BUY'?'gain':'loss'}">${p.side}</td><td>${p.lot.toFixed(2)}</td><td>${p.entry.toFixed(2)}</td><td>${p.sl.toFixed(2)}${p.slLocked?' 🔒':''}</td><td>${p.tp.toFixed(2)}</td><td>${(auto.lastPrice||p.entry).toFixed(2)}</td><td>$${money(margin)}</td><td class="${pl>=0?'profit':'loss2'}">${pl>=0?'+':'−'}$${money(Math.abs(pl))}</td><td>${p.reason}</td></tr>`
+  }).join(''):'<tr><td colspan="10" class="empty">No open positions.</td></tr>';
+  const closed=(auto.closedTrades||[]).slice().reverse();
+  aq('closedCount').textContent=closed.length+' closed';
+  aq('closedTrades').innerHTML=closed.length?closed.map(t=>`<tr><td>#${t.id}</td><td>${t.symbol}</td><td class="${t.side==='BUY'?'gain':'loss'}">${t.side}</td><td>${t.qty.toFixed(2)}</td><td>${t.entry.toFixed(2)}</td><td>${t.tp.toFixed(2)}</td><td>${t.sl.toFixed(2)}</td><td>${t.exit.toFixed(2)}</td><td>$${t.fees.toFixed(2)}</td><td class="${t.net>=0?'profit':'loss2'}">${t.net>=0?'+':'−'}$${money(Math.abs(t.net))}</td><td>${new Date(t.entryTime).toLocaleTimeString()}</td><td>${new Date(t.exitTime).toLocaleTimeString()}</td><td>${t.whyEntry}</td><td>${t.whyClosed}</td></tr>`).join(''):'<tr><td colspan="14" class="empty">No closed trades yet.</td></tr>';
+  const rows=auto.logs.slice().reverse();
+  aq('logCount').textContent=rows.length+' events';
+  aq('tradeLog').innerHTML=rows.slice(0,300).map(x=>`<tr><td>${new Date(x.time).toLocaleTimeString()}</td><td>${x.event}</td><td>${x.side}</td><td>${x.price!==''?Number(x.price).toFixed(2):'—'}</td><td>${x.ti!==''?Number(x.ti).toFixed(3):'—'}</td><td>${x.nm!==''?Number(x.nm).toFixed(2):'—'}</td><td>${x.accel!==''?Number(x.accel).toFixed(4):'—'}</td><td class="${Number(x.pl)>=0?'profit':'loss2'}">${x.pl!==''?(Number(x.pl)>=0?'+':'−')+'$'+money(Math.abs(Number(x.pl))):'—'}</td><td>${x.why}</td></tr>`).join('')||'<tr><td colspan="9" class="empty">Start the simulator to build the audit trail.</td></tr>';
+  drawReturnTimeChart();
+  drawReturnFeesChart();
+}
+
+function chartAxes(ctx,w,h){
+  ctx.strokeStyle='#eef1f3';ctx.lineWidth=1;
+  for(let i=1;i<4;i++){const y=i*h/4;ctx.beginPath();ctx.moveTo(8,y);ctx.lineTo(w-8,y);ctx.stroke();}
+}
+function emptyChart(ctx,w,h,msg){
+  ctx.fillStyle='#a0a8af';ctx.font='11px ui-monospace,monospace';ctx.textAlign='center';
+  ctx.fillText(msg,w/2,h/2);
+}
+function drawReturnTimeChart(){
+  const cv=aq('returnTimeChart');if(!cv)return;
+  const ctx=cv.getContext('2d'),d=devicePixelRatio||1,w=cv.clientWidth||600,h=210;
+  cv.width=w*d;cv.height=h*d;ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);
+  chartAxes(ctx,w,h);
+  const trades=(auto.closedTrades||[]).slice().sort((a,b)=>new Date(a.exitTime)-new Date(b.exitTime));
+  if(!trades.length)return emptyChart(ctx,w,h,'Closed trades will plot cumulative return over time.');
+  let cum=0;const pts=trades.map(t=>{cum+=t.net;return{t:new Date(t.exitTime).getTime(),v:cum};});
+  const xs=pts.map(p=>p.t),ys=pts.map(p=>p.v);
+  const xmin=Math.min(...xs),xmax=Math.max(...xs)||xmin+1;
+  const ymin=Math.min(0,...ys),ymax=Math.max(0,...ys);
+  const ypad=(ymax-ymin)*.15||1,min=ymin-ypad,max=ymax+ypad;
+  const px=x=>34+(x-xmin)/((xmax-xmin)||1)*(w-46),py=y=>h-24-(y-min)/((max-min)||1)*(h-40);
+  ctx.strokeStyle='#d7dde1';ctx.beginPath();ctx.moveTo(34,py(0));ctx.lineTo(w-12,py(0));ctx.stroke();
+  ctx.strokeStyle='#c58b2b';ctx.lineWidth=1.6;ctx.beginPath();
+  pts.forEach((p,i)=>{const X=px(p.t),Y=py(p.v);if(i===0)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);});
+  ctx.stroke();
+  ctx.fillStyle='#c58b2b';
+  pts.forEach(p=>{ctx.beginPath();ctx.arc(px(p.t),py(p.v),2.4,0,Math.PI*2);ctx.fill();});
+  ctx.fillStyle='#9ba3aa';ctx.font='10px ui-monospace,monospace';ctx.textAlign='right';
+  ctx.fillText('$'+max.toFixed(2),30,14);ctx.fillText('$'+min.toFixed(2),30,h-16);
+  ctx.textAlign='left';
+  ctx.fillText(new Date(xmin).toLocaleTimeString(),34,h-4);
+  ctx.textAlign='right';
+  ctx.fillText(new Date(xmax).toLocaleTimeString(),w-12,h-4);
+}
+function drawReturnFeesChart(){
+  const cv=aq('returnFeesChart');if(!cv)return;
+  const ctx=cv.getContext('2d'),d=devicePixelRatio||1,w=cv.clientWidth||600,h=210;
+  cv.width=w*d;cv.height=h*d;ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);
+  chartAxes(ctx,w,h);
+  const trades=auto.closedTrades||[];
+  if(!trades.length)return emptyChart(ctx,w,h,'Closed trades will plot return against fees paid.');
+  const xs=trades.map(t=>t.fees),ys=trades.map(t=>t.net);
+  const xmin=0,xmax=Math.max(...xs,0.01);
+  const ymin=Math.min(0,...ys),ymax=Math.max(0,...ys,0.01);
+  const ypad=(ymax-ymin)*.15||1,min=ymin-ypad,max=ymax+ypad;
+  const px=x=>34+(x-xmin)/((xmax-xmin)||1)*(w-46),py=y=>h-24-(y-min)/((max-min)||1)*(h-40);
+  ctx.strokeStyle='#d7dde1';ctx.beginPath();ctx.moveTo(34,py(0));ctx.lineTo(w-12,py(0));ctx.stroke();
+  trades.forEach(t=>{
+    ctx.fillStyle=t.net>=0?'#159570':'#d95764';
+    ctx.beginPath();ctx.arc(px(t.fees),py(t.net),3.2,0,Math.PI*2);ctx.fill();
+  });
+  ctx.fillStyle='#9ba3aa';ctx.font='10px ui-monospace,monospace';ctx.textAlign='right';
+  ctx.fillText('$'+max.toFixed(2),30,14);ctx.fillText('$'+min.toFixed(2),30,h-16);
+  ctx.textAlign='left';ctx.fillText('fees $'+xmin.toFixed(2),34,h-4);
+  ctx.textAlign='right';ctx.fillText('fees $'+xmax.toFixed(2),w-12,h-4);
+}
+window.addEventListener('resize',()=>{drawReturnTimeChart();drawReturnFeesChart();});
+function resetAuto(){
+  if(auto.timer)clearTimeout(auto.timer);
+  const resetCfg=cfg();
+  auto={running:false,balance:resetCfg.balance,equity:resetCfg.balance,realized:0,positions:[],logs:[],ticks:[],closedTrades:[],lastPrice:null,lastQuoteAt:0,lastDecision:'Waiting for 30 ticks',timer:null,tradeId:0,wins:0,closed:0,startBalance:resetCfg.balance,dayLoss:0,dayLossLimit:resetCfg.balance*(resetCfg.dailyLossPct/100),lastTradeAt:0,lastLossAt:0};
+  aq('autoStatus').textContent='Stopped';aq('autoDot').className='dot';
+  aq('decisionTitle').textContent='No entry';
+  aq('decisionWhy').textContent='Waiting for 30 ticks';
+  aq('decisionBox').textContent='Waiting for 30 ticks';
+  renderAuto();
+}
+
+aq('autoSymbol').onchange=()=>{
+if(auto.running)connectSelectedTickSocket();
+  const s=aq('autoSymbol').value;
+  auto.ticks=[];
+  auto.lastPrice=null;
+  auto.lastQuoteAt=0;
+  auto.positions=[];
+  auto.lastTradeAt=0;
+  aq('autoStatus').textContent='Symbol changed · press Start simulation';
+  aq('autoDot').className='dot';
+  aq('decisionTitle').textContent='No entry';
+  aq('decisionWhy').textContent='Symbol changed · waiting for ticks';
+  aq('decisionBox').textContent='Symbol changed · waiting for ticks';
+  aq('autoSymbolLabel').textContent=s+' live price';
+  aq('aPriceLabel').textContent=s+' live price';
+  aq('autoLivePrice').textContent='—';
+  aq('aPrice').textContent='—';
+  aq('autoLiveAge').textContent='waiting for live tick';
+  aq('aQuoteAge').textContent='waiting for live tick';
+  renderAuto();
+};
+
+aq('startAuto').onclick=()=>{
+  auto.running=true;aq('autoStatus').textContent='Running · '+aq('autoSymbol').value+' live ticks';aq('autoDot').className='dot live';
+  if(auto.closed===0&&auto.logs.length===0){
+    auto.balance=cfg().balance;
+    auto.startBalance=cfg().balance;
+    auto.dayLoss=0;
+    auto.dayLossLimit=dailyLossLimit(cfg());
+  }
+  autoPoll();
+};
+aq('stopAuto').onclick=()=>{auto.running=false;if(auto.timer)clearTimeout(auto.timer);aq('autoStatus').textContent='Stopped';aq('autoDot').className='dot';};
+aq('resetAuto').onclick=resetAuto;
+aq('exportAuto').onclick=()=>{
+  const rows=[['Time','Event','Side','Price','Tick imbalance','Normalized momentum','Acceleration','P/L','Why'],...auto.logs.map(x=>[x.time,x.event,x.side,x.price,x.ti,x.nm,x.accel,x.pl,x.why])];
+  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=aq('autoSymbol').value.toLowerCase()+'-tick-trade-log.csv';a.click();
+};
+aq('exportClosed').onclick=()=>{
+  const rows=[['ID','Symbol','Side','Qty','Entry','TP','SL','Exit','Fees','Return','Entry time','Exit time','Why entry','Why closed'],
+    ...(auto.closedTrades||[]).map(t=>[t.id,t.symbol,t.side,t.qty,t.entry,t.tp,t.sl,t.exit,t.fees,t.net,t.entryTime,t.exitTime,t.whyEntry,t.whyClosed])];
+  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=aq('autoSymbol').value.toLowerCase()+'-closed-trades.csv';a.click();
+};
+document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===btn));
+  document.querySelectorAll('.tab-panel').forEach(x=>x.classList.toggle('active',x.id===btn.dataset.tab));
+  if(btn.dataset.tab==='minuteTab')startMinuteTracker();
+  else stopMinuteTracker();
+});
+aq('autoSymbolLabel').textContent=aq('autoSymbol').value+' live price';aq('aPriceLabel').textContent=aq('autoSymbol').value+' live price';
+setInterval(()=>{if(auto.running)renderAuto()},1000);
+resetAuto();
+(function(){const t=aq('autoConfigToggle'),b=aq('autoConfigBody'),l=aq('autoConfigToggleLabel');t.onclick=()=>{const open=b.classList.toggle('open');t.classList.toggle('open',open);l.textContent=open?'Hide configuration':'Show configuration'};})();
+</script>
+</body></html>
