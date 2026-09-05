@@ -103,6 +103,7 @@
 
 <div class="chart-card">
   <div class="chart-tools">
+    <div class="intervals" id="autoIntervals"><button class="active" data-interval="1m">1m</button><button data-interval="5m">5m</button><button data-interval="15m">15m</button><button data-interval="1h">1h</button><button data-interval="4h">4h</button><button data-interval="1d">1d</button></div>
     <div class="legend"><span><i class="upbox"></i>Up</span><span><i class="downbox"></i>Down</span><span id="autoChartState">Loading…</span></div>
   </div>
   <canvas id="autoChart" width="1200" height="360"></canvas>
@@ -808,6 +809,8 @@ function closeSelectedTickSocket(){
 // data or code paths.
 let autoCandles=[];
 let autoCandleSymbol='';
+let autoInterval='1m';
+const AUTO_INTERVAL_MS={'1m':60000,'5m':300000,'15m':900000,'1h':3600000,'4h':14400000,'1d':86400000};
 
 function klineSymbolFor(s){const stream=streamFor(s);return stream?stream.split('@')[0].toUpperCase():null;}
 
@@ -818,7 +821,7 @@ async function loadAutoCandles(){
   if(!ksym){autoCandles=[];drawAutoChart();return;}
   try{
     aq('autoChartState').textContent='Loading…';
-    const r=await fetch(`https://api.binance.com/api/v3/klines?symbol=${ksym}&interval=1m&limit=90`);
+    const r=await fetch(`https://api.binance.com/api/v3/klines?symbol=${ksym}&interval=${autoInterval}&limit=90`);
     if(!r.ok)throw Error('Klines unavailable');
     if(autoCandleSymbol!==s)return;
     autoCandles=await r.json();
@@ -831,7 +834,8 @@ async function loadAutoCandles(){
 
 function updateAutoCandleFromTick(price){
   if(!Number.isFinite(price)||price<=0)return;
-  const m=Math.floor(Date.now()/60000)*60000;
+  const bucketMs=AUTO_INTERVAL_MS[autoInterval]||60000;
+  const m=Math.floor(Date.now()/bucketMs)*bucketMs;
   const last=autoCandles[autoCandles.length-1];
   if(last && Number(last[0])===m){
     last[2]=Math.max(Number(last[2]),price);
@@ -1167,6 +1171,12 @@ document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{
   else stopMinuteTracker();
 });
 aq('autoSymbolLabel').textContent=aq('autoSymbol').value+' live price';aq('aPriceLabel').textContent=aq('autoSymbol').value+' live price';
+aq('autoIntervals').onclick=e=>{
+  if(!e.target.dataset.interval)return;
+  autoInterval=e.target.dataset.interval;
+  document.querySelectorAll('#autoIntervals button').forEach(b=>b.classList.toggle('active',b===e.target));
+  loadAutoCandles();
+};
 loadAutoCandles();
 setInterval(()=>{if(auto.running)renderAuto()},1000);
 resetAuto();
