@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Position Return Simulator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F6F8F9; --panel:#FFFFFF; --border:#E1E7EB;
+    --ink:#16202B; --ink-soft:#5B6B7A;
+    --teal:#0C8C9B; --teal-deep:#0A6E7A;
+    --red:#DD3B45; --red-bg:#FDEDEE;
+    --green:#1E9E5A; --green-bg:#E9F8EF;
+    --amber:#B9740B; --amber-bg:#FBF1DF;
+    --mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); padding:18px 14px 50px; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px; margin:0 auto;}
+  .masthead{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:6px;}
+  .masthead h1{font-size:20px; margin:0; font-weight:700; letter-spacing:-0.01em;}
+  .masthead .sub{font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:14px;}
+  h2.card-title{font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:0 0 14px; font-weight:600;}
+
+  .form-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px;}
+  .field label{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px; font-weight:500;}
+  .field input, .field select{
+    width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:7px;
+    font-family:var(--mono); font-size:13.5px; background:#FBFCFD; color:var(--ink);
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .side-toggle{display:flex; border:1px solid var(--border); border-radius:7px; overflow:hidden;}
+  .side-toggle button{
+    flex:1; padding:9px 0; border:none; background:#FBFCFD; color:var(--ink-soft);
+    font-family:var(--sans); font-weight:600; font-size:13px; cursor:pointer;
+  }
+  .side-toggle button.active-long{background:var(--green-bg); color:var(--green);}
+  .side-toggle button.active-short{background:var(--red-bg); color:var(--red);}
+
+  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;}
+  .stat{border:1px solid var(--border); border-radius:8px; padding:11px 12px; background:#FBFCFD;}
+  .stat .label{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em;}
+  .stat .val{font-family:var(--mono); font-size:16.5px; font-weight:700; margin-top:3px;}
+  .stat .sub{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .stat.highlight{border-color:var(--teal); background:#F0FAFB;}
+  .stat.highlight .val{color:var(--teal-deep);}
+  .stat.warn{border-color:var(--amber); background:var(--amber-bg);}
+  .stat.warn .val{color:var(--amber);}
+
+  canvas{max-width:100%;}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  thead th{text-align:right; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); padding:8px; border-bottom:1px solid var(--border); font-weight:600;}
+  thead th:first-child, tbody td:first-child{text-align:left;}
+  tbody td{padding:7px 8px; border-bottom:1px solid #F0F3F5; font-family:var(--mono); font-size:12.5px; text-align:right;}
+  tbody tr:last-child td{border-bottom:none;}
+  tr.row-current{background:#F0FAFB;}
+  tr.row-zero{background:var(--red-bg);}
+  .neg{color:var(--red);}
+  .pos{color:var(--green);}
+
+  .analysis{font-size:13px; line-height:1.7; color:var(--ink);}
+  .analysis b{color:var(--teal-deep);}
+
+  .disclaimer{font-size:11px; color:var(--ink-soft); text-align:center; margin-top:18px; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Position Return Simulator</h1>
+    <div class="sub">entry → zero, any symbol</div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <h2 class="card-title">Your position</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label>Symbol</label>
+        <input type="text" id="symbol" value="CLO-USDT">
+      </div>
+      <div class="field">
+        <label>Side</label>
+        <div class="side-toggle">
+          <button id="btnLong" class="active-long">Long</button>
+          <button id="btnShort">Short</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Entry price</label>
+        <input type="number" id="entry" value="0.12783" step="any">
+      </div>
+      <div class="field">
+        <label>Quantity</label>
+        <input type="number" id="qty" value="91" step="any">
+      </div>
+      <div class="field">
+        <label>Margin allocated (from your app)</label>
+        <input type="number" id="margin" value="3.739" step="any">
+      </div>
+      <div class="field">
+        <label>Total account balance</label>
+        <input type="number" id="balance" value="100" step="any">
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="card">
+    <h2 class="card-title">Position snapshot</h2>
+    <div class="stat-grid" id="snapGrid"></div>
+  </div>
+
+  <!-- CHART -->
+  <div class="card">
+    <h2 class="card-title" id="chartTitle">Return curve · entry → zero</h2>
+    <canvas id="chart" height="230"></canvas>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card">
+    <h2 class="card-title">Price ladder</h2>
+    <table>
+      <thead>
+        <tr><th>Price</th><th>Move</th><th>PnL</th><th>Return on margin</th><th>Balance impact</th></tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- CANDLESTICK -->
+  <div class="card">
+    <h2 class="card-title">Loss cascade · candlestick view</h2>
+    <div id="candleWrap"></div>
+    <div class="ctrl-note" style="margin-top:8px;">Illustrative — each candle is a 10% price step down from entry, not real trade history. Marked line is your true liquidation price.</div>
+  </div>
+
+  <!-- SYMBOL ANALYSIS -->
+  <div class="card">
+    <h2 class="card-title">Symbol analysis <span style="font-weight:400; text-transform:none; letter-spacing:0;">(editable — overwrite for other symbols)</span></h2>
+    <div class="form-grid" style="margin-bottom:12px;">
+      <div class="field"><label>Project / network</label><input type="text" id="anProject" value="Yei Finance"></div>
+      <div class="field"><label>Real spot price (reference exchange)</label><input type="text" id="anRealPrice" value="~$0.10–0.13"></div>
+      <div class="field"><label>Circulating / max supply</label><input type="text" id="anSupply" value="129.1M / 1B"></div>
+      <div class="field"><label>Market cap</label><input type="text" id="anMcap" value="~$15–18M"></div>
+      <div class="field"><label>All-time high</label><input type="text" id="anAth" value="~$0.91–0.94 (Jan 13, 2026)"></div>
+      <div class="field"><label>Recent trend</label><input type="text" id="anTrend" value="ATL ~$0.05 (Feb 6, 2026), down ~85-90% from ATH"></div>
+    </div>
+    <div class="analysis" id="fixedNote"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">What this means</h2>
+    <div class="analysis" id="analysisText"></div>
+  </div>
+
+  <div class="disclaimer">Educational calculation only — not financial advice. Assumes isolated margin (loss capped at margin posted) and ignores fees/funding.</div>
+
+</div>
+
+<script>
+let chart;
+let side = 'long';
+
+document.getElementById('btnLong').addEventListener('click', ()=>{ side='long'; syncSideButtons(); render(); });
+document.getElementById('btnShort').addEventListener('click', ()=>{ side='short'; syncSideButtons(); render(); });
+function syncSideButtons(){
+  document.getElementById('btnLong').classList.toggle('active-long', side==='long');
+  document.getElementById('btnShort').classList.toggle('active-short', side==='short');
+}
+
+['symbol','entry','qty','margin','balance'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', render);
+});
+
+function fmt(n,d=4){
+  if(!isFinite(n)) return '—';
+  return Number(n).toFixed(d);
+}
+function fmtSmart(n){
+  const a = Math.abs(n);
+  if(a===0) return '0';
+  if(a<0.001) return n.toFixed(8);
+  if(a<1) return n.toFixed(5);
+  if(a<100) return n.toFixed(4);
+  return n.toFixed(2);
+}
+
+function render(){
+  const symbol = document.getElementById('symbol').value || 'ASSET';
+  const entry = parseFloat(document.getElementById('entry').value)||0;
+  const qty = parseFloat(document.getElementById('qty').value)||0;
+  const margin = Math.max(0.000001, parseFloat(document.getElementById('margin').value)||0.000001);
+  const balance = parseFloat(document.getElementById('balance').value)||0;
+
+  const notional = entry*qty;
+  const leverage = margin>0 ? notional/margin : 0;
+  const allocPct = balance>0 ? margin/balance*100 : 0;
+
+  document.getElementById('chartTitle').textContent = symbol.toUpperCase()+' · return curve · entry → zero';
+
+  function pnlAt(P){
+    return side==='long' ? (P-entry)*qty : (entry-P)*qty;
+  }
+  // With auto top-up drawing from the main balance, loss isn't capped at margin —
+  // it's capped at total balance (that's the real point nothing is left to top up with).
+  function pnlCappedFn(pnl){
+    // Long: price floors at 0, so loss can never exceed notional value —
+    // and can never exceed total balance either, if top-up runs dry first.
+    // Short: no natural price ceiling, so only the balance limits the loss.
+    if(side==='long'){
+      const cap = balance>0 ? Math.min(balance, notional) : notional;
+      return Math.max(pnl, -cap);
+    } else {
+      return balance>0 ? Math.max(pnl, -balance) : pnl;
+    }
+  }
+  const trueLiqPrice = (() => {
+    if(balance<=0) return null;
+    if(side==='long'){
+      if(balance>=notional) return 0; // balance covers full notional; price hits 0 before balance runs out
+      return entry - balance/qty;
+    } else {
+      return entry + balance/qty;
+    }
+  })();
+  const trueLiqMove = trueLiqPrice!==null ? (trueLiqPrice/entry-1)*100 : null;
+
+  // Snapshot stats
+  const snap = document.getElementById('snapGrid');
+  snap.innerHTML = `
+    <div class="stat">
+      <div class="label">Notional</div>
+      <div class="val">${fmtSmart(notional)}</div>
+      <div class="sub">${qty} ${symbol.split(/[-\/]/)[0]||'units'} @ entry</div>
+    </div>
+    <div class="stat highlight">
+      <div class="label">Effective leverage</div>
+      <div class="val">${fmt(leverage,2)}x</div>
+      <div class="sub">notional ÷ margin (${fmtSmart(margin)} margin)</div>
+    </div>
+    <div class="stat ${allocPct>50?'warn':''}">
+      <div class="label">% of balance in this trade</div>
+      <div class="val">${fmt(allocPct,1)}%</div>
+      <div class="sub">${fmtSmart(balance)} total balance</div>
+    </div>
+    <div class="stat warn">
+      <div class="label">True liquidation price</div>
+      <div class="val">${trueLiqPrice!==null ? fmtSmart(trueLiqPrice) : '—'}</div>
+      <div class="sub">${trueLiqMove!==null ? fmt(trueLiqMove,1)+'% from entry' : 'set a balance'} · when balance runs out</div>
+    </div>
+    <div class="stat">
+      <div class="label">Max loss if it goes to zero</div>
+      <div class="val neg">−${fmtSmart(Math.abs(pnlCappedFn(pnlAt(0))))}</div>
+      <div class="sub">capped at total balance, not just margin</div>
+    </div>
+  `;
+
+  // Table: price ladder from entry down to 0, plus a little upside for reference
+  const steps = [100,90,80,70,60,50,40,30,20,10,0];
+  const upside = side==='long' ? [130,120,110] : [];
+  const allSteps = [...upside, ...steps].sort((a,b)=>b-a);
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = allSteps.map(pct=>{
+    const P = entry*pct/100;
+    let pnl = pnlAt(P);
+    const pnlCapped = pnlCappedFn(pnl);
+    const retPct = margin>0 ? pnlCapped/margin*100 : 0;
+    const balImpact = balance>0 ? pnlCapped/balance*100 : 0;
+    const cls = pnlCapped<0 ? 'neg':'pos';
+    const isPastTrueLiq = trueLiqPrice!==null && (side==='long' ? P<=trueLiqPrice : P>=trueLiqPrice);
+    const rowClass = pct===0 ? 'row-zero' : (pct===100?'row-current':(isPastTrueLiq?'row-zero':''));
+    return `<tr class="${rowClass}">
+      <td>${fmtSmart(P)}</td>
+      <td>${pct-100>=0?'+':''}${pct-100}%</td>
+      <td class="${cls}">${pnlCapped>=0?'+':''}${fmtSmart(pnlCapped)}</td>
+      <td class="${cls}">${retPct>=0?'+':''}${fmt(retPct,1)}%</td>
+      <td class="${cls}">${balImpact>=0?'+':''}${fmt(balImpact,1)}%</td>
+    </tr>`;
+  }).join('');
+
+  // Chart: fine-grained curve from entry down to 0 (and a bit of upside for long)
+  const chartMaxPct = side==='long' ? 140 : 100;
+  const N = 120;
+  const labels=[], pnlData=[], balData=[];
+  for(let i=0;i<=N;i++){
+    const pct = chartMaxPct - (chartMaxPct)*i/N; // from chartMaxPct down to 0
+    const P = entry*pct/100;
+    const pnl = pnlCappedFn(pnlAt(P));
+    labels.push(pct.toFixed(0)+'%');
+    pnlData.push(pnl);
+    balData.push(balance>0 ? (balance+pnl) : null);
+  }
+
+  const ctx = document.getElementById('chart').getContext('2d');
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'PnL', data:pnlData, borderColor:'#0C8C9B', backgroundColor:'rgba(12,140,155,0.08)', fill:true, pointRadius:0, borderWidth:2, yAxisID:'y'},
+        {label:'Balance after', data:balData, borderColor:'#B9740B', pointRadius:0, borderWidth:1.6, borderDash:[4,3], yAxisID:'y1'}
+      ]
+    },
+    options:{
+      responsive:true,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:10, font:{size:11, family:'Inter'}}},
+        tooltip:{titleFont:{family:'IBM Plex Mono', size:11}, bodyFont:{family:'IBM Plex Mono', size:11}}
+      },
+      scales:{
+        x:{title:{display:true, text:'% of entry price', font:{size:11}}, ticks:{maxTicksLimit:8, font:{size:10}}, reverse:false},
+        y:{title:{display:true, text:'PnL', font:{size:11}}, ticks:{font:{size:10}}},
+        y1:{position:'right', title:{display:true, text:'Balance', font:{size:11}}, grid:{drawOnChartArea:false}, ticks:{font:{size:10}}}
+      }
+    }
+  });
+
+  // Candlestick view (custom SVG, illustrative loss cascade)
+  renderCandles(entry, side, trueLiqPrice, notional, margin, qty);
+
+  const zeroLoss = pnlCappedFn(pnlAt(0));
+  const zeroBalPct = balance>0 ? zeroLoss/balance*100 : 0;
+  const breakevenNote = side==='long'
+    ? `Price needs to hold above ${fmtSmart(entry)} to stay in profit; every 10% ${side==='long'?'drop':'rise'} costs you roughly ${fmt(Math.abs(pnlAt(entry*0.9)),4)} on this size.`
+    : `Price needs to hold below ${fmtSmart(entry)} to stay in profit.`;
+  const analysis = document.getElementById('analysisText');
+  const liqLine = trueLiqPrice!==null
+    ? `<p>Because auto top-up keeps pulling from your <b>${fmtSmart(balance)}</b> balance to defend this position, the margin figure (${fmtSmart(margin)}) isn't the real ceiling on loss — your <b>whole account balance</b> is. On that basis, you're only truly liquidated once price reaches <b>${fmtSmart(trueLiqPrice)}</b> (${fmt(trueLiqMove,1)}% from entry) — the point where topping up further isn't possible anymore.</p>`
+    : `<p>Set a balance above 0 to see the price at which top-ups would run out entirely.</p>`;
+  analysis.innerHTML = `
+    <p>You're risking <b>${fmtSmart(margin)}</b> margin (${fmt(allocPct,1)}% of your ${fmtSmart(balance)} balance) on this ${side} in <b>${symbol.toUpperCase()}</b>, ${qty} units, ${fmt(leverage,1)}x effective leverage.</p>
+    ${liqLine}
+    <p>If price goes to zero, this position loses <b>${fmtSmart(Math.abs(zeroLoss))}</b> — that's <b>${fmt(Math.abs(zeroBalPct),1)}%</b> of your total account balance, assuming top-up keeps defending it until the balance itself is gone.</p>
+    <p>${breakevenNote}</p>
+  `;
+}
+
+function renderCandles(entry, side, trueLiqPrice, notional, margin, qty){
+  const wrap = document.getElementById('candleWrap');
+  const steps = [100,90,80,70,60,50,40,30,20,10,0];
+  const prices = steps.map(pct => entry*pct/100);
+
+  const W = 640, H = 220, padL = 46, padR = 10, padT = 10, padB = 24;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const maxP = entry*1.05;
+  const minP = 0;
+  const xf = i => padL + (i/(prices.length-1))*plotW;
+  const yf = p => padT + (1-(p-minP)/(maxP-minP))*plotH;
+
+  let candles = '';
+  for(let i=0;i<prices.length-1;i++){
+    const openP = prices[i];
+    const closeP = prices[i+1];
+    const wickUp = Math.abs(openP-closeP)*0.25;
+    const highP = Math.max(openP,closeP)+wickUp;
+    const lowP = Math.max(0, Math.min(openP,closeP)-wickUp);
+    const cx = (xf(i)+xf(i+1))/2;
+    const bodyW = plotW/(prices.length-1)*0.55;
+    const yOpen = yf(openP), yClose = yf(closeP), yHigh = yf(highP), yLow = yf(lowP);
+    const bodyTop = Math.min(yOpen,yClose), bodyH = Math.max(1.5, Math.abs(yClose-yOpen));
+    candles += `<line x1="${cx}" y1="${yHigh}" x2="${cx}" y2="${yLow}" stroke="#DD3B45" stroke-width="1.4"/>`;
+    candles += `<rect x="${cx-bodyW/2}" y="${bodyTop}" width="${bodyW}" height="${bodyH}" fill="#DD3B45" opacity="0.85" rx="1"/>`;
+  }
+
+  let liqMarker = '';
+  if(trueLiqPrice!==null && trueLiqPrice>=minP && trueLiqPrice<=maxP){
+    const yl = yf(trueLiqPrice);
+    liqMarker = `<line x1="${padL}" y1="${yl}" x2="${W-padR}" y2="${yl}" stroke="#B9740B" stroke-width="1.3" stroke-dasharray="5,3"/>
+    <text x="${W-padR}" y="${yl-4}" font-size="10" fill="#B9740B" text-anchor="end" font-family="IBM Plex Mono">true liq.</text>`;
+  }
+  const entryMarker = `<line x1="${padL}" y1="${yf(entry)}" x2="${W-padR}" y2="${yf(entry)}" stroke="#5B6B7A" stroke-width="1" stroke-dasharray="2,3"/>
+    <text x="${padL+2}" y="${yf(entry)-4}" font-size="10" fill="#5B6B7A" font-family="IBM Plex Mono">entry</text>`;
+
+  const yLabels = [0,0.25,0.5,0.75,1].map(f=>{
+    const p = minP + f*(maxP-minP);
+    return `<text x="${padL-6}" y="${yf(p)+3}" font-size="9" fill="#5B6B7A" text-anchor="end" font-family="IBM Plex Mono">${p.toFixed(p<1?5:2)}</text>`;
+  }).join('');
+  const xLabels = steps.map((pct,i)=>`<text x="${xf(i)}" y="${H-6}" font-size="9" fill="#5B6B7A" text-anchor="middle" font-family="IBM Plex Mono">${pct}%</text>`).join('');
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto;">
+    ${yLabels}${xLabels}${candles}${entryMarker}${liqMarker}
+  </svg>`;
+}
+
+document.getElementById('fixedNote').innerHTML = `<p>Correction: CLO here is <b>Yei Finance</b>, not Callisto Network — a DeFi lending/cross-chain liquidity protocol on Sei, launched October 2025. Its real market price (~$0.10–0.13) lines up with your entry, so this is a genuine, actively traded token — not a broker's synthetic quote. The catch is different: it's a brand-new, thinly-traded token that spiked 245% on launch day and has since fallen roughly 85–90% from its January 2026 all-time high of ~$0.91–0.94 down toward a February low near $0.05. That kind of drawdown on a sub-6-month-old token is a volatility story, not a pricing-error story — worth weighing heavily given your leverage here.</p>`;
+
+render();
+</script>
+</body>
+</html>
