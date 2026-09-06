@@ -450,8 +450,19 @@ function decision(){
   const c=cfg();
   const symbol=aq('autoSymbol').value;
   const changeThreshold=changeThresholdFor(symbol,c);
+  const openCount=auto.positions.length;
+  // Every additional concurrent trade gets progressively harder on THREE
+  // independent axes — confidence (below), minimum time since the last
+  // trade, and the minimum price move required — so a strong trend alone
+  // can no longer fill all slots in seconds; each axis scales linearly
+  // from 1x at the first trade up to a hard multiple right at the last
+  // slot before maxTrades.
+  const gapMultiplier=1+openCount;
+  const requiredGapMs=c.tradeGapMs*gapMultiplier;
+  const changeMultiplier=1+4*openCount/Math.max(1,c.maxTrades-1);
+  const requiredChangeThreshold=changeThreshold*changeMultiplier;
   // Entry decisions come from a continuous rolling window of the last
-  // c.window ticks (default 1000) — it slides forward one tick at a time,
+  // c.window ticks (default 100) — it slides forward one tick at a time,
   // recomputed fresh on every tick. Nothing is bucketed or thrown away at
   // time boundaries; the post-entry gap below only rate-limits how often
   // a trade may actually fire, it does not affect what data feeds the
@@ -465,8 +476,8 @@ function decision(){
     return {signal:null,reason:`BLOCKED: daily loss limit reached. $${auto.dayLoss.toFixed(2)} / $${auto.dayLossLimit.toFixed(2)}.`,m};
 
   const sinceLastTrade=auto.lastTradeAt?Date.now()-auto.lastTradeAt:Infinity;
-  if(sinceLastTrade<c.tradeGapMs)
-    return {signal:null,reason:`WAIT: minimum ${c.tradeGapMs}ms gap between trades (${(c.tradeGapMs-sinceLastTrade).toFixed(0)}ms remaining).`,m};
+  if(sinceLastTrade<requiredGapMs)
+    return {signal:null,reason:`WAIT: trade #${openCount+1} needs a ${requiredGapMs}ms gap since the last trade (${gapMultiplier}x base) — ${(requiredGapMs-sinceLastTrade).toFixed(0)}ms remaining.`,m};
 
   const sinceLastLoss=auto.lastLossAt?Date.now()-auto.lastLossAt:Infinity;
   if(c.lossCooldownMs>0 && sinceLastLoss<c.lossCooldownMs)
@@ -483,10 +494,11 @@ function decision(){
     return {signal:null,reason:'BLOCKED: commission alone consumes the configured per-trade risk.',m};
 
   // CHANGE HAS PRIORITY: without the fixed price change, no trade is allowed.
-  if(Math.abs(m.change)<changeThreshold){
+  // The required move itself scales up per concurrent trade (changeMultiplier).
+  if(Math.abs(m.change)<requiredChangeThreshold){
     return {
       signal:null,
-      reason:`WAIT: change ${m.change.toFixed(4)} has not reached ±${changeThreshold.toFixed(4)}. Trend sequence is only confidence.`,
+      reason:`WAIT: change ${m.change.toFixed(4)} has not reached ±${requiredChangeThreshold.toFixed(4)} required for trade #${openCount+1} (${changeMultiplier.toFixed(2)}x base ±${changeThreshold.toFixed(4)}). Trend sequence is only confidence.`,
       m
     };
   }
@@ -497,7 +509,6 @@ function decision(){
   // open raises the bar, reaching 100% right at the last slot before
   // maxTrades — so the full allotment of running trades is never used
   // unless the market is genuinely at max confidence.
-  const openCount=auto.positions.length;
   const requiredConfidence=Math.min(100,c.trendConfidence+(100-c.trendConfidence)*openCount/Math.max(1,c.maxTrades-1));
   if(confidencePct<requiredConfidence){
     return {
@@ -510,7 +521,7 @@ function decision(){
   const side=m.bias;
   return {
     signal:side,
-    reason:`${side}: change ${m.change.toFixed(4)} reached ±${changeThreshold.toFixed(4)}. Confidence ${confidencePct.toFixed(0)}% ≥ ${requiredConfidence.toFixed(0)}% required for trade #${openCount+1}. ${m.up}U/${m.down}D/${m.flat}F; movement ${m.upMove.toFixed(4)}↑/${m.downMove.toFixed(4)}↓; ${m.flips} flips.`,
+    reason:`${side}: change ${m.change.toFixed(4)} reached ±${requiredChangeThreshold.toFixed(4)} (${changeMultiplier.toFixed(2)}x base). Confidence ${confidencePct.toFixed(0)}% ≥ ${requiredConfidence.toFixed(0)}% required for trade #${openCount+1}. ${m.up}U/${m.down}D/${m.flat}F; movement ${m.upMove.toFixed(4)}↑/${m.downMove.toFixed(4)}↓; ${m.flips} flips.`,
     m
   };
 }
