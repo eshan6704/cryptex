@@ -104,7 +104,7 @@
         <label>Trailing TP giveback (%)<input id="cfgTrailPct" type="number" value="2.5" step="0.1" min="0.1"></label>
         <label>Lot size<input id="cfgLot" type="number" value="0.01" step="0.01" min="0.01"></label>
         <label>Commission / 0.01 lot ($)<input id="cfgComm" type="number" value="0.15" step="0.01" min="0"></label>
-        <label>Tick frame<input id="cfgWindow" type="number" value="1000" step="1" min="20"></label>
+        <label>Tick frame<input id="cfgWindow" type="number" value="100" step="1" min="20"></label>
         <label>Change threshold — BTCUSDT<input id="cfgChangeThresholdBtc" type="number" value="1" step="0.01" min="0"></label>
         <label>Change threshold — XAUUSD<input id="cfgChangeThresholdXau" type="number" value="0.1" step="0.01" min="0"></label>
         <label>Change threshold — XAUUSD mini<input id="cfgChangeThresholdXauMini" type="number" value="0.1" step="0.01" min="0"></label>
@@ -153,13 +153,7 @@
         <span>Price change</span><strong id="aChange">—</strong><small>primary trade trigger</small>
       </div>
       <div class="signal-card">
-        <span>Tick structure</span><strong id="aStructure">—</strong><small>UP / DOWN / FLAT</small>
-      </div>
-      <div class="signal-card">
-        <span>Trend confidence</span><strong id="aTrendConfidence">—</strong><small>sequence confirmation only</small>
-      </div>
-      <div class="signal-card">
-        <span>Flip count</span><strong id="aFlips">—</strong><small>lower is better for a trend</small>
+        <span>Trend confidence</span><strong id="aTrendConfidence">—</strong><small id="aTrendConfidenceReq">sequence confirmation only</small>
       </div>
       <div class="signal-card">
         <span>Tick streak</span><strong id="aStreak">—</strong><small>latest directional run</small>
@@ -168,16 +162,10 @@
         <span>Trend bias</span><strong id="aTrendBias">—</strong><small>movement-weighted direction</small>
       </div>
       <div class="signal-card">
-        <span>1. Total ticks</span><strong id="aRawTotal">—</strong><small>ticks in rolling window</small>
-      </div>
-      <div class="signal-card">
-        <span>2. Total up</span><strong id="aRawUp">—</strong><small>up-tick count</small>
-      </div>
-      <div class="signal-card">
-        <span>3. Total down</span><strong id="aRawDown">—</strong><small>down-tick count</small>
-      </div>
-      <div class="signal-card">
         <span>Tick shorthand</span><strong id="aTickShorthand">—</strong><small>U&lt;ticks&gt;_&lt;avg move&gt; D&lt;ticks&gt;_&lt;avg move&gt;</small>
+      </div>
+      <div class="signal-card">
+        <span>1. Total ticks</span><strong id="aRawTotal">—</strong><small>ticks in rolling window</small>
       </div>
       <div class="signal-card">
         <span>4. Total flat</span><strong id="aRawFlat">—</strong><small>no-change ticks</small>
@@ -272,7 +260,7 @@ const nval=(id,def)=>{const x=Number(aq(id).value);return Number.isFinite(x)?x:d
 const cfg=()=>({
   balance:nval('cfgBalance',1000),risk:nval('cfgRisk',0.5),maxTrades:Math.max(1,Math.floor(nval('cfgMaxTrades',10))),
   lot:Math.max(.01,nval('cfgLot',.01)),commPer001:nval('cfgComm',.15),
-  window:Math.max(20,Math.floor(nval('cfgWindow',1000))),
+  window:Math.max(20,Math.floor(nval('cfgWindow',100))),
   changeThresholdBtc:Math.max(0,nval('cfgChangeThresholdBtc',1)),
   changeThresholdXau:Math.max(0,nval('cfgChangeThresholdXau',0.1)),
   changeThresholdXauMini:Math.max(0,nval('cfgChangeThresholdXauMini',0.1)),
@@ -367,6 +355,12 @@ function dailyLossReached(c){
 }
 function trendMetrics(){
   const c=cfg();
+  const symbol=aq('autoSymbol').value;
+  // A tick is only "flat" if the move is smaller than a tiny fraction of
+  // the symbol's own entry-trigger threshold — with raw floating-point
+  // trade prices, an exact zero-difference basically never happens, so
+  // without this band flat ticks were essentially never counted at all.
+  const flatEps=changeThresholdFor(symbol,c)*0.02;
   // Continuous rolling window: always the most recent c.window ticks,
   // recomputed fresh every single tick. Nothing is bucketed or discarded
   // at time boundaries — the window just slides forward by one tick each
@@ -380,11 +374,11 @@ function trendMetrics(){
 
   for(let i=1;i<a.length;i++){
     const d=Number(a[i])-Number(a[i-1]);
-    if(d>0){
+    if(d>flatEps){
       up++; upMove+=d;
       if(lastDir===-1)flips++;
       lastDir=1;
-    }else if(d<0){
+    }else if(d<-flatEps){
       down++; downMove+=-d;
       if(lastDir===1)flips++;
       lastDir=-1;
@@ -396,7 +390,7 @@ function trendMetrics(){
   // Current directional streak, ignoring flat ticks.
   for(let i=a.length-1;i>0;i--){
     const d=Number(a[i])-Number(a[i-1]);
-    if(d===0)continue;
+    if(Math.abs(d)<=flatEps)continue;
     const q=d>0?1:-1;
     if(!streakDir)streakDir=q;
     if(q!==streakDir)break;
@@ -498,10 +492,17 @@ function decision(){
   }
 
   const confidencePct=m.confidence*100;
-  if(confidencePct<c.trendConfidence){
+  // Progressively tougher confidence bar per concurrent trade: the 1st
+  // trade only needs the base threshold, but each additional position
+  // open raises the bar, reaching 100% right at the last slot before
+  // maxTrades — so the full allotment of running trades is never used
+  // unless the market is genuinely at max confidence.
+  const openCount=auto.positions.length;
+  const requiredConfidence=Math.min(100,c.trendConfidence+(100-c.trendConfidence)*openCount/Math.max(1,c.maxTrades-1));
+  if(confidencePct<requiredConfidence){
     return {
       signal:null,
-      reason:`WAIT: ${m.bias} change ${m.change.toFixed(4)} reached, but trend confidence is ${confidencePct.toFixed(0)}% < ${c.trendConfidence.toFixed(0)}%. ${m.up}U/${m.down}D/${m.flat}F, ${m.flips} flips.`,
+      reason:`WAIT: ${m.bias} change ${m.change.toFixed(4)} reached, but trend confidence is ${confidencePct.toFixed(0)}% < ${requiredConfidence.toFixed(0)}% required for trade #${openCount+1} (${openCount} already open). ${m.up}U/${m.down}D/${m.flat}F, ${m.flips} flips.`,
       m
     };
   }
@@ -509,7 +510,7 @@ function decision(){
   const side=m.bias;
   return {
     signal:side,
-    reason:`${side}: change ${m.change.toFixed(4)} reached ±${changeThreshold.toFixed(4)}. Confidence ${confidencePct.toFixed(0)}%. ${m.up}U/${m.down}D/${m.flat}F; movement ${m.upMove.toFixed(4)}↑/${m.downMove.toFixed(4)}↓; ${m.flips} flips.`,
+    reason:`${side}: change ${m.change.toFixed(4)} reached ±${changeThreshold.toFixed(4)}. Confidence ${confidencePct.toFixed(0)}% ≥ ${requiredConfidence.toFixed(0)}% required for trade #${openCount+1}. ${m.up}U/${m.down}D/${m.flat}F; movement ${m.upMove.toFixed(4)}↑/${m.downMove.toFixed(4)}↓; ${m.flips} flips.`,
     m
   };
 }
@@ -611,15 +612,15 @@ function checkPositions(m){
 function runDecision(){
   const d=decision();
   if(d.m){
+    const c=cfg();
+    const openCount=auto.positions.length;
+    const requiredConfidence=Math.min(100,c.trendConfidence+(100-c.trendConfidence)*openCount/Math.max(1,c.maxTrades-1));
     if(aq('aChange'))aq('aChange').textContent=d.m.change.toFixed(4);
-    if(aq('aStructure'))aq('aStructure').textContent=`${d.m.up}U / ${d.m.down}D / ${d.m.flat}F`;
     if(aq('aTrendConfidence'))aq('aTrendConfidence').textContent=(d.m.confidence*100).toFixed(0)+'%';
-    if(aq('aFlips'))aq('aFlips').textContent=d.m.flips;
+    if(aq('aTrendConfidenceReq'))aq('aTrendConfidenceReq').textContent=`needs ≥${requiredConfidence.toFixed(0)}% for trade #${openCount+1} (${openCount} open)`;
     if(aq('aStreak'))aq('aStreak').textContent=(d.m.streakDir>0?'UP ':d.m.streakDir<0?'DOWN ':'')+d.m.streak;
     if(aq('aTrendBias'))aq('aTrendBias').textContent=d.m.bias;
     if(aq('aRawTotal'))aq('aRawTotal').textContent=d.m.total;
-    if(aq('aRawUp'))aq('aRawUp').textContent=d.m.up;
-    if(aq('aRawDown'))aq('aRawDown').textContent=d.m.down;
     if(aq('aTickShorthand'))aq('aTickShorthand').textContent=`U${d.m.up}_${(d.m.up?d.m.upMove/d.m.up:0).toFixed(2)} D${d.m.down}_${(d.m.down?d.m.downMove/d.m.down:0).toFixed(2)}`;
     if(aq('aRawFlat'))aq('aRawFlat').textContent=d.m.flat;
     if(aq('aRawDirectional'))aq('aRawDirectional').textContent=d.m.directional;
@@ -791,7 +792,7 @@ function closeSelectedTickSocket(){
 // state/functions from the candle builder and the decision engine.
 let patternRecord=null;
 function makePatternRecord(price){return{open:price,close:price,high:price,low:price,ticks:1,up:0,down:0,flat:1,absoluteMove:0,pattern:'',streakDirection:null,streakLength:0,pendingDirection:null,pendingLength:0,pendingImpact:0};}
-function applyPatternTick(r,price){const dir=price>r.close?'up':price<r.close?'down':'flat',delta=Math.abs(price-r.close);if(dir==='up')r.up++;if(dir==='down')r.down++;if(dir==='flat')r.flat++;r.high=Math.max(r.high,price);r.low=Math.min(r.low,price);r.absoluteMove+=delta;r.ticks++;r.streakLength=r.streakDirection===dir?r.streakLength+1:1;r.streakDirection=dir;
+function applyPatternTick(r,price,flatEps){const d=price-r.close,dir=d>flatEps?'up':d<-flatEps?'down':'flat',delta=Math.abs(d);if(dir==='up')r.up++;if(dir==='down')r.down++;if(dir==='flat')r.flat++;r.high=Math.max(r.high,price);r.low=Math.min(r.low,price);r.absoluteMove+=delta;r.ticks++;r.streakLength=r.streakDirection===dir?r.streakLength+1:1;r.streakDirection=dir;
 if(dir!=='flat'){const token=dir==='up'?'U':'D',m=r.pattern.match(/([UD])(\d*)_([\d.]+)$/),chainDir=m?.[1]||null,chainCount=m?Number(m[2]||1):0,chainImpact=m?Number(m[3]):0,format=(d,c,i)=>`${d}${c>1?c:''}_${i.toFixed(2)}`;if(r.pendingDirection){if(r.pendingDirection===dir){r.pendingLength++;r.pendingImpact+=delta;if(r.pendingLength>=2){r.pattern+=`${r.pattern?', ':''}${format(token,r.pendingLength,r.pendingImpact)}`;r.pendingDirection=null;r.pendingLength=0;r.pendingImpact=0}}else if(chainDir===token){r.pattern=r.pattern.slice(0,-m[0].length)+format(token,chainCount+1,chainImpact+delta);r.pendingDirection=null;r.pendingLength=0;r.pendingImpact=0}else{r.pendingDirection=dir;r.pendingLength=1;r.pendingImpact=delta}}else if(!chainDir){r.pendingDirection=dir;r.pendingLength=1;r.pendingImpact=delta}else if(chainDir===token){r.pattern=r.pattern.slice(0,-m[0].length)+format(token,chainCount+1,chainImpact+delta)}else{r.pendingDirection=dir;r.pendingLength=1;r.pendingImpact=delta}}
 r.close=price;return r}
 function patternCalc(r){const range=r.high-r.low,avg=r.ticks>1?r.absoluteMove/(r.ticks-1):0;let regime='building';if(r.ticks>=4){const ratio=range/Math.max(r.open,.000001);regime=range===0?'quiet':ratio>.004?'expanding':ratio<.0005?'compressed':'active'}const dir=r.close>r.open?'up':r.close<r.open?'down':'flat',loc=range?(r.close-r.low)/range:.5,body=Math.abs(r.close-r.open),upper=Math.max(0,r.high-Math.max(r.open,r.close)),lower=Math.max(0,Math.min(r.open,r.close)-r.low);let label='Balanced move';if(r.ticks<4)label='Building pattern';else if(dir==='flat'&&regime!=='quiet')label='Range-bound rotation';else if(dir==='up'&&r.streakLength>=3&&loc>.65)label='Steady upward drift';else if(dir==='down'&&r.streakLength>=3&&loc<.35)label='Steady downward drift';else if(body<(upper+lower)*.35)label='Indecision / wick-heavy';else label=`${dir==='up'?'Upward':dir==='down'?'Downward':'Balanced'} ${regime} move`;return{range,avg,regime,dir,loc,body,upper,lower,label}}
@@ -818,7 +819,8 @@ function renderPatternPanel(){
 }
 function updatePatternFromTick(price){
   if(!Number.isFinite(price)||price<=0)return;
-  patternRecord=patternRecord?applyPatternTick(patternRecord,price):makePatternRecord(price);
+  const flatEps=changeThresholdFor(aq('autoSymbol').value,cfg())*0.02;
+  patternRecord=patternRecord?applyPatternTick(patternRecord,price,flatEps):makePatternRecord(price);
   renderPatternPanel();
 }
 
