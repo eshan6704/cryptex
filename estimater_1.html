@@ -1,0 +1,3306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Desk — Structure &amp; Paper Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --panel:#fbfaf8;
+    --line:#e2e0da;
+    --ink:#15181d;
+    --ink-soft:#6a6e76;
+    --ink-faint:#9a9da3;
+    --green:#0f7a4c;
+    --green-soft:#e6f3ec;
+    --red:#b23b2e;
+    --red-soft:#f8ebe9;
+    --gold:#a8791f;
+    --gold-soft:#f6eddb;
+    --blue:#2c5aa0;
+    --blue-soft:#e9f0f9;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
+  ::selection{background:var(--gold-soft);}
+
+  #app{max-width:1180px;margin:0 auto;padding:14px 16px 60px;}
+
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+    gap:8px 14px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px;}
+  header .hleft{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  header .status{font-size:11px;color:var(--ink-soft);white-space:nowrap;
+    min-width:190px;flex:0 0 auto;overflow:hidden;text-overflow:ellipsis;text-align:right;}
+  header .status .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ink-faint);margin-right:5px;}
+  header .status.live .dot{background:var(--green);}
+  header .status.err .dot{background:var(--red);}
+  @media(max-width:640px){
+    header{justify-content:center;text-align:center;}
+    header .status{text-align:center;margin:0 auto;}
+  }
+
+  .headerprice{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .headerprice .hp-last{font-size:20px;font-weight:600;font-family:'IBM Plex Mono',monospace;
+    font-variant-numeric:tabular-nums;min-width:9ch;text-align:right;}
+  .headerprice .hp-chg{font-size:12px;font-weight:600;font-family:'IBM Plex Mono',monospace;padding:1px 6px;
+    border-radius:2px;font-variant-numeric:tabular-nums;min-width:58px;text-align:center;display:inline-block;}
+  .headerprice .hp-chg.up{color:var(--green);background:var(--green-soft);}
+  .headerprice .hp-chg.down{color:var(--red);background:var(--red-soft);}
+  .headerprice .hp-meta{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+  @media(max-width:640px){
+    .headerprice{justify-content:center;}
+    .headerprice .hp-last{text-align:center;}
+  }
+
+  .selectctl{border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    padding:6px 22px 6px 10px;font-size:12px;font-weight:500;cursor:pointer;border-radius:var(--radius);
+    font-family:'IBM Plex Mono',monospace;height:30px;line-height:1;vertical-align:middle;
+    box-sizing:border-box;-webkit-appearance:none;-moz-appearance:none;appearance:none;
+    margin:0;background-image:linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+      linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+    background-position:calc(100% - 14px) center, calc(100% - 9px) center;
+    background-size:5px 5px, 5px 5px;background-repeat:no-repeat;}
+  .selectctl:hover{border-color:var(--ink-soft);}
+  .selectctl:focus{outline:none;border-color:var(--gold);}
+
+  .patternbar{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;
+    width:100%;margin:-8px 0 16px;font-size:12px;scrollbar-width:thin;}
+  .patternbar::-webkit-scrollbar{height:4px;}
+  .patternbar::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px;}
+  .patternbar .lbl{color:var(--ink-soft);flex:0 0 auto;position:sticky;left:0;background:var(--bg);padding-right:4px;}
+  .patternbar .tag{font-family:'IBM Plex Mono',monospace;font-weight:700;padding:2px 7px;border-radius:2px;font-size:11.5px;flex:0 0 auto;white-space:nowrap;}
+  .patternbar .tag.u{color:var(--green);background:var(--green-soft);}
+  .patternbar .tag.d{color:var(--red);background:var(--red-soft);}
+  .patternbar .empty{color:var(--ink-faint);font-style:italic;flex:0 0 auto;}
+
+  /* Toolbar row #2 — sits just below the header. Houses the market-table
+     toggle for now; more toggle buttons will be added here later. */
+  .toolbar2{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-2px 0 12px;}
+  .togglebtn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);
+    padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer;border-radius:var(--radius);
+    font-family:'IBM Plex Mono',monospace;letter-spacing:0.02em;}
+  .togglebtn:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .togglebtn.active{background:var(--blue-soft);color:var(--blue);border-color:#c3d6ec;}
+
+  #marketTablePanel .body{padding:0;}
+  .markettable-wrap{max-height:520px;overflow:auto;}
+  .markettable{width:100%;border-collapse:collapse;font-size:12px;}
+  .markettable th,.markettable td{text-align:right;padding:6px 10px;border-bottom:1px dashed var(--line);white-space:nowrap;}
+  .markettable th:nth-child(-n+2),.markettable td:nth-child(-n+2){text-align:left;}
+  .markettable th{color:var(--ink-soft);font-weight:600;font-size:10.5px;letter-spacing:0.02em;
+    position:sticky;top:0;background:var(--panel);cursor:default;}
+  .markettable th.sortable{cursor:pointer;user-select:none;}
+  .markettable th.sortable:hover{color:var(--ink);}
+  .markettable th .arrow{font-size:9px;margin-left:3px;color:var(--gold);}
+  .markettable td.mono{font-family:'IBM Plex Mono',monospace;}
+  .markettable td.name{font-weight:500;}
+  .markettable td.sym{color:var(--ink-faint);font-weight:400;}
+  .markettable td.chg.up{color:var(--green);}
+  .markettable td.chg.down{color:var(--red);}
+  .markettable-loading,.markettable-err{padding:24px;text-align:center;color:var(--ink-soft);font-size:12.5px;font-style:italic;}
+
+  /* News / calendar / analysis panels — share a common list look */
+  .listpanel-wrap{max-height:420px;overflow:auto;}
+  .panel-msg{padding:24px;text-align:center;color:var(--ink-soft);font-size:12.5px;font-style:italic;}
+  .panel-msg.err{color:var(--red);}
+  .panel-note{padding:7px 10px;font-size:11px;color:var(--ink-soft);font-style:italic;
+    background:var(--panel);border-bottom:1px dashed var(--line);}
+
+  .coinstats{display:flex;flex-wrap:wrap;gap:14px;padding:9px 10px;border-bottom:1px dashed var(--line);}
+  .coinstats .stat{display:flex;flex-direction:column;gap:1px;}
+  .coinstats .stat .lbl{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.03em;}
+  .coinstats .stat .val{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;}
+  .coinstats .stat .val.up{color:var(--green);}
+  .coinstats .stat .val.down{color:var(--red);}
+
+  .newslist{display:flex;flex-direction:column;}
+  .newsitem{padding:8px 10px;border-bottom:1px dashed var(--line);font-size:12.5px;}
+  .newsitem:last-child{border-bottom:none;}
+  .newsitem .meta{display:flex;gap:8px;align-items:baseline;margin-bottom:2px;}
+  .newsitem .src{font-size:10.5px;color:var(--blue);font-weight:600;text-transform:uppercase;letter-spacing:0.02em;}
+  .newsitem .time{font-size:10.5px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace;margin-left:auto;white-space:nowrap;}
+  .newsitem a{color:var(--ink);text-decoration:none;font-weight:500;line-height:1.3;}
+  .newsitem a:hover{text-decoration:underline;color:var(--blue);}
+  .newsitem .snippet{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.4;}
+
+  .calitem{display:flex;align-items:center;gap:9px;padding:7px 10px;border-bottom:1px dashed var(--line);font-size:12px;}
+  .calitem:last-child{border-bottom:none;}
+  .calitem .impact{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .calitem .impact.high{background:var(--red);}
+  .calitem .impact.medium{background:var(--gold);}
+  .calitem .impact.low{background:var(--ink-faint);}
+  .calitem .when{font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);font-size:11px;min-width:110px;flex:0 0 auto;}
+  .calitem .country{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-faint);min-width:28px;flex:0 0 auto;}
+  .calitem .title{flex:1;}
+  .calitem .fp{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft);white-space:nowrap;flex:0 0 auto;}
+  .calitem .countdown{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--blue);white-space:nowrap;flex:0 0 auto;min-width:64px;text-align:right;}
+  .calitem.next{background:var(--blue-soft);}
+
+  .refreshbtn{float:right;background:none;border:1px solid var(--line);border-radius:4px;color:var(--ink-soft);
+    font-size:12px;line-height:1;padding:2px 6px;cursor:pointer;margin-left:8px;}
+  .refreshbtn:hover{color:var(--ink);border-color:var(--ink-soft);}
+  .refreshbtn.spinning{animation:spin 0.6s linear;}
+  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  .cache-badge{font-size:9.5px;color:var(--gold);margin-left:4px;}
+
+  .markettable-searchbar{padding:8px 10px;border-bottom:1px dashed var(--line);}
+  .markettable-searchbar input{width:100%;box-sizing:border-box;padding:6px 9px;border:1px solid var(--line);
+    border-radius:var(--radius);font-family:'IBM Plex Mono',monospace;font-size:12px;background:#fff;color:var(--ink);}
+  .markettable-searchbar input:focus{outline:none;border-color:var(--blue);}
+  .markettable tr.self-row{background:var(--blue-soft);}
+  .markettable tr.self-row td{font-weight:600;}
+
+  .chartind-bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 0;}
+  .chartind-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);
+    background:#fff;color:var(--ink-faint);padding:3px 8px;font-size:10.5px;font-weight:600;
+    border-radius:999px;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:0.01em;
+    opacity:0.5;}
+  .chartind-chip .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+  .chartind-chip.active{opacity:1;color:var(--ink);border-color:var(--ink-soft);background:var(--panel);}
+
+  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;}
+  @media(max-width:820px){.grid{grid-template-columns:1fr;}}
+
+  .panel{border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);margin-bottom:14px;}
+  .panel h3{margin:0;padding:9px 12px;font-size:12px;font-weight:600;letter-spacing:0.02em;
+    border-bottom:1px solid var(--line);background:var(--panel);border-radius:var(--radius) var(--radius) 0 0;}
+  .panel .body{padding:12px;}
+  .panel .body.empty{color:var(--ink-soft);font-size:12.5px;font-style:italic;}
+  .candlecountdown{font-weight:500;color:var(--ink-soft);font-size:10.5px;letter-spacing:0;text-transform:none;}
+
+  details.panel > summary{margin:0;padding:9px 12px;font-size:12px;font-weight:600;letter-spacing:0.02em;
+    background:var(--panel);border-radius:var(--radius);cursor:pointer;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;}
+  details.panel > summary::-webkit-details-marker{display:none;}
+  details.panel[open] > summary{border-bottom:1px solid var(--line);border-radius:var(--radius) var(--radius) 0 0;}
+  details.panel > summary::after{content:"▾";font-size:9px;color:var(--ink-soft);margin-left:6px;flex:0 0 auto;}
+  details.panel[open] > summary::after{content:"▴";}
+  /* Broker config toggle lives inline in the header row now, just after the
+     timeframe select — a small pill that pops its form open as a floating
+     dropdown instead of pushing the rest of the header down when opened. */
+  #brokerPanel{position:relative;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);
+    height:30px;box-sizing:border-box;vertical-align:middle;margin:0;}
+  #brokerPanel > summary{padding:6px 10px;font-size:12px;font-weight:500;gap:4px;height:100%;
+    box-sizing:border-box;line-height:1;}
+  #brokerPanel > summary::after{content:"▾";font-size:9px;color:var(--ink-soft);margin-left:4px;}
+  #brokerPanel[open] > summary::after{content:"▴";}
+  #brokerPanel[open] > summary{border-bottom:none;}
+  #brokerPanel > .body{position:absolute;top:calc(100% + 4px);left:0;z-index:20;min-width:260px;
+    background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 4px 14px rgba(0,0,0,0.1);}
+  .brokerrow{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .brokerrow select{font-family:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line);
+    border-radius:2px;background:var(--bg);color:var(--ink);}
+  .brokertable{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:2px;}
+  .brokertable th,.brokertable td{text-align:left;padding:4px 8px 4px 0;border-bottom:1px dashed var(--line);}
+  .brokertable th{color:var(--ink-soft);font-weight:600;}
+  .brokertable td.mono,.brokertable th.mono{font-family:'IBM Plex Mono',monospace;}
+
+  .tradesfilter{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:12px;color:var(--ink-soft);}
+  .tradesfilter input{width:100px;border:1px solid var(--line);border-radius:var(--radius);
+    padding:4px 7px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--ink);}
+  .tradesfilter input:focus{outline:none;border-color:var(--gold);}
+  .trades-buy{color:var(--green);font-weight:600;}
+  .trades-sell{color:var(--red);font-weight:600;}
+  .trade-filler{opacity:.5;font-style:italic;}
+
+  canvas#chart{width:100%;height:62vh;min-height:340px;max-height:640px;display:block;}
+  .chartbody{padding:8px 4px 10px !important;}
+
+  .kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line);font-size:13px;}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--ink-soft);}
+  .kv .v{font-family:'IBM Plex Mono',monospace;font-weight:500;}
+
+  .taglist{display:flex;flex-direction:column;gap:6px;}
+  .tag{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;
+    border:1px solid var(--line);border-radius:2px;padding:6px 9px;}
+  .tag .side{padding:1px 6px;border-radius:2px;font-size:10.5px;font-weight:700;letter-spacing:0.03em;}
+  .tag .side.bull{background:var(--green-soft);color:var(--green);}
+  .tag .side.bear{background:var(--red-soft);color:var(--red);}
+  .tag .rng{font-family:'IBM Plex Mono',monospace;}
+
+  .biaspill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+  .biaspill.bullish{background:var(--green-soft);color:var(--green);}
+  .biaspill.bearish{background:var(--red-soft);color:var(--red);}
+  .biaspill.neutral{background:var(--gold-soft);color:var(--gold);}
+
+  .obrow{display:flex;height:9px;border-radius:2px;overflow:hidden;border:1px solid var(--line);margin-top:6px;}
+  .obrow .bid{background:var(--green);}
+  .obrow .ask{background:var(--red);}
+
+  .depthside{display:flex;flex-direction:column;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:11px;}
+  .depthrow{display:flex;justify-content:space-between;position:relative;padding:2px 6px;}
+  .depthrow .bar{position:absolute;top:0;bottom:0;right:0;opacity:.12;}
+  .depthrow.bid .bar{background:var(--green);}
+  .depthrow.ask .bar{background:var(--red);}
+  .depthcols{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .depthcols h4{margin:0 0 4px;font-size:10.5px;color:var(--ink-soft);font-weight:600;letter-spacing:0.03em;}
+
+  .groupbar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+  .groupbtn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);
+    padding:3px 8px;font-size:11px;font-weight:500;cursor:pointer;border-radius:var(--radius);
+    font-family:'IBM Plex Mono',monospace;}
+  .groupbtn.active{background:var(--gold-soft);color:var(--gold);border-color:#e6d5a8;font-weight:600;}
+  .groupbtn:hover:not(.active){border-color:var(--ink-soft);color:var(--ink);}
+  .liqrow{background:#fdecec;}
+
+  .tradebox{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .tradebox input{border:1px solid var(--line);border-radius:2px;padding:7px 8px;font-size:13px;
+    font-family:'IBM Plex Mono',monospace;width:100%;}
+  .tradebox label{font-size:10.5px;color:var(--ink-soft);display:block;margin-bottom:3px;}
+  .fullrow{grid-column:1/-1;}
+  .btnrow{display:flex;gap:8px;margin-bottom:12px;}
+  .btn{flex:1;padding:9px;border:none;border-radius:2px;font-weight:600;font-size:13px;cursor:pointer;}
+  .btn.long{background:var(--green);color:#fff;}
+  .btn.short{background:var(--red);color:#fff;}
+  .btn.long:hover{background:#0c6640;}
+  .btn.short:hover{background:#983025;}
+
+  .postab{border:1px solid var(--line);border-radius:2px;padding:9px;margin-bottom:8px;}
+  .postab .row1{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;}
+  .postab .row2{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);margin-top:3px;
+    font-family:'IBM Plex Mono',monospace;}
+  .postab .pnl{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;}
+  .postab .closebtn{font-size:11px;border:1px solid var(--line);background:var(--panel);padding:4px 9px;
+    border-radius:2px;cursor:pointer;margin-top:6px;width:100%;}
+  .postab .closebtn:hover{border-color:var(--ink-soft);}
+
+  .summarybar{display:flex;justify-content:space-between;font-size:12.5px;padding:8px 0 2px;border-top:1px solid var(--line);margin-top:4px;}
+  .summarybar .v.pos{color:var(--green);} .summarybar .v.neg{color:var(--red);}
+
+  .notice{font-size:12px;background:var(--gold-soft);color:var(--gold);border:1px solid #e6d5a8;
+    border-radius:2px;padding:8px 10px;margin-bottom:10px;}
+
+  .opttable{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11.5px;margin-top:8px;}
+  .opttable th{font-size:9.5px;color:var(--ink-soft);text-align:center;padding:4px 2px;border-bottom:1px solid var(--line);font-weight:600;letter-spacing:0.02em;}
+  .opttable td{text-align:center;padding:4px 2px;border-bottom:1px dashed var(--line);}
+  .opttable td.strikecell{font-weight:700;background:var(--panel);}
+  .opttable tr.atmrow td{background:var(--gold-soft);}
+  .opttable tr.atmrow td.strikecell{color:var(--gold);}
+
+  .manualrow{display:flex;gap:8px;margin-bottom:10px;}
+  .manualrow input{flex:1;border:1px solid var(--line);border-radius:2px;padding:7px 8px;font-family:'IBM Plex Mono',monospace;}
+  .manualrow button{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:7px 12px;border-radius:2px;cursor:pointer;font-size:12.5px;}
+
+  footer{margin-top:22px;font-size:11px;color:var(--ink-faint);border-top:1px solid var(--line);padding-top:10px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="hleft">
+      <select class="selectctl" id="symbolSelect"></select>
+      <select class="selectctl" id="tfSelect"></select>
+      <details class="panel" id="brokerPanel">
+        <summary>⚙ Broker</summary>
+        <div class="body" id="brokerBody"></div>
+      </details>
+    </div>
+    <div class="headerprice" id="headerprice"><span class="hp-meta">Loading…</span></div>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">connecting…</span></div>
+  </header>
+
+  <div class="toolbar2" id="toolbar2">
+    <button type="button" class="togglebtn" id="sentimentToggle">😨 Sentiment</button>
+    <button type="button" class="togglebtn" id="marketTableToggle">☰ Market Table</button>
+    <button type="button" class="togglebtn" id="cryptoNewsToggle">📰 Crypto News</button>
+    <button type="button" class="togglebtn" id="financeNewsToggle">🌐 Global Finance News</button>
+    <button type="button" class="togglebtn" id="macroCalToggle">📅 Upcoming Events</button>
+    <button type="button" class="togglebtn" id="coinAnalysisToggle">🔍 Coin Analysis</button>
+  </div>
+
+  <div class="panel" id="sentimentPanel" style="display:none;">
+    <h3>MARKET SENTIMENT <span class="candlecountdown" id="sentimentMeta"></span><button type="button" class="refreshbtn" id="sentimentRefresh" title="Refresh now">⟳</button></h3>
+    <div class="body">
+      <div id="sentimentWrap">
+        <div class="panel-msg">Loading sentiment…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="marketTablePanel" style="display:none;">
+    <h3>TOP 100 — BINANCE COINS BY MARKET CAP <span class="candlecountdown" id="marketTableMeta"></span><button type="button" class="refreshbtn" id="marketTableRefresh" title="Refresh now">⟳</button></h3>
+    <div class="body">
+      <div class="markettable-searchbar">
+        <input type="text" id="marketTableSearch" placeholder="Filter by name or symbol…" autocomplete="off">
+      </div>
+      <div class="markettable-wrap" id="marketTableWrap">
+        <div class="markettable-loading">Loading market data…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="cryptoNewsPanel" style="display:none;">
+    <h3>CRYPTO MARKET NEWS <span class="candlecountdown" id="cryptoNewsMeta"></span><button type="button" class="refreshbtn" id="cryptoNewsRefresh" title="Refresh now">⟳</button></h3>
+    <div class="body">
+      <div class="listpanel-wrap" id="cryptoNewsWrap">
+        <div class="panel-msg">Loading crypto news…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="financeNewsPanel" style="display:none;">
+    <h3>GLOBAL FINANCIAL NEWS <span class="candlecountdown" id="financeNewsMeta"></span><button type="button" class="refreshbtn" id="financeNewsRefresh" title="Refresh now">⟳</button></h3>
+    <div class="body">
+      <div class="listpanel-wrap" id="financeNewsWrap">
+        <div class="panel-msg">Loading global finance news…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="macroCalPanel" style="display:none;">
+    <h3>UPCOMING EVENTS — MACRO CALENDAR <span class="candlecountdown" id="macroCalMeta"></span></h3>
+    <div class="body">
+      <div class="listpanel-wrap" id="macroCalWrap">
+        <div class="panel-msg">Loading calendar…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="coinAnalysisPanel" style="display:none;">
+    <h3>LATEST ANALYSIS — <span id="coinAnalysisSymLabel">—</span> <span class="candlecountdown" id="coinAnalysisMeta"></span><button type="button" class="refreshbtn" id="coinAnalysisRefresh" title="Refresh now">⟳</button></h3>
+    <div class="body">
+      <div class="listpanel-wrap" id="coinAnalysisWrap">
+        <div class="panel-msg">Loading analysis…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="patternbar" id="patternbar"></div>
+
+  <div id="noticearea"></div>
+
+  <div class="grid">
+    <!-- LEFT COLUMN -->
+    <div>
+      <details class="panel" open>
+        <summary id="chartTitle">PRICE STRUCTURE — order blocks, FVGs &amp; levels</summary>
+        <div class="chartind-bar" id="chartIndBar">
+          <button type="button" class="chartind-chip" data-ind="ema20"><span class="dot" style="background:#a8791f"></span>EMA20</button>
+          <button type="button" class="chartind-chip" data-ind="ema50"><span class="dot" style="background:#2c5aa0"></span>EMA50</button>
+          <button type="button" class="chartind-chip" data-ind="vwap"><span class="dot" style="background:#7a3fa0"></span>VWAP</button>
+          <button type="button" class="chartind-chip" data-ind="ob"><span class="dot" style="background:#0f7a4c"></span>Order Blocks</button>
+          <button type="button" class="chartind-chip" data-ind="fvg"><span class="dot" style="background:#b23b2e"></span>FVGs</button>
+          <button type="button" class="chartind-chip" data-ind="streaks"><span class="dot" style="background:#444"></span>Streaks</button>
+          <button type="button" class="chartind-chip" data-ind="lastprice"><span class="dot" style="background:#2c5aa0"></span>Last Price</button>
+          <button type="button" class="chartind-chip" data-ind="volume"><span class="dot" style="background:#0f7a4c"></span>Volume</button>
+          <button type="button" class="chartind-chip" data-ind="vp"><span class="dot" style="background:#2c5aa0"></span>Vol Profile</button>
+        </div>
+        <div class="body chartbody"><canvas id="chart"></canvas></div>
+      </details>
+
+      <details class="panel" open>
+        <summary>TREND &amp; MARKET STRUCTURE</summary>
+        <div class="body" id="trendBody"></div>
+      </details>
+
+      <details class="panel">
+        <summary>SMC / ICT — ORDER BLOCKS &amp; FAIR VALUE GAPS</summary>
+        <div class="body" id="smcBody"></div>
+      </details>
+
+      <details class="panel">
+        <summary>SUPPORT / RESISTANCE &amp; DEMAND / SUPPLY ZONES</summary>
+        <div class="body" id="levelsBody"></div>
+      </details>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <details class="panel">
+        <summary>INDICATORS</summary>
+        <div class="body" id="indBody"></div>
+      </details>
+
+      <details class="panel">
+        <summary>VOLUME</summary>
+        <div class="body" id="volBody"></div>
+      </details>
+
+      <details class="panel">
+        <summary>ORDER BOOK</summary>
+        <div class="body" id="bookBody"></div>
+      </details>
+
+      <details class="panel">
+        <summary>RECENT LARGE TRADES</summary>
+        <div class="body" id="tradesBody"></div>
+      </details>
+
+      <details class="panel">
+        <summary>PRICE ALERTS</summary>
+        <div class="body" id="alertsBody"></div>
+      </details>
+
+      <details class="panel">
+        <summary>OPTION CHAIN</summary>
+        <div class="body" id="optBody"></div>
+      </details>
+
+      <details class="panel" open>
+        <summary>VIRTUAL PAPER TRADE</summary>
+        <div class="body" id="tradeBody"></div>
+      </details>
+
+      <details class="panel">
+        <summary>PNL FORECAST</summary>
+        <div class="body" id="forecastBody"></div>
+      </details>
+    </div>
+  </div>
+
+  <footer>
+    Data: Binance public market data (BTC, ETH, SOL, PAXG), CoinGecko (XAUT fallback), Deribit (BTC/ETH/XAUT options).
+    CL (WTI crude) has no free live feed here, so price is entered manually for the paper-trade tracker only.
+    Structure/SMC/ICT labels are computed with simple rule-based heuristics (swing highs/lows, displacement, imbalance) —
+    treat this as a decision-support read of the tape, not financial advice, and confirm before sizing real risk.
+    Paper positions persist on this device only.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const SYMBOLS = {
+    BTC:  { label:"BTC",  full:"BTC / USDT",  source:"binance", pair:"BTCUSDT",  accent:"#a8791f", contractSize:1, stepDefault:500, sharkClass:"btc" },
+    ETH:  { label:"ETH",  full:"ETH / USDT",  source:"binance", pair:"ETHUSDT",  accent:"#4f6ec9", contractSize:1, stepDefault:25, sharkClass:"other" },
+    SOL:  { label:"SOL",  full:"SOL / USDT",  source:"binance", pair:"SOLUSDT",  accent:"#6b4fc9", contractSize:1, stepDefault:5, sharkClass:"other" },
+    PAXG: { label:"PAXG", full:"PAXG / USDT", source:"binance", pair:"PAXGUSDT", accent:"#a8791f", contractSize:100, stepDefault:50, sharkClass:"gold" },
+    XAUT: { label:"XAUT", full:"XAUT / USDT", source:"binance-cg", pair:"XAUTUSDT", cgId:"tether-gold", accent:"#a8791f", contractSize:100, stepDefault:50, sharkClass:"gold" },
+    XAUTM:{ label:"XAUTm",full:"XAUT / USDT — Mini Gold (1/5 size)", source:"binance-cg", pair:"XAUTUSDT", cgId:"tether-gold", accent:"#c9a24f", contractSize:20, optionCurrency:"XAUT", stepDefault:10, sharkClass:"gold" },
+    CL:   { label:"CL",   full:"CL — WTI Crude", source:"manual", accent:"#2c5aa0", contractSize:1, stepDefault:5, sharkClass:"other" }
+  };
+  const ORDER = ["BTC","ETH","SOL","PAXG","XAUT","XAUTM","CL"];
+  // Deribit publishes a live public option book for these underlyings.
+  const OPTION_CURRENCIES = ["BTC","ETH","XAUT"];
+  const POLL_MS = 5000;
+  const MARKET_TABLE_POLL_MS = 60000;
+  const NEWS_POLL_MS = 180000;      // crypto & finance news — 3 min
+  const COIN_ANALYSIS_POLL_MS = 180000;
+  // News/analysis panels pull from real outlet RSS feeds via rss2json.com
+  // (a free, no-key, CORS-open RSS→JSON proxy — GDELT's doc API and
+  // CryptoCompare's now-key-gated news endpoint both proved unreliable for
+  // in-browser use, so this is the most robust free option). Feeds are
+  // merged and sorted by publish date.
+  const CRYPTO_NEWS_FEEDS = [
+    "https://www.coindesk.com/arc/outboundfeeds/rss/",
+    "https://cointelegraph.com/rss",
+    "https://decrypt.co/feed"
+  ];
+  const FINANCE_NEWS_FEEDS = [
+    "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+    "https://feeds.marketwatch.com/marketwatch/topstories/",
+    "https://finance.yahoo.com/news/rssindex"
+  ];
+  // Cointelegraph publishes a per-tag RSS feed (cointelegraph.com/rss/tag/<tag>)
+  // used for the "coin analysis" panel. Instruments with no good crypto-news
+  // tag (gold tokens, WTI) fall back to the general crypto feed instead.
+  const COIN_ANALYSIS_TAG = { BTC:"bitcoin", ETH:"ethereum", SOL:"solana", PAXG:null, XAUT:null, XAUTM:null, CL:null };
+  // CoinGecko coin IDs for the long-term stats strip (30D/1Y/ATH) in the
+  // Coin Analysis panel. CL (WTI crude) isn't a CoinGecko asset, so it gets
+  // no stats strip — just the news feed.
+  const COIN_STATS_CG_ID = { BTC:"bitcoin", ETH:"ethereum", SOL:"solana", PAXG:"pax-gold", XAUT:"tether-gold", XAUTM:"tether-gold", CL:null };
+  // "1s" is a real Binance kline interval, so it flows through the normal
+  // REST path below. "5s"/"15s" are NOT published by Binance at all — those
+  // two are built locally from the live @trade tick stream (see
+  // TICK_BUILT_TFS / feedTickCandles). They get instant history anyway: on
+  // first load for a symbol, seedTickCandlesFromRest() pulls the last 5 min
+  // of 1s klines and aggregates them locally into 5s/15s candles, then the
+  // live tick stream extends that seeded array from there.
+  const TIMEFRAMES = ["1s","5s","15s","1m","5m","15m","1h","4h","1d"];
+  const TICK_BUILT_TFS = { "5s":5000, "15s":15000 };
+  const GROUP_SIZES = [0.01, 0.1, 1, 5, 25];
+
+  // Broker rulesets. Each open/closed position stores which broker it was
+  // opened under (see enterTrade), so switching the active broker never
+  // retroactively changes the economics of an existing trade — only new
+  // trades use the newly-selected broker's rules.
+  const BROKERS = {
+    dana: {
+      label: "BTCDana",
+      defaultLot: 0.01,
+      // Fixed $ per lot, charged on entry only — exit is free.
+      feeEntryPerLot: 0.15,
+      feeExitPerLot: 0,
+      // Margin = (qty × contract size × price) / leverage. Leverage is
+      // user-adjustable (state.leverage, default 500) — this is the
+      // existing behavior, unchanged.
+      defaultLeverage: 500,
+      usesContractSize: true
+    },
+    shark: {
+      label: "Shark",
+      defaultLot: 0.002,
+      // 0.016% of trade value, charged on BOTH entry and exit.
+      feePct: 0.00016,
+      // Margin = (price × lot size) / leverage — no contract-size
+      // multiplier — with leverage fixed by instrument class, not
+      // user-adjustable.
+      leverageByClass: { btc:150, gold:75, other:25 },
+      usesContractSize: false
+    }
+  };
+  function sharkLeverage(symbol){
+    return BROKERS.shark.leverageByClass[SYMBOLS[symbol].sharkClass] || BROKERS.shark.leverageByClass.other;
+  }
+  // --- broker-aware fee / margin / P&L helpers ---
+  // `broker` param defaults to the currently active one, but callers dealing
+  // with an existing position always pass pos.broker so a broker switch
+  // never changes the math for trades already open.
+  function brokerFeeEntry(qty, price, broker){
+    const key = broker || state.broker;
+    const b = BROKERS[key];
+    return key==="shark" ? price*qty*b.feePct : b.feeEntryPerLot*qty;
+  }
+  function brokerFeeExit(qty, price, broker){
+    const key = broker || state.broker;
+    const b = BROKERS[key];
+    return key==="shark" ? price*qty*b.feePct : (b.feeExitPerLot||0)*qty;
+  }
+  function brokerMargin(qty, contractSize, price, symbol, broker){
+    const key = broker || state.broker;
+    if(key==="shark") return (price*qty)/sharkLeverage(symbol);
+    return (qty*contractSize*price)/state.leverage;
+  }
+  function posGrossPnL(pos, price){
+    if(price==null) return null;
+    const b = BROKERS[pos.broker || "dana"];
+    if(b.usesContractSize){
+      const units = pos.qty*(pos.contractSize||1);
+      return pos.side==="long" ? (price-pos.entry)*units : (pos.entry-price)*units;
+    }
+    return pos.side==="long" ? (price-pos.entry)*pos.qty : (pos.entry-price)*pos.qty;
+  }
+
+  let state = {
+    symbol: "XAUT",
+    timeframe: "15m",
+    candles: [],
+    depth: null,
+    ticker: null,
+    options: null,
+    dataOk: false,
+    lastError: null,
+    manualPrice: null,
+    bookGroup: 1,
+    broker: "dana",
+    leverage: 500,
+    startBalance: 100,
+    balance: 100,
+    forecast: {}, // per-symbol {min,max,step}; min/max null = auto-derive, step null = use SYMBOLS[x].stepDefault
+    tradeValueThreshold: 10000, // $ cutoff for the recent-large-trades panel; user-editable
+    alerts: {}, // symbol -> [{id, price}], one-shot: removed once crossed
+    positions: [],
+    closed: [],
+    marketTableOpen: false,
+    marketTableSort: { key:"marketcap", dir:"desc" },
+    marketTableRows: null,
+    marketTableFetchedAt: null,
+    marketTableFilter: "",
+    marketTableFromCache: false,
+    cryptoNewsRows: null, cryptoNewsFetchedAt: null, cryptoNewsFromCache: false,
+    financeNewsRows: null, financeNewsFetchedAt: null, financeNewsFromCache: false,
+    macroCalRows: null, macroCalFetchedAt: null,
+    coinAnalysisRows: null, coinAnalysisFetchedAt: null, coinAnalysisFallback: false, coinAnalysisForSymbol: null, coinAnalysisFromCache: false,
+    sentimentData: null, sentimentFetchedAt: null, sentimentFromCache: false,
+    // Which overlays draw on the main chart — all on by default (matches
+    // the look before this toggle row existed); click a chip to hide one.
+    chartIndicators: { ema20:true, ema50:true, vwap:true, ob:true, fvg:true, streaks:true, lastprice:true, volume:true, vp:true }
+  };
+
+  // ---------- storage ----------
+  // Lightweight localStorage cache for the toggle panels (market table,
+  // news, sentiment, coin analysis). This is separate from the
+  // window.storage-based paper-trade persistence below: window.storage only
+  // exists inside Claude's artifact runtime, but this file is meant to also
+  // run as a plain downloaded HTML file in any browser, where localStorage
+  // is the one thing guaranteed to work. Best-effort — if it's unavailable
+  // (privacy mode, etc.) panels just always start from a fresh fetch.
+  function cacheGet(key){
+    try{
+      const raw = localStorage.getItem("est9:"+key);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function cacheSet(key, value){
+    try{ localStorage.setItem("est9:"+key, JSON.stringify(value)); }catch(e){ /* best effort only */ }
+  }
+
+  async function loadPersisted(){
+    try{
+      const r = await window.storage.get("paper-trade-state", false);
+      if(r && r.value){
+        const parsed = JSON.parse(r.value);
+        state.positions = parsed.positions || [];
+        state.closed = parsed.closed || [];
+        if(parsed.leverage) state.leverage = parsed.leverage;
+        if(typeof parsed.startBalance === "number") state.startBalance = parsed.startBalance;
+        if(typeof parsed.balance === "number") state.balance = parsed.balance;
+        if(parsed.broker && BROKERS[parsed.broker]) state.broker = parsed.broker;
+        if(parsed.forecast) state.forecast = { ...state.forecast, ...parsed.forecast };
+        if(typeof parsed.tradeValueThreshold === "number" && parsed.tradeValueThreshold>=0) state.tradeValueThreshold = parsed.tradeValueThreshold;
+        if(parsed.alerts && typeof parsed.alerts==="object") state.alerts = parsed.alerts;
+      }
+    }catch(e){ /* no saved state yet, that's fine */ }
+  }
+  async function savePersisted(){
+    try{
+      await window.storage.set("paper-trade-state", JSON.stringify({
+        positions: state.positions, closed: state.closed, leverage: state.leverage,
+        startBalance: state.startBalance, balance: state.balance, forecast: state.forecast,
+        broker: state.broker, tradeValueThreshold: state.tradeValueThreshold, alerts: state.alerts
+      }), false);
+    }catch(e){ /* best effort only */ }
+  }
+
+  // ---------- math helpers ----------
+  function ema(values, period){
+    const k = 2/(period+1);
+    const out = new Array(values.length).fill(null);
+    let prev;
+    for(let i=0;i<values.length;i++){
+      if(i < period-1) continue;
+      if(i === period-1){
+        prev = values.slice(0,period).reduce((a,b)=>a+b,0)/period;
+        out[i]=prev; continue;
+      }
+      prev = values[i]*k + prev*(1-k);
+      out[i]=prev;
+    }
+    return out;
+  }
+  function rsi(values, period){
+    const out = new Array(values.length).fill(null);
+    if(values.length <= period) return out;
+    let gains=[], losses=[];
+    for(let i=1;i<values.length;i++){
+      const d = values[i]-values[i-1];
+      gains.push(Math.max(d,0)); losses.push(Math.max(-d,0));
+    }
+    let avgG = gains.slice(0,period).reduce((a,b)=>a+b,0)/period;
+    let avgL = losses.slice(0,period).reduce((a,b)=>a+b,0)/period;
+    out[period] = 100 - 100/(1+(avgL===0?100:avgG/avgL));
+    for(let i=period;i<gains.length;i++){
+      avgG = (avgG*(period-1)+gains[i])/period;
+      avgL = (avgL*(period-1)+losses[i])/period;
+      const rs = avgL===0?100:avgG/avgL;
+      out[i+1] = 100 - 100/(1+rs);
+    }
+    return out;
+  }
+  function macd(values){
+    const f = ema(values,12), s = ema(values,26);
+    const line = values.map((_,i)=> (f[i]!=null && s[i]!=null) ? f[i]-s[i] : null);
+    const compact = line.filter(v=>v!=null);
+    const sig = ema(compact,9);
+    const offset = line.length - compact.length;
+    const signal = new Array(offset).fill(null).concat(sig);
+    const hist = line.map((v,i)=> (v!=null && signal[i]!=null) ? v-signal[i] : null);
+    return {line, signal, hist};
+  }
+  function atr(candles, period){
+    const trs = candles.map((c,i)=>{
+      if(i===0) return c.high-c.low;
+      const p = candles[i-1];
+      return Math.max(c.high-c.low, Math.abs(c.high-p.close), Math.abs(c.low-p.close));
+    });
+    return ema(trs, period);
+  }
+  function lastNonNull(arr){
+    for(let i=arr.length-1;i>=0;i--) if(arr[i]!=null) return arr[i];
+    return null;
+  }
+
+  function findSwings(candles, w){
+    const highs=[], lows=[];
+    for(let i=w;i<candles.length-w;i++){
+      const seg = candles.slice(i-w,i+w+1);
+      if(seg.every(c=>c.high<=candles[i].high)) highs.push({i,price:candles[i].high,time:candles[i].time});
+      if(seg.every(c=>c.low>=candles[i].low)) lows.push({i,price:candles[i].low,time:candles[i].time});
+    }
+    return {highs, lows};
+  }
+  function classifyStructure(highs, lows){
+    if(highs.length<2 || lows.length<2) return {label:"Not enough swing data yet", bias:"neutral"};
+    const h = highs.slice(-2), l = lows.slice(-2);
+    const hh = h[1].price > h[0].price, hl = l[1].price > l[0].price;
+    const lh = h[1].price < h[0].price, ll = l[1].price < l[0].price;
+    if(hh && hl) return {label:"Higher-High / Higher-Low — uptrend structure", bias:"bullish"};
+    if(lh && ll) return {label:"Lower-High / Lower-Low — downtrend structure", bias:"bearish"};
+    return {label:"Mixed swings — ranging / transitional structure", bias:"neutral"};
+  }
+  function findOrderBlocks(candles){
+    const lookback = Math.min(80, candles.length);
+    const start = candles.length - lookback + 1;
+    if(start < 2) return [];
+    let sumRange = 0;
+    for(let i=start;i<candles.length;i++) sumRange += candles[i].high-candles[i].low;
+    const avgRange = sumRange/(candles.length-start);
+    const obs = [];
+    for(let i=start;i<candles.length;i++){
+      const c = candles[i], prev = candles[i-1];
+      const range = c.high-c.low;
+      const displacement = range > avgRange*1.6;
+      if(displacement && c.close>c.open && prev.close<prev.open){
+        obs.push({type:"bullish", low:prev.low, high:prev.high, time:prev.time});
+      }
+      if(displacement && c.close<c.open && prev.close>prev.open){
+        obs.push({type:"bearish", low:prev.low, high:prev.high, time:prev.time});
+      }
+    }
+    return obs.slice(-6).reverse();
+  }
+  function findFVGs(candles){
+    const lookback = Math.min(80, candles.length);
+    const start = Math.max(2, candles.length-lookback);
+    const out = [];
+    for(let i=start;i<candles.length;i++){
+      const a = candles[i-2], c = candles[i];
+      if(a.high < c.low) out.push({type:"bullish", top:c.low, bottom:a.high, time:candles[i-1].time});
+      if(a.low > c.high) out.push({type:"bearish", top:a.low, bottom:c.high, time:candles[i-1].time});
+    }
+    return out.slice(-6).reverse();
+  }
+  function findLiquidity(highs, lows){
+    // Merge nearby swing points into single equal-high/low levels instead of
+    // listing every close-enough pair (which flooded the panel with near-
+    // duplicate entries). Keeps only genuine 2+ touch clusters, strongest
+    // (most touches, then most recent) first, capped at 3 per side.
+    const TOL = 0.0018;
+    function cluster(points){
+      if(points.length<2) return [];
+      const sorted = [...points].sort((a,b)=>a.price-b.price);
+      const groups = [];
+      let cur = [sorted[0]];
+      for(let i=1;i<sorted.length;i++){
+        const avg = cur.reduce((s,p)=>s+p.price,0)/cur.length;
+        if(Math.abs(sorted[i].price-avg)/avg < TOL){
+          cur.push(sorted[i]);
+        } else {
+          groups.push(cur);
+          cur = [sorted[i]];
+        }
+      }
+      groups.push(cur);
+      return groups
+        .filter(g=>g.length>=2)
+        .map(g=>({
+          price: g.reduce((s,p)=>s+p.price,0)/g.length,
+          touches: g.length,
+          time: Math.max(...g.map(p=>p.time||0))
+        }))
+        .sort((a,b)=> b.touches-a.touches || b.time-a.time)
+        .slice(0,3);
+    }
+    return {eqHighs:cluster(highs.slice(-10)), eqLows:cluster(lows.slice(-10))};
+  }
+  function findZones(candles, highs, lows){
+    const vols = candles.map(c=>c.volume);
+    const avgVol = vols.slice(-20).reduce((a,b)=>a+b,0)/Math.min(20,vols.length) || 1;
+    const demand = lows.slice(-8).filter(l=>candles[l.i] && candles[l.i].volume > avgVol*1.25)
+      .map(l=>({price:l.price, time:l.time}));
+    const supply = highs.slice(-8).filter(h=>candles[h.i] && candles[h.i].volume > avgVol*1.25)
+      .map(h=>({price:h.price, time:h.time}));
+    return {demand: demand.slice(-4).reverse(), supply: supply.slice(-4).reverse()};
+  }
+
+  // ---------- data fetching ----------
+  async function fetchBinanceKlines(pair, interval, limit){
+    const url = `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=${limit||200}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("klines "+res.status);
+    const raw = await res.json();
+    return raw.map(k=>({time:k[0], open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:+k[5]}));
+  }
+
+  // ---------- session reference levels (daily open, prev-day H/L, weekly open) ----------
+  // These need daily candles regardless of whatever timeframe the chart is
+  // on (a 1m/5s chart's own 200-candle history doesn't reach back a full
+  // day), so they're fetched separately via a dedicated 1d kline request,
+  // cached per symbol, and only refreshed occasionally.
+  const dailyLevelsCache = {}; // symbol -> {levels, fetchedAt}
+  const DAILY_LEVELS_REFRESH_MS = 60000;
+  function computeSessionLevels(dailyCandles){
+    if(!dailyCandles || dailyCandles.length===0) return null;
+    const sorted = dailyCandles.slice().sort((a,b)=>a.time-b.time);
+    const today = sorted[sorted.length-1];
+    const prevDay = sorted.length>1 ? sorted[sorted.length-2] : null;
+    const dow = new Date(today.time).getUTCDay(); // 0=Sun..6=Sat
+    const daysSinceMonday = (dow+6)%7;
+    const todayMidnight = Math.floor(today.time/86400000)*86400000;
+    const weekStart = todayMidnight - daysSinceMonday*86400000;
+    const weekOpenCandle = sorted.find(c=>c.time>=weekStart) || sorted[0];
+    return {
+      dailyOpen: today.open,
+      prevDayHigh: prevDay ? prevDay.high : null,
+      prevDayLow: prevDay ? prevDay.low : null,
+      weeklyOpen: weekOpenCandle.open,
+      weeklyOpenApprox: weekOpenCandle.time > weekStart // history didn't reach this week's actual open
+    };
+  }
+  async function refreshSessionLevels(symbol){
+    const cfg = SYMBOLS[symbol];
+    if(cfg.source==="manual") return;
+    const cached = dailyLevelsCache[symbol];
+    if(cached && Date.now()-cached.fetchedAt < DAILY_LEVELS_REFRESH_MS) return;
+    try{
+      const daily = await fetchBinanceKlines(cfg.pair, "1d");
+      dailyLevelsCache[symbol] = { levels: computeSessionLevels(daily), fetchedAt: Date.now() };
+    }catch(e){
+      dailyLevelsCache[symbol] = { levels: null, fetchedAt: Date.now() };
+    }
+    if(state.symbol===symbol) renderAll(true);
+  }
+  async function fetchBinanceDepth(pair){
+    // Fetch a wide book (not just top-of-book) so grouping into coarser
+    // price buckets (see GROUP_SIZES) has enough raw levels to aggregate.
+    const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${pair}&limit=500`);
+    if(!res.ok) throw new Error("depth "+res.status);
+    return res.json();
+  }
+  async function fetchBinanceTicker(pair){
+    const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`);
+    if(!res.ok) throw new Error("ticker "+res.status);
+    return res.json();
+  }
+  async function fetchDeribitOptions(currency){
+    const res = await fetch(`https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=${currency}&kind=option`);
+    if(!res.ok) throw new Error("deribit "+res.status);
+    const j = await res.json();
+    return j.result || [];
+  }
+  function cgDaysForTimeframe(tf){
+    if(tf==="1s"||tf==="1m"||tf==="5m") return 1;
+    if(tf==="15m"||tf==="1h") return 7;
+    if(tf==="4h") return 30;
+    return 90;
+  }
+  async function fetchCoinGeckoOHLC(id, days){
+    const res = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/ohlc?vs_currency=usd&days=${days}`);
+    if(!res.ok) throw new Error("cg "+res.status);
+    const raw = await res.json();
+    return raw.map(k=>({time:k[0], open:k[1], high:k[2], low:k[3], close:k[4], volume:0}));
+  }
+
+  // ---------- market table (top 100 Binance-listed coins, by market cap) ----------
+  // Binance doesn't publish market cap, so rank/market-cap comes from
+  // CoinGecko; price & 24h change come from Binance's own bulk USDT ticker
+  // (one call covers every symbol) so the numbers agree with the rest of
+  // this dashboard. A coin only makes the list if it actually has a
+  // Binance USDT pair.
+  async function fetchMarketTableRows(){
+    const [cgRes, tickerRes] = await Promise.all([
+      fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=30d,1y"),
+      fetch("https://api.binance.com/api/v3/ticker/24hr")
+    ]);
+    if(!cgRes.ok) throw new Error("cg markets "+cgRes.status);
+    if(!tickerRes.ok) throw new Error("binance ticker "+tickerRes.status);
+    const cgList = await cgRes.json();
+    const tickers = await tickerRes.json();
+    const tickerMap = {};
+    for(const t of tickers){
+      if(t.symbol && t.symbol.endsWith("USDT")) tickerMap[t.symbol.slice(0,-4)] = t;
+    }
+    const rows = [];
+    for(const c of cgList){
+      const base = (c.symbol||"").toUpperCase();
+      const t = tickerMap[base];
+      if(!t) continue;
+      rows.push({
+        rank: c.market_cap_rank || (rows.length+1),
+        name: c.name,
+        symbol: base,
+        price: +t.lastPrice,
+        change24h: +t.priceChangePercent,
+        change30d: c.price_change_percentage_30d_in_currency,
+        change1y: c.price_change_percentage_1y_in_currency,
+        ath: c.ath,
+        athChangePct: c.ath_change_percentage, // % below (negative) or at (0) all-time high
+        marketCap: c.market_cap
+      });
+      if(rows.length>=100) break;
+    }
+    return rows;
+  }
+
+  let marketTableTimer = null;
+  async function loadMarketTable(isManualRefresh){
+    const wrap = document.getElementById("marketTableWrap");
+    if(isManualRefresh) spinRefreshBtn("marketTableRefresh");
+    try{
+      if(!state.marketTableRows){
+        const cached = cacheGet("marketTable");
+        if(cached && cached.rows){
+          state.marketTableRows = cached.rows;
+          state.marketTableFetchedAt = cached.fetchedAt;
+          state.marketTableFromCache = true;
+          renderMarketTable();
+        } else if(wrap){
+          wrap.innerHTML = '<div class="markettable-loading">Loading market data…</div>';
+        }
+      }
+      const rows = await fetchMarketTableRows();
+      state.marketTableRows = rows;
+      state.marketTableFetchedAt = Date.now();
+      state.marketTableFromCache = false;
+      cacheSet("marketTable", { rows, fetchedAt: state.marketTableFetchedAt });
+      renderMarketTable();
+    }catch(e){
+      if(wrap && !state.marketTableRows) wrap.innerHTML = '<div class="markettable-err">Couldn\u2019t load market data — will retry.</div>';
+    }
+  }
+
+  function renderMarketTable(){
+    const wrap = document.getElementById("marketTableWrap");
+    const meta = document.getElementById("marketTableMeta");
+    if(!wrap || !state.marketTableRows) return;
+    const {key, dir} = state.marketTableSort;
+    const sortVal = (r)=>{
+      switch(key){
+        case "change": return r.change24h;
+        case "change30d": return r.change30d;
+        case "change1y": return r.change1y;
+        case "athpct": return r.athChangePct;
+        case "price": return r.price;
+        case "ath": return r.ath;
+        default: return r.marketCap;
+      }
+    };
+    const filterTerm = (state.marketTableFilter||"").trim().toLowerCase();
+    let rows = state.marketTableRows;
+    if(filterTerm) rows = rows.filter(r=> r.symbol.toLowerCase().includes(filterTerm) || r.name.toLowerCase().includes(filterTerm));
+    rows = rows.slice().sort((a,b)=>{
+      const va = sortVal(a), vb = sortVal(b);
+      const na = (va==null||isNaN(va)), nb = (vb==null||isNaN(vb));
+      if(na && nb) return 0;
+      if(na) return 1;   // push missing values (e.g. no 1y history yet) to the bottom
+      if(nb) return -1;
+      return dir==="asc" ? va-vb : vb-va;
+    });
+    if(meta) meta.textContent = state.marketTableFetchedAt
+      ? (state.marketTableFromCache ? "cached "+new Date(state.marketTableFetchedAt).toLocaleTimeString() : "updated "+new Date(state.marketTableFetchedAt).toLocaleTimeString())
+      : "";
+    const arrow = (k)=> key===k ? `<span class="arrow">${dir==="asc"?"▲":"▼"}</span>` : "";
+    const fmtPrice = (p)=> p==null||isNaN(p) ? "—" : (p>=1 ? p.toLocaleString(undefined,{maximumFractionDigits:2}) : p.toPrecision(4));
+    const fmtPct = (v)=> (v==null||isNaN(v)) ? "—" : (v>=0?"+":"")+v.toFixed(2)+"%";
+    const fmtCap = (m)=>{
+      if(m==null) return "—";
+      if(m>=1e9) return "$"+(m/1e9).toFixed(2)+"B";
+      if(m>=1e6) return "$"+(m/1e6).toFixed(2)+"M";
+      return "$"+m.toLocaleString();
+    };
+    const chgClass = (v)=> (v==null||isNaN(v)) ? "" : (v>=0?"up":"down");
+    if(rows.length===0){
+      wrap.innerHTML = '<div class="markettable-loading">No coins match "'+escapeHtml(state.marketTableFilter)+'".</div>';
+      return;
+    }
+    const body = rows.map(r=>`
+      <tr class="${r.symbol===state.symbol || (r.symbol==="XAUT" && (state.symbol==="XAUT"||state.symbol==="XAUTM")) ? "self-row" : ""}">
+        <td class="mono">${r.rank}</td>
+        <td class="name">${r.name} <span class="sym">${r.symbol}</span></td>
+        <td class="mono">$${fmtPrice(r.price)}</td>
+        <td class="mono chg ${chgClass(r.change24h)}">${fmtPct(r.change24h)}</td>
+        <td class="mono chg ${chgClass(r.change30d)}">${fmtPct(r.change30d)}</td>
+        <td class="mono chg ${chgClass(r.change1y)}">${fmtPct(r.change1y)}</td>
+        <td class="mono">${fmtCap(r.marketCap)}</td>
+        <td class="mono">$${fmtPrice(r.ath)}</td>
+        <td class="mono chg ${chgClass(r.athChangePct)}">${fmtPct(r.athChangePct)}</td>
+      </tr>`).join("");
+    wrap.innerHTML = `
+      <table class="markettable">
+        <thead><tr>
+          <th>#</th>
+          <th>Coin</th>
+          <th class="sortable" data-sort="price">Price ${arrow("price")}</th>
+          <th class="sortable" data-sort="change">24h ${arrow("change")}</th>
+          <th class="sortable" data-sort="change30d">30D ${arrow("change30d")}</th>
+          <th class="sortable" data-sort="change1y">1Y ${arrow("change1y")}</th>
+          <th class="sortable" data-sort="marketcap">Mkt Cap ${arrow("marketcap")}</th>
+          <th class="sortable" data-sort="ath">ATH ${arrow("ath")}</th>
+          <th class="sortable" data-sort="athpct">vs ATH ${arrow("athpct")}</th>
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>`;
+    wrap.querySelectorAll("th.sortable").forEach(th=>{
+      th.onclick = ()=>{
+        const k = th.dataset.sort;
+        if(state.marketTableSort.key===k){
+          state.marketTableSort.dir = state.marketTableSort.dir==="desc" ? "asc" : "desc";
+        } else {
+          state.marketTableSort = { key:k, dir:"desc" };
+        }
+        renderMarketTable();
+      };
+    });
+  }
+
+  function setMarketTableOpen(open){
+    state.marketTableOpen = open;
+    document.getElementById("marketTablePanel").style.display = open ? "" : "none";
+    document.getElementById("marketTableToggle").classList.toggle("active", open);
+    if(open){
+      loadMarketTable();
+      if(marketTableTimer) clearInterval(marketTableTimer);
+      marketTableTimer = setInterval(loadMarketTable, MARKET_TABLE_POLL_MS);
+    } else if(marketTableTimer){
+      clearInterval(marketTableTimer);
+      marketTableTimer = null;
+    }
+  }
+
+  // Brief spin animation so a manual refresh click gives visible feedback
+  // even though the fetch itself is invisible/async.
+  function spinRefreshBtn(id){
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.classList.remove("spinning");
+    void btn.offsetWidth; // restart the CSS animation
+    btn.classList.add("spinning");
+  }
+
+  function initMarketTable(){
+    document.getElementById("marketTableToggle").onclick = ()=> setMarketTableOpen(!state.marketTableOpen);
+    document.getElementById("marketTableRefresh").onclick = (ev)=>{ ev.stopPropagation(); loadMarketTable(true); };
+    document.getElementById("marketTableSearch").oninput = (ev)=>{
+      state.marketTableFilter = ev.target.value;
+      renderMarketTable();
+    };
+  }
+
+  // ---------- market sentiment (Fear & Greed Index + BTC dominance) ----------
+  // Two free, no-key, CORS-open sources: alternative.me for the Fear & Greed
+  // Index, CoinGecko's /global for BTC/ETH dominance and total market cap.
+  async function fetchSentiment(){
+    const [fngRes, globalRes] = await Promise.all([
+      fetch("https://api.alternative.me/fng/?limit=1&format=json"),
+      fetch("https://api.coingecko.com/api/v3/global")
+    ]);
+    if(!fngRes.ok) throw new Error("fng "+fngRes.status);
+    if(!globalRes.ok) throw new Error("cg global "+globalRes.status);
+    const fngJson = await fngRes.json();
+    const globalJson = await globalRes.json();
+    const fng = (fngJson.data && fngJson.data[0]) || {};
+    const g = globalJson.data || {};
+    return {
+      fngValue: fng.value!=null ? +fng.value : null,
+      fngLabel: fng.value_classification || null,
+      btcDominance: g.market_cap_percentage && g.market_cap_percentage.btc,
+      ethDominance: g.market_cap_percentage && g.market_cap_percentage.eth,
+      totalMarketCap: g.total_market_cap && g.total_market_cap.usd,
+      marketCapChange24h: g.market_cap_change_percentage_24h_usd
+    };
+  }
+  function renderSentiment(){
+    const wrap = document.getElementById("sentimentWrap");
+    const meta = document.getElementById("sentimentMeta");
+    const d = state.sentimentData;
+    if(!wrap || !d) return;
+    if(meta) meta.textContent = state.sentimentFetchedAt
+      ? (state.sentimentFromCache ? "cached "+new Date(state.sentimentFetchedAt).toLocaleTimeString() : "updated "+new Date(state.sentimentFetchedAt).toLocaleTimeString())
+      : "";
+    const fmtPct = (v)=> (v==null||isNaN(v)) ? "—" : (v>=0?"+":"")+v.toFixed(2)+"%";
+    const fmtCap = (m)=>{
+      if(m==null) return "—";
+      if(m>=1e12) return "$"+(m/1e12).toFixed(2)+"T";
+      if(m>=1e9) return "$"+(m/1e9).toFixed(2)+"B";
+      return "$"+m.toLocaleString();
+    };
+    const fngClass = d.fngValue==null ? "" : (d.fngValue>=55?"up":d.fngValue<=45?"down":"");
+    wrap.innerHTML = `<div class="coinstats">
+      <div class="stat"><span class="lbl">Fear &amp; Greed</span><span class="val ${fngClass}">${d.fngValue!=null?d.fngValue:"—"}${d.fngLabel?" · "+escapeHtml(d.fngLabel):""}</span></div>
+      <div class="stat"><span class="lbl">BTC Dominance</span><span class="val">${d.btcDominance!=null?d.btcDominance.toFixed(1)+"%":"—"}</span></div>
+      <div class="stat"><span class="lbl">ETH Dominance</span><span class="val">${d.ethDominance!=null?d.ethDominance.toFixed(1)+"%":"—"}</span></div>
+      <div class="stat"><span class="lbl">Total Mkt Cap</span><span class="val">${fmtCap(d.totalMarketCap)}</span></div>
+      <div class="stat"><span class="lbl">Mkt Cap 24h</span><span class="val ${(d.marketCapChange24h||0)>=0?"up":"down"}">${fmtPct(d.marketCapChange24h)}</span></div>
+    </div>`;
+  }
+  let sentimentTimer = null;
+  async function loadSentiment(isManualRefresh){
+    const wrap = document.getElementById("sentimentWrap");
+    if(isManualRefresh) spinRefreshBtn("sentimentRefresh");
+    try{
+      if(!state.sentimentData){
+        const cached = cacheGet("sentiment");
+        if(cached && cached.data){
+          state.sentimentData = cached.data;
+          state.sentimentFetchedAt = cached.fetchedAt;
+          state.sentimentFromCache = true;
+          renderSentiment();
+        } else if(wrap){
+          wrap.innerHTML = '<div class="panel-msg">Loading sentiment…</div>';
+        }
+      }
+      const data = await fetchSentiment();
+      state.sentimentData = data;
+      state.sentimentFetchedAt = Date.now();
+      state.sentimentFromCache = false;
+      cacheSet("sentiment", { data, fetchedAt: state.sentimentFetchedAt });
+      renderSentiment();
+    }catch(e){
+      if(wrap && !state.sentimentData) wrap.innerHTML = '<div class="panel-msg err">Couldn\u2019t load sentiment data ('+escapeHtml(e.message||"error")+') — will retry.</div>';
+    }
+  }
+  function setSentimentOpen(open){
+    document.getElementById("sentimentPanel").style.display = open ? "" : "none";
+    document.getElementById("sentimentToggle").classList.toggle("active", open);
+    if(open){
+      loadSentiment();
+      if(sentimentTimer) clearInterval(sentimentTimer);
+      sentimentTimer = setInterval(loadSentiment, MARKET_TABLE_POLL_MS);
+    } else if(sentimentTimer){ clearInterval(sentimentTimer); sentimentTimer=null; }
+  }
+  function initSentiment(){
+    document.getElementById("sentimentToggle").onclick = ()=> setSentimentOpen(!isPanelOpen("sentimentPanel"));
+    document.getElementById("sentimentRefresh").onclick = (ev)=>{ ev.stopPropagation(); loadSentiment(true); };
+  }
+
+  // ---------- shared helpers for the news / calendar list panels ----------
+  function timeAgo(ms){
+    if(!ms) return "";
+    const s = Math.max(0, Math.floor((Date.now()-ms)/1000));
+    if(s<60) return s+"s ago";
+    if(s<3600) return Math.floor(s/60)+"m ago";
+    if(s<86400) return Math.floor(s/3600)+"h ago";
+    return Math.floor(s/86400)+"d ago";
+  }
+  function escapeHtml(s){
+    return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function newsItemsHtml(rows){
+    if(!rows || rows.length===0) return null;
+    return rows.map(n=>`
+      <div class="newsitem">
+        <div class="meta"><span class="src">${escapeHtml(n.source||"")}</span><span class="time">${timeAgo(n.time)}</span></div>
+        <a href="${n.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(n.title)}</a>
+        ${n.snippet?`<div class="snippet">${escapeHtml(n.snippet)}</div>`:""}
+      </div>`).join("");
+  }
+  function renderNewsList(wrap, rows, emptyMsg){
+    const items = newsItemsHtml(rows);
+    wrap.innerHTML = items ? `<div class="newslist">${items}</div>` : `<div class="panel-msg">${emptyMsg||"No stories found."}</div>`;
+  }
+
+  // ---------- shared RSS→JSON fetch (rss2json.com — free, no key, CORS-open) ----------
+  function rss2jsonDateToMs(s){
+    if(!s) return null;
+    let t = Date.parse(s.replace(" ","T")+"Z");
+    if(isNaN(t)) t = Date.parse(s);
+    return isNaN(t) ? null : t;
+  }
+  function stripHtml(html){
+    if(!html) return "";
+    let text = html.replace(/<[^>]*>/g, " ");
+    text = text.replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&quot;/g,'"')
+      .replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">");
+    return text.replace(/\s+/g," ").trim();
+  }
+  function truncateText(text, maxLen){
+    if(!text) return "";
+    if(text.length<=maxLen) return text;
+    return text.slice(0,maxLen).replace(/\s+\S*$/,"") + "…";
+  }
+  async function fetchRss(feedUrl){
+    const url = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(feedUrl);
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("rss2json HTTP "+res.status);
+    const j = await res.json();
+    if(j.status !== "ok") throw new Error("rss2json: "+(j.message||"error"));
+    const feedTitle = (j.feed && j.feed.title) || "";
+    return (j.items||[]).map(it=>({
+      title:it.title, url:it.link, source:feedTitle, time: rss2jsonDateToMs(it.pubDate),
+      snippet: truncateText(stripHtml(it.description || it.content || ""), 160)
+    }));
+  }
+  async function fetchMergedRss(feedUrls, limit){
+    const results = await Promise.allSettled(feedUrls.map(fetchRss));
+    const rows = [];
+    const errs = [];
+    for(const r of results){
+      if(r.status==="fulfilled") rows.push(...r.value);
+      else errs.push(r.reason && r.reason.message);
+    }
+    if(rows.length===0) throw new Error(errs.join("; ") || "no items");
+    rows.sort((a,b)=> (b.time||0)-(a.time||0));
+    return rows.slice(0, limit||25);
+  }
+
+  // ---------- crypto market news (CoinDesk, Cointelegraph, Decrypt via RSS) ----------
+  let cryptoNewsTimer = null;
+  async function loadCryptoNews(isManualRefresh){
+    const wrap = document.getElementById("cryptoNewsWrap");
+    if(isManualRefresh) spinRefreshBtn("cryptoNewsRefresh");
+    try{
+      if(!state.cryptoNewsRows){
+        const cached = cacheGet("cryptoNews");
+        if(cached && cached.rows){
+          state.cryptoNewsRows = cached.rows;
+          state.cryptoNewsFetchedAt = cached.fetchedAt;
+          state.cryptoNewsFromCache = true;
+          document.getElementById("cryptoNewsMeta").textContent = "cached "+new Date(cached.fetchedAt).toLocaleTimeString();
+          renderNewsList(wrap, state.cryptoNewsRows);
+        } else {
+          wrap.innerHTML = '<div class="panel-msg">Loading crypto news…</div>';
+        }
+      }
+      state.cryptoNewsRows = await fetchMergedRss(CRYPTO_NEWS_FEEDS, 25);
+      state.cryptoNewsFetchedAt = Date.now();
+      state.cryptoNewsFromCache = false;
+      cacheSet("cryptoNews", { rows: state.cryptoNewsRows, fetchedAt: state.cryptoNewsFetchedAt });
+      document.getElementById("cryptoNewsMeta").textContent = "updated "+new Date(state.cryptoNewsFetchedAt).toLocaleTimeString();
+      renderNewsList(wrap, state.cryptoNewsRows);
+    }catch(e){
+      if(!state.cryptoNewsRows) wrap.innerHTML = '<div class="panel-msg err">Couldn\u2019t load crypto news ('+escapeHtml(e.message||"error")+') — will retry.</div>';
+    }
+  }
+  function setCryptoNewsOpen(open){
+    document.getElementById("cryptoNewsPanel").style.display = open ? "" : "none";
+    document.getElementById("cryptoNewsToggle").classList.toggle("active", open);
+    if(open){
+      loadCryptoNews();
+      if(cryptoNewsTimer) clearInterval(cryptoNewsTimer);
+      cryptoNewsTimer = setInterval(loadCryptoNews, NEWS_POLL_MS);
+    } else if(cryptoNewsTimer){ clearInterval(cryptoNewsTimer); cryptoNewsTimer=null; }
+  }
+
+  // ---------- global financial news (CNBC, MarketWatch, Yahoo Finance via RSS) ----------
+  let financeNewsTimer = null;
+  async function loadFinanceNews(isManualRefresh){
+    const wrap = document.getElementById("financeNewsWrap");
+    if(isManualRefresh) spinRefreshBtn("financeNewsRefresh");
+    try{
+      if(!state.financeNewsRows){
+        const cached = cacheGet("financeNews");
+        if(cached && cached.rows){
+          state.financeNewsRows = cached.rows;
+          state.financeNewsFetchedAt = cached.fetchedAt;
+          state.financeNewsFromCache = true;
+          document.getElementById("financeNewsMeta").textContent = "cached "+new Date(cached.fetchedAt).toLocaleTimeString();
+          renderNewsList(wrap, state.financeNewsRows);
+        } else {
+          wrap.innerHTML = '<div class="panel-msg">Loading global finance news…</div>';
+        }
+      }
+      state.financeNewsRows = await fetchMergedRss(FINANCE_NEWS_FEEDS, 25);
+      state.financeNewsFetchedAt = Date.now();
+      state.financeNewsFromCache = false;
+      cacheSet("financeNews", { rows: state.financeNewsRows, fetchedAt: state.financeNewsFetchedAt });
+      document.getElementById("financeNewsMeta").textContent = "updated "+new Date(state.financeNewsFetchedAt).toLocaleTimeString();
+      renderNewsList(wrap, state.financeNewsRows);
+    }catch(e){
+      if(!state.financeNewsRows) wrap.innerHTML = '<div class="panel-msg err">Couldn\u2019t load global finance news ('+escapeHtml(e.message||"error")+') — will retry.</div>';
+    }
+  }
+  function setFinanceNewsOpen(open){
+    document.getElementById("financeNewsPanel").style.display = open ? "" : "none";
+    document.getElementById("financeNewsToggle").classList.toggle("active", open);
+    if(open){
+      loadFinanceNews();
+      if(financeNewsTimer) clearInterval(financeNewsTimer);
+      financeNewsTimer = setInterval(loadFinanceNews, NEWS_POLL_MS);
+    } else if(financeNewsTimer){ clearInterval(financeNewsTimer); financeNewsTimer=null; }
+  }
+
+  // ---------- upcoming macro events (ForexFactory weekly calendar — free JSON, no key) ----------
+  // These are the scheduled releases (CPI, FOMC, NFP, rate decisions, etc.)
+  // that reliably move both crypto and broader financial markets.
+  //
+  // ForexFactory's own feed sits behind Cloudflare and blocks direct browser
+  // fetches, and even routing through free CORS-relay proxies (allorigins,
+  // codetabs) failed outright in testing ("Failed to fetch" from all three).
+  // Rather than keep chasing a flaky third-party feed, this list is a
+  // hand-compiled schedule of the releases that actually move markets —
+  // FOMC rate decisions, CPI, the jobs report (NFP), and PCE inflation —
+  // taken straight from the official Fed/BLS/BEA calendars
+  // (federalreserve.gov, bls.gov/schedule, bea.gov). No network call, so it
+  // can't go down — the tradeoff is it needs a manual refresh periodically
+  // (ask me to update it) and it only covers the handful of very-high-impact
+  // US releases rather than the full multi-country calendar ForexFactory has.
+  const MACRO_EVENTS_ASOF = "Sep 12, 2026";
+  const MACRO_EVENTS = [
+    { title:"FOMC Rate Decision",               country:"US", impact:"high",   date:"2026-09-16T18:00:00Z" },
+    { title:"PCE Price Index (Aug)",             country:"US", impact:"high",   date:"2026-09-30T12:30:00Z" },
+    { title:"Employment Situation (Sep) — NFP",  country:"US", impact:"high",   date:"2026-10-02T12:30:00Z" },
+    { title:"CPI (Sep)",                         country:"US", impact:"high",   date:"2026-10-14T12:30:00Z" },
+    { title:"PPI (Sep)",                         country:"US", impact:"medium", date:"2026-10-15T12:30:00Z" },
+    { title:"FOMC Rate Decision",               country:"US", impact:"high",   date:"2026-10-28T18:00:00Z" },
+    { title:"PCE Price Index (Sep)",             country:"US", impact:"high",   date:"2026-10-29T12:30:00Z" },
+    { title:"Employment Situation (Oct) — NFP",  country:"US", impact:"high",   date:"2026-11-06T13:30:00Z" },
+    { title:"CPI (Oct)",                         country:"US", impact:"high",   date:"2026-11-10T13:30:00Z" },
+    { title:"PPI (Oct)",                         country:"US", impact:"medium", date:"2026-11-13T13:30:00Z" },
+    { title:"PCE Price Index (Oct)",             country:"US", impact:"high",   date:"2026-11-25T13:30:00Z" },
+    { title:"Employment Situation (Nov) — NFP",  country:"US", impact:"high",   date:"2026-12-04T13:30:00Z" },
+    { title:"FOMC Rate Decision",               country:"US", impact:"high",   date:"2026-12-09T19:00:00Z" },
+    { title:"CPI (Nov)",                         country:"US", impact:"high",   date:"2026-12-10T13:30:00Z" },
+    { title:"PCE Price Index (Nov)",             country:"US", impact:"high",   date:"2026-12-23T13:30:00Z" }
+  ];
+  function fetchMacroCalendar(){
+    const now = Date.now();
+    return MACRO_EVENTS
+      .map(e=>({ title:e.title, country:e.country, impact:e.impact, date:Date.parse(e.date), forecast:null, previous:null }))
+      .filter(e=> e.date >= now - 3600000)
+      .sort((a,b)=> a.date-b.date);
+  }
+  let macroCalTimer = null;
+  function fmtCountdown(ms){
+    if(ms<=0) return "now";
+    const mins = Math.floor(ms/60000);
+    const d = Math.floor(mins/1440);
+    const h = Math.floor((mins%1440)/60);
+    const m = mins%60;
+    if(d>0) return "in "+d+"d "+h+"h";
+    if(h>0) return "in "+h+"h "+m+"m";
+    return "in "+m+"m";
+  }
+  function renderMacroCalendar(wrap){
+    const rows = state.macroCalRows;
+    if(!rows || rows.length===0){
+      wrap.innerHTML = '<div class="panel-msg">No more scheduled releases on this list — ask to have it extended.</div>';
+      return;
+    }
+    const impactClass = (i)=> (i==="high"?"high":i==="medium"?"medium":"low");
+    const now = Date.now();
+    wrap.innerHTML = '<div class="panel-note">Hand-maintained US macro schedule (FOMC/CPI/NFP/PCE) from Fed/BLS/BEA — not a live feed.</div>'
+      + rows.map((e,i)=>`
+      <div class="calitem${i===0?" next":""}">
+        <span class="impact ${impactClass(e.impact)}" title="${escapeHtml(e.impact)} impact"></span>
+        <span class="when">${e.date ? new Date(e.date).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}</span>
+        <span class="country">${escapeHtml(e.country)}</span>
+        <span class="title">${escapeHtml(e.title)}</span>
+        <span class="countdown">${e.date ? fmtCountdown(e.date-now) : ""}</span>
+      </div>`).join("");
+  }
+  function loadMacroCalendar(){
+    const wrap = document.getElementById("macroCalWrap");
+    state.macroCalRows = fetchMacroCalendar();
+    state.macroCalFetchedAt = Date.now();
+    const meta = document.getElementById("macroCalMeta");
+    if(meta) meta.textContent = "schedule verified "+MACRO_EVENTS_ASOF;
+    renderMacroCalendar(wrap);
+  }
+  function setMacroCalOpen(open){
+    document.getElementById("macroCalPanel").style.display = open ? "" : "none";
+    document.getElementById("macroCalToggle").classList.toggle("active", open);
+    if(open){
+      loadMacroCalendar();
+      // No network call here — this just re-filters passed events and
+      // refreshes the countdowns while the panel sits open, every minute.
+      if(macroCalTimer) clearInterval(macroCalTimer);
+      macroCalTimer = setInterval(loadMacroCalendar, 60000);
+    } else if(macroCalTimer){ clearInterval(macroCalTimer); macroCalTimer=null; }
+  }
+
+  // ---------- latest analysis for the currently selected coin ----------
+  // Uses Cointelegraph's per-tag RSS feed where a good tag exists (BTC/ETH/SOL);
+  // instruments without one (gold tokens, WTI) fall back to the merged general
+  // crypto feed and the panel flags it as a fallback.
+  async function fetchCoinAnalysis(symbol){
+    const tag = COIN_ANALYSIS_TAG[symbol];
+    if(tag){
+      try{
+        const rows = await fetchRss(`https://cointelegraph.com/rss/tag/${tag}`);
+        if(rows.length>0) return { rows: rows.slice(0,20), fallback:false };
+      }catch(e){ /* fall through to the general feed below */ }
+    }
+    const rows = await fetchMergedRss(CRYPTO_NEWS_FEEDS, 20);
+    return { rows, fallback:true };
+  }
+  // ---------- long-term stats strip (30D / 1Y / all-time-high) ----------
+  async function fetchCoinStats(symbol){
+    const id = COIN_STATS_CG_ID[symbol];
+    if(!id) return null;
+    const res = await fetch(`https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`);
+    if(!res.ok) throw new Error("cg coin "+res.status);
+    const j = await res.json();
+    const md = j.market_data || {};
+    return {
+      price: md.current_price && md.current_price.usd,
+      change24h: md.price_change_percentage_24h,
+      change30d: md.price_change_percentage_30d,
+      change1y: md.price_change_percentage_1y,
+      ath: md.ath && md.ath.usd,
+      athChangePct: md.ath_change_percentage && md.ath_change_percentage.usd,
+      athDate: md.ath_date && md.ath_date.usd
+    };
+  }
+  function coinStatsHtml(stats){
+    if(!stats) return "";
+    const fmtPrice = (p)=> p==null||isNaN(p) ? "—" : (p>=1 ? p.toLocaleString(undefined,{maximumFractionDigits:2}) : p.toPrecision(4));
+    const fmtPct = (v)=> (v==null||isNaN(v)) ? "—" : (v>=0?"+":"")+v.toFixed(2)+"%";
+    const cls = (v)=> (v==null||isNaN(v)) ? "" : (v>=0?"up":"down");
+    const athDate = stats.athDate ? new Date(stats.athDate).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
+    return `<div class="coinstats">
+      <div class="stat"><span class="lbl">Price</span><span class="val">$${fmtPrice(stats.price)}</span></div>
+      <div class="stat"><span class="lbl">24h</span><span class="val ${cls(stats.change24h)}">${fmtPct(stats.change24h)}</span></div>
+      <div class="stat"><span class="lbl">30D</span><span class="val ${cls(stats.change30d)}">${fmtPct(stats.change30d)}</span></div>
+      <div class="stat"><span class="lbl">1Y</span><span class="val ${cls(stats.change1y)}">${fmtPct(stats.change1y)}</span></div>
+      <div class="stat"><span class="lbl">ATH</span><span class="val">$${fmtPrice(stats.ath)}</span></div>
+      <div class="stat"><span class="lbl">vs ATH</span><span class="val ${cls(stats.athChangePct)}">${fmtPct(stats.athChangePct)}${athDate?" ("+athDate+")":""}</span></div>
+    </div>`;
+  }
+  let coinAnalysisTimer = null;
+  async function loadCoinAnalysis(isManualRefresh){
+    const wrap = document.getElementById("coinAnalysisWrap");
+    const symbol = state.symbol;
+    document.getElementById("coinAnalysisSymLabel").textContent = SYMBOLS[symbol] ? SYMBOLS[symbol].label : symbol;
+    if(isManualRefresh) spinRefreshBtn("coinAnalysisRefresh");
+    const cacheKey = "coinAnalysis:"+symbol;
+    try{
+      if(!state.coinAnalysisRows || state.coinAnalysisForSymbol!==symbol){
+        const cached = cacheGet(cacheKey);
+        if(cached){
+          state.coinAnalysisRows = cached.rows;
+          state.coinAnalysisFallback = cached.fallback;
+          state.coinAnalysisForSymbol = symbol;
+          state.coinAnalysisFetchedAt = cached.fetchedAt;
+          state.coinAnalysisFromCache = true;
+          document.getElementById("coinAnalysisMeta").textContent = "cached "+new Date(cached.fetchedAt).toLocaleTimeString();
+          renderCoinAnalysis(wrap, symbol, cached.rows, cached.fallback, cached.stats||null);
+        } else {
+          wrap.innerHTML = '<div class="panel-msg">Loading analysis…</div>';
+        }
+      }
+      const [{ rows, fallback }, stats] = await Promise.all([
+        fetchCoinAnalysis(symbol),
+        fetchCoinStats(symbol).catch(()=>null)
+      ]);
+      state.coinAnalysisRows = rows;
+      state.coinAnalysisFallback = fallback;
+      state.coinAnalysisForSymbol = symbol;
+      state.coinAnalysisFetchedAt = Date.now();
+      state.coinAnalysisFromCache = false;
+      cacheSet(cacheKey, { rows, fallback, stats, fetchedAt: state.coinAnalysisFetchedAt });
+      document.getElementById("coinAnalysisMeta").textContent = "updated "+new Date(state.coinAnalysisFetchedAt).toLocaleTimeString();
+      renderCoinAnalysis(wrap, symbol, rows, fallback, stats);
+    }catch(e){
+      if(!state.coinAnalysisRows || state.coinAnalysisForSymbol!==symbol) wrap.innerHTML = '<div class="panel-msg err">Couldn\u2019t load coin analysis ('+escapeHtml(e.message||"error")+') — will retry.</div>';
+    }
+  }
+  function renderCoinAnalysis(wrap, symbol, rows, fallback, stats){
+    const statsHtml = coinStatsHtml(stats);
+    const items = newsItemsHtml(rows);
+    if(fallback){
+      const note = '<div class="panel-note">No dedicated feed for '+escapeHtml(SYMBOLS[symbol]?SYMBOLS[symbol].label:symbol)+' — showing latest general crypto news instead.</div>';
+      wrap.innerHTML = statsHtml + note + (items ? `<div class="newslist">${items}</div>` : '<div class="panel-msg">No stories found.</div>');
+    } else {
+      wrap.innerHTML = statsHtml + (items ? `<div class="newslist">${items}</div>` : '<div class="panel-msg">No stories found for this coin.</div>');
+    }
+  }
+  function setCoinAnalysisOpen(open){
+    document.getElementById("coinAnalysisPanel").style.display = open ? "" : "none";
+    document.getElementById("coinAnalysisToggle").classList.toggle("active", open);
+    if(open){
+      loadCoinAnalysis();
+      if(coinAnalysisTimer) clearInterval(coinAnalysisTimer);
+      coinAnalysisTimer = setInterval(loadCoinAnalysis, COIN_ANALYSIS_POLL_MS);
+    } else if(coinAnalysisTimer){ clearInterval(coinAnalysisTimer); coinAnalysisTimer=null; }
+  }
+
+  function isPanelOpen(panelId){
+    const el = document.getElementById(panelId);
+    return !!el && el.style.display !== "none";
+  }
+
+  function initInfoPanels(){
+    document.getElementById("cryptoNewsToggle").onclick = ()=> setCryptoNewsOpen(!isPanelOpen("cryptoNewsPanel"));
+    document.getElementById("cryptoNewsRefresh").onclick = (ev)=>{ ev.stopPropagation(); loadCryptoNews(true); };
+    document.getElementById("financeNewsToggle").onclick = ()=> setFinanceNewsOpen(!isPanelOpen("financeNewsPanel"));
+    document.getElementById("financeNewsRefresh").onclick = (ev)=>{ ev.stopPropagation(); loadFinanceNews(true); };
+    document.getElementById("macroCalToggle").onclick = ()=> setMacroCalOpen(!isPanelOpen("macroCalPanel"));
+    document.getElementById("coinAnalysisToggle").onclick = ()=> setCoinAnalysisOpen(!isPanelOpen("coinAnalysisPanel"));
+    document.getElementById("coinAnalysisRefresh").onclick = (ev)=>{ ev.stopPropagation(); loadCoinAnalysis(true); };
+  }
+
+  // Bumped every time a fetch cycle starts for a given symbol/timeframe. If the
+  // user switches symbols while an older fetch is still in flight, that older
+  // fetch's results are discarded when they land instead of overwriting the
+  // now-selected symbol's data.
+  let dataRequestId = 0;
+
+  // Populates state.candles/dataOk from the locally-built tick-candle store
+  // for a "5s"/"15s" timeframe instead of hitting Binance's kline endpoint
+  // (which doesn't offer those intervals). Depth/ticker are still fetched
+  // normally via REST since those aren't timeframe-dependent.
+  async function loadTickBuiltCandles(symbol, tf, cfg, isStale){
+    const store = tickCandleStore(symbol);
+    // Only seed once per symbol per session — if ticks have already been
+    // building up (e.g. the user switched away and back), that live history
+    // is better than a fresh REST snapshot, so leave it alone.
+    if(store["5s"].length===0 && store["15s"].length===0){
+      try{ await seedTickCandlesFromRest(symbol, cfg); }
+      catch(e){ /* REST seed failed (e.g. rate limit) — fall back to live-only accumulation */ }
+      if(isStale()) return;
+    }
+    const built = tickCandleStore(symbol)[tf] || [];
+    if(tickWSStatus==="unavailable"){
+      if(isStale()) return;
+      state.candles = built.slice(); // still show the REST-seeded history even without a live feed
+      state.dataOk = built.length>0;
+      if(!state.dataOk) state.lastError = `${tf} candles are built from the live tick feed, which isn't available for ${symbol}.`;
+    } else {
+      if(isStale()) return;
+      state.candles = built.slice();
+      state.dataOk = built.length>0;
+    }
+    try{
+      const [depth, ticker] = await Promise.all([fetchBinanceDepth(cfg.pair), fetchBinanceTicker(cfg.pair)]);
+      if(isStale()) return;
+      state.depth = depth; state.ticker = ticker;
+    }catch(e){ /* keep whatever depth/ticker we already had — not fatal here */ }
+  }
+
+  async function loadData(){
+    const myRequestId = ++dataRequestId;
+    const mySymbol = state.symbol;
+    const cfg = SYMBOLS[mySymbol];
+    const tf = state.timeframe;
+    const isStale = () => myRequestId !== dataRequestId || state.symbol !== mySymbol;
+    state.lastError = null;
+    refreshSessionLevels(mySymbol); // fire-and-forget; self-throttled, re-renders when it resolves
+    try{
+      if(cfg.source === "binance"){
+        if(TICK_BUILT_TFS[tf]){
+          await loadTickBuiltCandles(mySymbol, tf, cfg, isStale);
+        } else {
+          const [candles, depth, ticker] = await Promise.all([
+            fetchBinanceKlines(cfg.pair, tf, tf==="1s"?300:200), fetchBinanceDepth(cfg.pair), fetchBinanceTicker(cfg.pair)
+          ]);
+          if(isStale()) return;
+          state.candles = candles; state.depth = depth; state.ticker = ticker;
+          state.dataOk = true;
+        }
+      } else if(cfg.source === "binance-cg"){
+        if(TICK_BUILT_TFS[tf]){
+          await loadTickBuiltCandles(mySymbol, tf, cfg, isStale);
+        } else {
+          try{
+            const [candles, depth, ticker] = await Promise.all([
+              fetchBinanceKlines(cfg.pair, tf, tf==="1s"?300:200), fetchBinanceDepth(cfg.pair), fetchBinanceTicker(cfg.pair)
+            ]);
+            if(isStale()) return;
+            state.candles = candles; state.depth = depth; state.ticker = ticker;
+            state.dataOk = true;
+          }catch(e){
+            const candles = await fetchCoinGeckoOHLC(cfg.cgId, cgDaysForTimeframe(tf));
+            if(isStale()) return;
+            state.candles = candles; state.depth = null; state.ticker = null;
+            state.dataOk = true;
+          }
+        }
+      } else {
+        if(isStale()) return;
+        state.dataOk = false; // manual
+      }
+      const optionCurrency = cfg.optionCurrency || mySymbol;
+      if(OPTION_CURRENCIES.includes(optionCurrency)){
+        let opts = null;
+        try{ opts = await fetchDeribitOptions(optionCurrency); }catch(e){ opts = null; }
+        if(isStale()) return;
+        state.options = opts;
+      } else {
+        if(isStale()) return;
+        state.options = null;
+      }
+    }catch(err){
+      if(isStale()) return;
+      state.lastError = err.message || String(err);
+      state.dataOk = false;
+    }
+  }
+
+  // ---------- rendering ----------
+  function fmt(n, d){
+    if(n==null || isNaN(n)) return "—";
+    d = d==null ? (n>=100?2:6) : d;
+    return Number(n).toLocaleString(undefined,{minimumFractionDigits:d, maximumFractionDigits:d});
+  }
+  function fmtVol(v){
+    if(v==null || isNaN(v)) return "—";
+    if(v>=1e6) return (v/1e6).toFixed(2)+"M";
+    if(v>=1e3) return (v/1e3).toFixed(2)+"K";
+    return fmt(v,2);
+  }
+
+  function renderSymbolBar(){
+    const sel = document.getElementById("symbolSelect");
+    // Rebuild options only if the set changed (it never does), but always
+    // sync selection — cheap, and avoids fighting the user's open dropdown.
+    if(sel.options.length !== ORDER.length){
+      sel.innerHTML = ORDER.map(sym=>`<option value="${sym}">${SYMBOLS[sym].label}</option>`).join("");
+    }
+    if(sel.value !== state.symbol) sel.value = state.symbol;
+    sel.onchange = () => switchSymbol(sel.value);
+  }
+
+  function renderTimeframeBar(){
+    const sel = document.getElementById("tfSelect");
+    const cfg = SYMBOLS[state.symbol];
+    if(cfg.source==="manual"){
+      sel.style.display = "none";
+      sel.innerHTML = "";
+      return;
+    }
+    sel.style.display = "";
+    if(sel.options.length !== TIMEFRAMES.length){
+      sel.innerHTML = TIMEFRAMES.map(tf=>{
+        const hint = TICK_BUILT_TFS[tf] ? ' title="Not a native Binance interval — seeded from 1s history, then built live from trade ticks"' : '';
+        return `<option value="${tf}"${hint}>${tf}${TICK_BUILT_TFS[tf]?' ⚡':''}</option>`;
+      }).join("");
+    }
+    if(sel.value !== state.timeframe) sel.value = state.timeframe;
+    sel.onchange = () => switchTimeframe(sel.value);
+  }
+
+  function switchTimeframe(tf){
+    if(tf === state.timeframe) return;
+    state.timeframe = tf;
+    if(TICK_BUILT_TFS[tf]){
+      // Show whatever's already been built this session immediately,
+      // rather than blanking the chart until the next refresh cycle.
+      const built = tickCandleStore(state.symbol)[tf] || [];
+      state.candles = built.slice();
+      state.dataOk = built.length>0;
+    } else {
+      state.candles = []; state.dataOk=false;
+    }
+    renderAll();
+    refresh();
+  }
+
+  // Cache of the last known price per symbol, so equity/forecast math for
+  // symbols other than the one currently on screen has something to use
+  // (only populated for symbols visited this session).
+  const lastPrices = {};
+
+  function currentPrice(){
+    let p;
+    if(state.symbol==="CL") p = state.manualPrice;
+    else if(state.ticker) p = +state.ticker.lastPrice;
+    else if(state.candles.length) p = state.candles[state.candles.length-1].close;
+    else p = null;
+    if(p!=null && !isNaN(p)) lastPrices[state.symbol] = p;
+    return p;
+  }
+  function lastKnownPrice(symbol){
+    return symbol in lastPrices ? lastPrices[symbol] : null;
+  }
+
+  // ---------- price alerts ----------
+  // One-shot: an alert fires the moment price crosses it (from either
+  // direction) and is then removed. Only checked for whichever symbol is
+  // currently on screen, since that's the only symbol with a live price
+  // feed at any given time in this app.
+  const alertLastPrice = {}; // symbol -> previous checked price, to detect a crossing
+  const recentlyFiredAlerts = []; // transient log shown at the top of the panel, newest last
+  function beep(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      const actx = new AC();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.connect(g); g.connect(actx.destination);
+      o.type = "sine"; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.16, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime+0.35);
+      o.start(); o.stop(actx.currentTime+0.35);
+    }catch(e){ /* audio not available — silent no-op */ }
+  }
+  function checkAlerts(symbol, price){
+    if(price==null || isNaN(price)) return;
+    const prev = alertLastPrice[symbol];
+    alertLastPrice[symbol] = price;
+    const arr = state.alerts[symbol];
+    if(!arr || arr.length===0 || prev==null || prev===price) return;
+    const stillActive = [];
+    let firedAny = false;
+    arr.forEach(a=>{
+      const crossed = (prev<a.price && price>=a.price) || (prev>a.price && price<=a.price);
+      if(crossed){
+        firedAny = true;
+        recentlyFiredAlerts.push({ label: SYMBOLS[symbol].label, price: a.price, when: new Date().toLocaleTimeString(undefined,{hour12:false}) });
+        if(recentlyFiredAlerts.length>5) recentlyFiredAlerts.shift();
+        beep();
+      } else {
+        stillActive.push(a);
+      }
+    });
+    if(firedAny){
+      state.alerts[symbol] = stillActive;
+      savePersisted();
+      if(state.symbol===symbol) renderAlerts();
+    }
+  }
+
+  // Tick-direction pattern tracker. Every live trade tick for the symbol on
+  // screen is compared to the last one, classified up/down, and folded into
+  // a running streak. A streak only counts as a "major pattern" once it's
+  // at least MIN_STREAK ticks long — single-tick flips (the u1d1u1d1...
+  // chatter of ordinary noise) are dropped entirely rather than shown, per
+  // request. Kept per symbol so switching tabs and coming back doesn't lose
+  // the thread. History is rolling, not cleared by the periodic re-render —
+  // capped only so a long session can't grow it unbounded.
+  const MIN_STREAK = 2;
+  // A streak this long or longer counts as "big" enough to mark directly on
+  // the price chart (separate from MIN_STREAK, which just governs what
+  // shows up as a tag in the scrolling pattern bar).
+  const BIG_STREAK = 5;
+  const MAX_PATTERN_HISTORY = 400;
+  const tickState = {}; // symbol -> { lastPrice, lastTime, dir, count, start, end, startTime, endTime, history:[...] }
+  function tickStateFor(symbol){
+    if(!tickState[symbol]) tickState[symbol] = { lastPrice:null, lastTime:null, dir:null, count:0, start:null, end:null, startTime:null, endTime:null, history:[] };
+    return tickState[symbol];
+  }
+  function recordTick(symbol, price, timestamp){
+    if(price==null || isNaN(price)) return;
+    const t = timestamp==null ? Date.now() : timestamp;
+    const ts = tickStateFor(symbol);
+    if(ts.lastPrice==null){ ts.lastPrice = price; ts.lastTime = t; return; }
+    if(price===ts.lastPrice) return; // no movement — not a tick, streak unaffected
+    const dir = price>ts.lastPrice ? "u" : "d";
+    if(dir===ts.dir){
+      ts.count++; ts.end = price; ts.endTime = t;
+    } else {
+      if(ts.dir!=null){
+        ts.history.push({ dir:ts.dir, count:ts.count, start:ts.start, end:ts.end, startTime:ts.startTime, endTime:ts.endTime });
+        if(ts.history.length>MAX_PATTERN_HISTORY) ts.history.shift();
+      }
+      ts.dir = dir; ts.count = 1; ts.start = ts.lastPrice; ts.end = price;
+      ts.startTime = ts.lastTime!=null ? ts.lastTime : t; ts.endTime = t;
+    }
+    ts.lastPrice = price; ts.lastTime = t;
+  }
+  // Every "big" streak (completed or currently forming) for a symbol, each
+  // mapped to the nearest candle index (by time) in the *full* candle array
+  // passed in — renderChart later re-offsets that against whatever slice of
+  // history it's actually displaying.
+  function bigStreaksForChart(symbol, candles){
+    if(!candles || candles.length===0) return [];
+    const ts = tickStateFor(symbol);
+    const all = [...ts.history];
+    if(ts.dir!=null && ts.count>0){
+      all.push({ dir:ts.dir, count:ts.count, start:ts.start, end:ts.end, startTime:ts.startTime, endTime:ts.endTime });
+    }
+    const big = all.filter(s=>s.count>=BIG_STREAK && s.endTime!=null);
+    return big.map(s=>{
+      let idx = 0;
+      for(let i=candles.length-1;i>=0;i--){
+        if(candles[i].time<=s.endTime){ idx=i; break; }
+      }
+      return { dir:s.dir, count:s.count, idx };
+    });
+  }
+
+  // ---------- self-built 5s/15s candles from live trade ticks ----------
+  // Binance's kline API doesn't publish 5s or 15s intervals, so those two
+  // timeframes are assembled here from the same @trade WebSocket already
+  // used for the pattern bar. Kept per-symbol and never reset on a
+  // timeframe/symbol switch (only capped in length), so flipping back to a
+  // symbol you were already watching keeps whatever history built up this
+  // session instead of going blank again.
+  const MAX_TICK_CANDLES = 300;
+  const tickCandles = {}; // symbol -> { "5s":[candles], "15s":[candles] }
+  function tickCandleStore(symbol){
+    if(!tickCandles[symbol]) tickCandles[symbol] = { "5s":[], "15s":[] };
+    return tickCandles[symbol];
+  }
+  // Binance publishes 1s klines over REST but not 5s/15s, so those two used
+  // to start every symbol/session completely empty and fill in only as live
+  // trade ticks arrived — which is what made them feel slow to load. Instead,
+  // grab the last 5 minutes of 1s history in one REST call and aggregate it
+  // locally into instant 5s/15s candles; the live tick stream then just
+  // extends the seeded array from there (feedTickCandles below always
+  // extends/starts from the LAST element of the array, seeded or not, so
+  // this requires no other changes to the live path).
+  function aggregateCandles(oneSecCandles, bucketMs){
+    const buckets = new Map();
+    const order = [];
+    oneSecCandles.forEach(c=>{
+      const bucketStart = Math.floor(c.time/bucketMs)*bucketMs;
+      let b = buckets.get(bucketStart);
+      if(!b){
+        b = { time:bucketStart, open:c.open, high:c.high, low:c.low, close:c.close, volume:c.volume||0 };
+        buckets.set(bucketStart, b);
+        order.push(bucketStart);
+      } else {
+        b.high = Math.max(b.high, c.high);
+        b.low = Math.min(b.low, c.low);
+        b.close = c.close;
+        b.volume += c.volume||0;
+      }
+    });
+    return order.map(t=>buckets.get(t));
+  }
+  async function seedTickCandlesFromRest(symbol, cfg){
+    const oneSec = await fetchBinanceKlines(cfg.pair, "1s", 300); // last 5 minutes
+    const store = tickCandleStore(symbol);
+    store["5s"] = aggregateCandles(oneSec, 5000);
+    store["15s"] = aggregateCandles(oneSec, 15000);
+  }
+  function feedTickCandles(symbol, price, qty, timestamp){
+    const store = tickCandleStore(symbol);
+    Object.keys(TICK_BUILT_TFS).forEach(tf=>{
+      const bucketMs = TICK_BUILT_TFS[tf];
+      const bucketStart = Math.floor(timestamp/bucketMs)*bucketMs;
+      const arr = store[tf];
+      let cur = arr[arr.length-1];
+      if(!cur || cur.time !== bucketStart){
+        cur = { time:bucketStart, open:price, high:price, low:price, close:price, volume:0 };
+        arr.push(cur);
+        if(arr.length>MAX_TICK_CANDLES) arr.shift();
+      }
+      if(price>cur.high) cur.high = price;
+      if(price<cur.low) cur.low = price;
+      cur.close = price;
+      cur.volume += (qty||0);
+    });
+  }
+
+  // ---------- recent-trades tape (filtered by $ value) ----------
+  // Raw per-symbol trade log fed from the same @trade WebSocket. Kept
+  // uncapped-by-threshold here — filtering to the user's $ value cutoff and
+  // the "at least 5 rows" backfill happens at render time in
+  // renderRecentTrades, so changing the threshold doesn't need new data.
+  const MAX_TRADE_TAPE = 500;
+  const tradeTape = {}; // symbol -> [{time, price, qty, value, side}], oldest first
+  function tradeTapeFor(symbol){
+    if(!tradeTape[symbol]) tradeTape[symbol] = [];
+    return tradeTape[symbol];
+  }
+  function recordTradeTape(symbol, price, qty, isBuyerMaker, timestamp){
+    if(!qty) return;
+    const arr = tradeTapeFor(symbol);
+    // Binance convention: isBuyerMaker true means the buy side was already
+    // resting on the book, so the trade was seller-initiated ("sell"); false
+    // means the buyer was the aggressor ("buy").
+    arr.push({ time:timestamp, price, qty, value:price*qty, side: isBuyerMaker ? "sell" : "buy" });
+    if(arr.length>MAX_TRADE_TAPE) arr.shift();
+  }
+  // Major patterns for the symbol on screen: the full rolling history of
+  // completed streaks plus the currently-forming one, filtered to MIN_STREAK+
+  // and formatted like "u23_10.5" (direction, tick count, absolute price
+  // change start->end of that streak — not a percentage). Oldest first, so
+  // the ticker reads left-to-right in time order.
+  function majorPatterns(symbol){
+    const ts = tickStateFor(symbol);
+    const all = [...ts.history];
+    if(ts.dir!=null && ts.count>0) all.push({ dir:ts.dir, count:ts.count, start:ts.start, end:ts.end });
+    return all
+      .filter(s=>s.count>=MIN_STREAK && s.start)
+      .map(s=>{
+        const change = Math.abs(s.end-s.start);
+        return `${s.dir}${s.count}_${fmt(change,1)}`;
+      });
+  }
+
+  // Live tick feed for the pattern bar, via Binance's public trade
+  // WebSocket — the 12s REST poll is far too coarse to produce meaningful
+  // up/down streaks, so ticks come from actual executed trades instead.
+  // Only symbols with a Binance pair have this (not CL, which has no feed
+  // at all and relies on manual price entry).
+  let tickWS = null;
+  let tickWSSymbol = null;
+  let tickWSRetryTimer = null;
+  let tickWSRetryCount = 0;
+  let tickWSStatus = "idle"; // idle | connecting | live | unavailable | error
+  let lastPatternRender = 0;
+  let lastTickChartRender = 0;
+  let lastTradesRender = 0;
+  function closeTickStream(){
+    if(tickWSRetryTimer){ clearTimeout(tickWSRetryTimer); tickWSRetryTimer = null; }
+    if(tickWS){
+      const ws = tickWS;
+      tickWS = null;
+      ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
+      try{ ws.close(); }catch(e){ /* ignore */ }
+    }
+  }
+  function openTickStream(symbol){
+    closeTickStream();
+    tickWSSymbol = symbol;
+    tickWSRetryCount = 0;
+    const cfg = SYMBOLS[symbol];
+    if(!cfg.pair){
+      // No live feed for this symbol (e.g. CL, manual price only).
+      tickWSStatus = "unavailable";
+      renderPatternBar();
+      return;
+    }
+    connectTickWS(symbol);
+  }
+  function connectTickWS(symbol){
+    tickWSStatus = "connecting";
+    renderPatternBar();
+    const cfg = SYMBOLS[symbol];
+    let ws;
+    try{
+      ws = new WebSocket(`wss://stream.binance.com:9443/ws/${cfg.pair.toLowerCase()}@trade`);
+    }catch(e){
+      tickWSStatus = "unavailable";
+      renderPatternBar();
+      return;
+    }
+    tickWS = ws;
+    const openedAt = Date.now();
+    ws.onopen = ()=>{
+      if(tickWSSymbol!==symbol) return; // superseded by a later symbol switch
+      tickWSRetryCount = 0;
+      tickWSStatus = "live";
+      renderPatternBar();
+    };
+    ws.onmessage = (ev)=>{
+      if(tickWSSymbol!==symbol) return;
+      let data;
+      try{ data = JSON.parse(ev.data); }catch(e){ return; }
+      const price = parseFloat(data.p);
+      if(isNaN(price)) return;
+      const qty = parseFloat(data.q) || 0;
+      const t = data.T || Date.now();
+      recordTick(symbol, price, t);
+      feedTickCandles(symbol, price, qty, t);
+      recordTradeTape(symbol, price, qty, !!data.m, t);
+      // Trades can arrive many times a second — throttle the actual DOM
+      // update so it stays smooth instead of thrashing on every tick.
+      const now = Date.now();
+      if(state.symbol===symbol && now-lastPatternRender>250){
+        lastPatternRender = now;
+        renderPatternBar();
+      }
+      if(state.symbol===symbol && now-lastTradesRender>1000){
+        lastTradesRender = now;
+        renderRecentTrades();
+      }
+      // If we're sitting on a self-built 5s/15s timeframe, the chart/
+      // indicators only ever get fresh data from ticks (no REST kline to
+      // poll) — so drive a throttled full re-render straight from here.
+      if(state.symbol===symbol && TICK_BUILT_TFS[state.timeframe] && now-lastTickChartRender>600){
+        lastTickChartRender = now;
+        const built = tickCandleStore(symbol)[state.timeframe] || [];
+        state.candles = built.slice();
+        state.dataOk = built.length>0;
+        renderAll(true);
+      }
+    };
+    ws.onerror = ()=>{ /* onclose fires right after and handles it */ };
+    ws.onclose = ()=>{
+      if(tickWSSymbol!==symbol) return; // a newer connection has already taken over
+      tickWS = null;
+      // A connection that dies within ~1.5s of opening (or never opens at
+      // all) almost always means the pair has no trade stream on Binance
+      // (e.g. XAUTUSDT isn't a real spot listing) rather than a transient
+      // drop — stop retrying that case instead of looping forever.
+      const diedFast = Date.now()-openedAt < 1500;
+      tickWSRetryCount++;
+      if(diedFast && tickWSRetryCount>=3){
+        tickWSStatus = "unavailable";
+        renderPatternBar();
+        return;
+      }
+      tickWSStatus = "error";
+      renderPatternBar();
+      tickWSRetryTimer = setTimeout(()=>{ if(tickWSSymbol===symbol) connectTickWS(symbol); }, 4000);
+    };
+  }
+
+  // Per-symbol forecast range/step, created on first use. step:null means
+  // "use this symbol's default" (SYMBOLS[x].stepDefault) rather than a
+  // fixed global default — so BTC/gold/SOL/crude each start at a sensible
+  // scale instead of all sharing one step size.
+  function forecastState(){
+    const sym = state.symbol;
+    if(!state.forecast[sym]) state.forecast[sym] = { min:null, max:null, step:null };
+    return state.forecast[sym];
+  }
+
+  function renderChartTitle(){
+    const cfg = SYMBOLS[state.symbol];
+    const tf = cfg.source==="manual" ? "" : ` — ${state.timeframe}`;
+    document.getElementById("chartTitle").innerHTML =
+      `PRICE STRUCTURE${tf} — order blocks, FVGs &amp; levels <span class="candlecountdown" id="candleCountdown"></span>`;
+    updateCandleCountdown();
+  }
+
+  const TF_MS = {"1s":1000,"5s":5000,"15s":15000,"1m":60000,"5m":300000,"15m":900000,"1h":3600000,"4h":14400000,"1d":86400000};
+  function updateCandleCountdown(){
+    const span = document.getElementById("candleCountdown");
+    if(!span) return;
+    const cfg = SYMBOLS[state.symbol];
+    const ms = TF_MS[state.timeframe];
+    if(cfg.source==="manual" || !ms || !state.candles.length){ span.textContent = ""; return; }
+    const lastCandleTime = state.candles[state.candles.length-1].time;
+    const remaining = (lastCandleTime + ms) - Date.now();
+    if(remaining<=0){ span.textContent = "closing…"; return; }
+    const totalSec = Math.ceil(remaining/1000);
+    const h = Math.floor(totalSec/3600), m = Math.floor((totalSec%3600)/60), s = totalSec%60;
+    const text = h>0 ? `${h}h ${m}m` : m>0 ? `${m}m ${s}s` : `${s}s`;
+    span.textContent = `· candle closes in ${text}`;
+  }
+
+  function renderPriceBar(){
+    const el = document.getElementById("headerprice");
+    const cfg = SYMBOLS[state.symbol];
+    if(state.symbol==="CL"){
+      el.innerHTML = `<span class="hp-meta">${cfg.full} — no live feed; set a reference price in the trade panel below.</span>`;
+      return;
+    }
+    const price = currentPrice();
+    if(price==null){ el.innerHTML = `<span class="hp-meta">Loading price…</span>`; return; }
+    checkAlerts(state.symbol, price);
+    let chgHtml = "";
+    if(state.ticker){
+      const chg = +state.ticker.priceChangePercent;
+      chgHtml = `<span class="hp-chg ${chg>=0?'up':'down'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`;
+    }
+    const metaHtml = state.ticker
+      ? `24h vol ${fmt(+state.ticker.quoteVolume,0)} · ${cfg.full}`
+      : cfg.full;
+    el.innerHTML = `
+      <span class="hp-last mono">${fmt(price)}</span>
+      ${chgHtml}
+      <span class="hp-meta">${metaHtml}</span>
+    `;
+  }
+
+  function renderNotices(){
+    const area = document.getElementById("noticearea");
+    area.innerHTML = "";
+    const cfg = SYMBOLS[state.symbol];
+    const msgs = [];
+    if(cfg.source==="manual"){
+      msgs.push("CL (WTI crude futures) has no free public market-data API reachable here — structure/indicator panels are skipped for this symbol. Use manual price entry in the trade panel for paper P&amp;L only.");
+    }
+    if(cfg.source==="binance-cg" && state.candles.length && (!state.depth)){
+      msgs.push("XAUT wasn't available on the primary feed, so this is showing CoinGecko OHLC data instead — no live order book for this symbol.");
+    }
+    if(state.lastError && cfg.source!=="manual"){
+      msgs.push("Data fetch issue: " + state.lastError + " — will retry automatically.");
+    }
+    if(TICK_BUILT_TFS[state.timeframe] && cfg.source!=="manual" && !state.lastError && state.candles.length>0 && state.candles.length<20){
+      msgs.push(`${state.timeframe} candles normally seed instantly from the last 5 min of 1s history, but that seed didn't come through this time — only ${state.candles.length} built up from live trades so far, filling in as they arrive.`);
+    }
+    msgs.forEach(m=>{
+      const d = document.createElement("div");
+      d.className = "notice"; d.innerHTML = m;
+      area.appendChild(d);
+    });
+  }
+
+  // Pattern bar: a rolling, full-history ticker of "major" tick-direction
+  // streaks for the symbol on screen, fed by the live Binance trade
+  // WebSocket (openTickStream). Nothing here gets cleared by the periodic
+  // re-render — history only grows (capped at MAX_PATTERN_HISTORY) — and if
+  // the user has scrolled left to look at older entries, that scroll
+  // position is preserved across rebuilds rather than snapping back.
+  function renderPatternBar(){
+    const el = document.getElementById("patternbar");
+    // Was the user already viewing the live (rightmost) edge? If so, keep
+    // following it as new entries arrive; otherwise leave their scroll
+    // position where they put it.
+    const wasAtEnd = el.scrollWidth - el.clientWidth <= el.scrollLeft + 4;
+    const prevScrollLeft = el.scrollLeft;
+
+    if(tickWSStatus==="unavailable"){
+      el.innerHTML = `<span class="lbl">PATTERN</span><span class="empty">no live tick feed for this symbol</span>`;
+      return;
+    }
+    if(tickWSStatus==="connecting"){
+      el.innerHTML = `<span class="lbl">PATTERN</span><span class="empty">connecting to live feed…</span>`;
+      return;
+    }
+    if(tickWSStatus==="error"){
+      el.innerHTML = `<span class="lbl">PATTERN</span><span class="empty">live feed dropped — retrying…</span>`;
+      return;
+    }
+    const pats = majorPatterns(state.symbol);
+    if(!pats.length){
+      el.innerHTML = `<span class="lbl">PATTERN</span><span class="empty">building… (need ${MIN_STREAK}+ consecutive same-direction ticks)</span>`;
+      return;
+    }
+    el.innerHTML = `<span class="lbl">PATTERN</span>` + pats.map(p=>
+      `<span class="tag ${p[0]}">${p}</span>`
+    ).join("");
+    el.scrollLeft = wasAtEnd ? el.scrollWidth : prevScrollLeft;
+  }
+
+  // Broker-configuration panel: which broker's rules apply account-wide
+  // (all symbols use the one active broker — this isn't per-symbol).
+  // Collapsed by default via the <details> element in the markup; this
+  // just fills in its contents and wires the selector.
+  function renderBroker(){
+    const el = document.getElementById("brokerBody");
+    const rows = ORDER.map(sym=>{
+      const cfg = SYMBOLS[sym];
+      return `<tr><td>${cfg.label}</td><td class="mono">${cfg.contractSize||1}</td><td class="mono">${sharkLeverage(sym)}x (${cfg.sharkClass})</td></tr>`;
+    }).join("");
+    el.innerHTML = `
+      <div class="brokerrow">
+        <label for="brokerSelect" style="font-size:12.5px;color:var(--ink-soft);">Active broker (applies to all symbols):</label>
+        <select id="brokerSelect">
+          <option value="dana" ${state.broker==="dana"?"selected":""}>BTCDana</option>
+          <option value="shark" ${state.broker==="shark"?"selected":""}>Shark</option>
+        </select>
+      </div>
+      <table class="brokertable">
+        <thead><tr><th></th><th>BTCDana</th><th>Shark</th></tr></thead>
+        <tbody>
+          <tr><td>Default lot size</td><td class="mono">${BROKERS.dana.defaultLot}</td><td class="mono">${BROKERS.shark.defaultLot}</td></tr>
+          <tr><td>Entry fee</td><td class="mono">$${BROKERS.dana.feeEntryPerLot} / lot</td><td class="mono">${(BROKERS.shark.feePct*100).toFixed(3)}% of trade value</td></tr>
+          <tr><td>Exit fee</td><td class="mono">free</td><td class="mono">${(BROKERS.shark.feePct*100).toFixed(3)}% of trade value</td></tr>
+          <tr><td>Margin formula</td><td class="mono">qty × contract size × price / leverage</td><td class="mono">qty × price / leverage (no contract size)</td></tr>
+          <tr><td>Leverage</td><td class="mono">user-set, default ${BROKERS.dana.defaultLeverage}x</td><td class="mono">fixed by instrument (see below)</td></tr>
+          <tr><td>P&amp;L formula</td><td class="mono">Δprice × qty × contract size</td><td class="mono">Δprice × qty (simple)</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:11px;color:var(--ink-soft);margin:10px 0 4px;">Shark's fixed leverage by instrument (contract size shown for reference — Shark's own margin/P&amp;L formulas above don't use it):</div>
+      <table class="brokertable">
+        <thead><tr><th>Symbol</th><th>Contract size</th><th>Shark leverage</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="font-size:10.5px;color:var(--ink-soft);margin-top:8px;">
+        Switching brokers only affects new trades — anything already open or closed keeps the rules of the broker it was opened under.
+      </div>
+    `;
+    document.getElementById("brokerSelect").onchange = (e)=>{
+      state.broker = e.target.value;
+      tradeDraft = { qty: String(BROKERS[state.broker].defaultLot), entry: "" };
+      savePersisted();
+      renderAll();
+    };
+  }
+
+  function fmtAxisTime(ts, spanMs){
+    const d = new Date(ts);
+    if(spanMs < 3*60*1000){
+      return d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+    }
+    if(spanMs < 2*24*3600*1000){
+      return d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit",hour12:false});
+    }
+    return d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  }
+  let lastChartArgs = null;
+  function renderChart(candles, indicators, obs, fvgs, streaks){
+    streaks = streaks || [];
+    lastChartArgs = { candles, indicators, obs, fvgs, streaks };
+    const ind = state.chartIndicators;
+    const canvas = document.getElementById("chart");
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.clientWidth || 560, cssH = canvas.clientHeight || 340;
+    canvas.width = cssW*dpr; canvas.height = cssH*dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,cssW,cssH);
+
+    if(!candles || candles.length===0){
+      ctx.fillStyle = "#9a9da3"; ctx.font = "13px IBM Plex Mono";
+      ctx.fillText("No chart data for this symbol.", 14, cssH/2);
+      return;
+    }
+    const view = candles.slice(-90);
+    const viewOffset = candles.length - view.length;
+    const highs = view.map(c=>c.high), lows = view.map(c=>c.low);
+    let max = Math.max(...highs), min = Math.min(...lows);
+    const pad = (max-min)*0.08 || max*0.01;
+    max += pad; min -= pad;
+
+    // Keep the latest close comfortably inside the visible band (20%-80% of
+    // the way up the y-axis) rather than glued to the top/bottom edge.
+    // Only ever extends the range (never shrinks it), so no candle gets
+    // clipped — if the price is already within 20-80%, nothing changes.
+    const lastCloseForRange = view[view.length-1] ? view[view.length-1].close : null;
+    if(lastCloseForRange!=null && max>min){
+      const LOW_BAND=0.2, HIGH_BAND=0.8;
+      const frac = (lastCloseForRange-min)/(max-min);
+      if(frac < LOW_BAND){
+        min = (lastCloseForRange - LOW_BAND*max) / (1-LOW_BAND);
+      } else if(frac > HIGH_BAND){
+        max = min + (lastCloseForRange-min) / HIGH_BAND;
+      }
+    }
+
+    const left=6, right=58, top=10, bottom=28;
+    const plotW = cssW-left-right, plotH = cssH-top-bottom;
+    const n = view.length;
+    const cw = plotW/n;
+
+    // Reserve the bottom 15% of the plot as a volume underlay (toggleable
+    // via the "Volume" chip). Price candles/lines only ever map into the
+    // remaining top portion — volPad is 0 when the chip is off, so price
+    // uses the full height exactly as before.
+    const volPad = ind.volume ? plotH*0.15 : 0;
+    const priceH = plotH - volPad;
+    const y = v => top + (max-v)/(max-min)*priceH;
+    const x = i => left + i*cw + cw/2;
+
+    // y-axis gridlines + price labels (right-hand scale, like most chart apps)
+    const Y_LEVELS = 5;
+    ctx.strokeStyle = "rgba(0,0,0,0.06)"; ctx.lineWidth = 1;
+    ctx.fillStyle = "#6a6e76"; ctx.font = "10px IBM Plex Mono"; ctx.textAlign = "right";
+    for(let i=0;i<Y_LEVELS;i++){
+      const v = min + (max-min)*i/(Y_LEVELS-1);
+      const gy = y(v);
+      ctx.beginPath(); ctx.moveTo(left, gy); ctx.lineTo(left+plotW, gy); ctx.stroke();
+      ctx.fillText(fmt(v,2), cssW-4, gy+3);
+    }
+    ctx.textAlign = "left";
+
+    // x-axis gridlines + time labels
+    const X_LEVELS = Math.min(6, n);
+    const spanMs = (view[n-1].time||0) - (view[0].time||0);
+    ctx.strokeStyle = "rgba(0,0,0,0.05)";
+    ctx.fillStyle = "#6a6e76"; ctx.font = "10px IBM Plex Mono"; ctx.textAlign = "center";
+    for(let i=0;i<X_LEVELS;i++){
+      const vi = Math.round(i*(n-1)/(X_LEVELS-1));
+      const gx = x(vi);
+      ctx.beginPath(); ctx.moveTo(gx, top); ctx.lineTo(gx, top+plotH); ctx.stroke();
+      const t = view[vi].time;
+      if(t!=null) ctx.fillText(fmtAxisTime(t, spanMs), gx, cssH-8);
+    }
+    ctx.textAlign = "left";
+
+    // volume profile — horizontal histogram on the left showing how much
+    // volume traded at each price level across the visible candles. 30
+    // bins spanning the current price range (min-max, same as the y-axis),
+    // each candle's volume split proportionally across the bins its
+    // high-low range overlaps. The busiest bin (point of control) is
+    // drawn in a stronger color.
+    if(ind.vp){
+      const VP_BINS = 30;
+      const binSize = (max-min)/VP_BINS;
+      const vpBins = new Array(VP_BINS).fill(0);
+      if(binSize>0){
+        view.forEach(c=>{
+          const v = c.volume||0;
+          if(v<=0) return;
+          const hi = Math.min(c.high, max), lo = Math.max(c.low, min);
+          if(hi<=lo){
+            const bi = Math.min(VP_BINS-1, Math.max(0, Math.floor((max-c.close)/binSize)));
+            vpBins[bi] += v;
+            return;
+          }
+          const startBin = Math.max(0, Math.floor((max-hi)/binSize));
+          const endBin = Math.min(VP_BINS-1, Math.floor((max-lo)/binSize));
+          for(let b=startBin;b<=endBin;b++){
+            const binTop = max-b*binSize, binBottom = binTop-binSize;
+            const overlap = Math.min(hi,binTop) - Math.max(lo,binBottom);
+            if(overlap>0) vpBins[b] += v*(overlap/(hi-lo));
+          }
+        });
+        const maxBin = Math.max(...vpBins) || 1;
+        const pocBin = vpBins.indexOf(maxBin);
+        const vpMaxWidth = plotW*0.32; // never covers more than ~1/3 of the chart
+        for(let b=0;b<VP_BINS;b++){
+          if(vpBins[b]<=0) continue;
+          const binTopPrice = max-b*binSize, binBottomPrice = binTopPrice-binSize;
+          const yTop = y(binTopPrice), yBot = y(binBottomPrice);
+          const w = (vpBins[b]/maxBin)*vpMaxWidth;
+          ctx.fillStyle = b===pocBin ? "rgba(168,121,31,0.40)" : "rgba(44,90,160,0.16)";
+          ctx.fillRect(left, Math.min(yTop,yBot), w, Math.max(1,Math.abs(yBot-yTop)-0.5));
+        }
+      }
+    }
+
+    // volume underlay — bottom 15% band. Scaled off 2x the view's average
+    // volume (that maps to 100% bar height); anything busier than that gets
+    // capped at full height with a "Nx average" label instead of growing
+    // the bar further off-scale. A dashed line marks the average itself,
+    // which sits at the halfway point of the band since avg = cap/2.
+    if(ind.volume){
+      const volBase = top + plotH; // bottom edge of the whole plot
+      const vols = view.map(c=>c.volume||0);
+      const avgVol = vols.reduce((a,b)=>a+b,0) / (vols.length||1);
+      const cap = avgVol*2 || Math.max(...vols) || 1;
+      view.forEach((c,i)=>{
+        const v = c.volume||0;
+        if(v<=0) return;
+        const cx = x(i);
+        const frac = Math.min(1, v/cap);
+        const bh = frac*volPad;
+        const bw = Math.max(1.5, cw*0.55);
+        const up = c.close>=c.open;
+        ctx.fillStyle = up ? "rgba(15,122,76,0.30)" : "rgba(178,59,46,0.30)";
+        ctx.fillRect(cx-bw/2, volBase-bh, bw, bh);
+        if(avgVol>0 && v>cap){
+          const mult = v/avgVol;
+          ctx.fillStyle = up ? "#0f7a4c" : "#b23b2e";
+          ctx.font = "8px IBM Plex Mono"; ctx.textAlign = "center";
+          ctx.fillText(mult.toFixed(1)+"x", cx, top+priceH-2);
+          ctx.textAlign = "left";
+        }
+      });
+      if(avgVol>0){
+        const avgY = volBase - 0.5*volPad;
+        ctx.save();
+        ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.setLineDash([2,2]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(left, avgY); ctx.lineTo(left+plotW, avgY); ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = "#6a6e76"; ctx.font = "8px IBM Plex Mono"; ctx.textAlign = "left";
+        ctx.fillText("avg "+fmtVol(avgVol), left+2, avgY-2);
+      }
+      ctx.strokeStyle = "rgba(0,0,0,0.08)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(left, top+priceH); ctx.lineTo(left+plotW, top+priceH); ctx.stroke();
+
+      // badge the top-3 highest-volume candles in view, up near their high
+      // on the price chart itself — rank 1 = busiest.
+      const topVolIdx = vols.map((v,i)=>[v,i]).filter(([v])=>v>0).sort((a,b)=>b[0]-a[0]).slice(0,3);
+      topVolIdx.forEach(([v,i],rank)=>{
+        const c = view[i];
+        const cx = x(i), cy = y(c.high) - 10;
+        ctx.fillStyle = "#a8791f";
+        ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.font = "9px IBM Plex Mono";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(String(rank+1), cx, cy+0.5);
+        ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      });
+    }
+
+    // zones: FVGs then order blocks — only when their chip is selected
+    function zoneRect(zTop, zBottom, color){
+      const yt = y(zTop), yb = y(zBottom);
+      ctx.fillStyle = color;
+      ctx.fillRect(left, Math.min(yt,yb), plotW, Math.max(2,Math.abs(yb-yt)));
+    }
+    if(ind.fvg) fvgs.forEach(f=> zoneRect(f.top, f.bottom, f.type==="bullish" ? "rgba(15,122,76,0.08)" : "rgba(178,59,46,0.08)"));
+    if(ind.ob) obs.forEach(o=> zoneRect(o.high, o.low, o.type==="bullish" ? "rgba(15,122,76,0.14)" : "rgba(178,59,46,0.14)"));
+
+    // candles
+    view.forEach((c,i)=>{
+      const cx = x(i);
+      const up = c.close>=c.open;
+      ctx.strokeStyle = up ? "#0f7a4c" : "#b23b2e";
+      ctx.fillStyle = up ? "#0f7a4c" : "#b23b2e";
+      ctx.beginPath(); ctx.moveTo(cx, y(c.high)); ctx.lineTo(cx, y(c.low)); ctx.stroke();
+      const bw = Math.max(1.5, cw*0.55);
+      const yo = y(c.open), yc = y(c.close);
+      ctx.fillRect(cx-bw/2, Math.min(yo,yc), bw, Math.max(1,Math.abs(yc-yo)));
+    });
+
+    // last-price marker — dashed line + label pinned to the right-hand
+    // price scale, so it's obvious where "now" sits against the gridlines.
+    const lastClose = view[n-1].close;
+    if(ind.lastprice && lastClose!=null){
+      const ly = y(lastClose);
+      ctx.save();
+      ctx.strokeStyle = "rgba(44,90,160,0.55)"; ctx.setLineDash([3,3]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(left, ly); ctx.lineTo(left+plotW, ly); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = "#2c5aa0"; ctx.font = "10px IBM Plex Mono"; ctx.textAlign = "right";
+      ctx.fillText(fmt(lastClose,2), cssW-4, ly-3);
+      ctx.textAlign = "left";
+    }
+
+    // EMA / VWAP lines — each drawn only if its chip is selected
+    function drawLine(arr, color){
+      arr = arr || [];
+      ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.beginPath();
+      let started=false;
+      view.forEach((c,i)=>{
+        const v = arr[viewOffset+i];
+        if(v==null) return;
+        const cx=x(i), cy=y(v);
+        if(!started){ ctx.moveTo(cx,cy); started=true; } else ctx.lineTo(cx,cy);
+      });
+      ctx.stroke();
+    }
+    if(ind.ema20) drawLine(indicators.ema20, "#a8791f");
+    if(ind.ema50) drawLine(indicators.ema50, "#2c5aa0");
+    if(ind.vwap) drawLine(indicators.vwap, "#7a3fa0");
+
+    // big tick-streak markers — small arrow + tick-count label sitting just
+    // off the candle where a run of >=BIG_STREAK same-direction ticks ended.
+    // Up-streaks mark below the low (green), down-streaks above the high (red).
+    if(ind.streaks){
+      ctx.font = "9px IBM Plex Mono";
+      ctx.textAlign = "center";
+      streaks.forEach(s=>{
+        const vi = s.idx - viewOffset;
+        if(vi<0 || vi>=view.length) return;
+        const c = view[vi];
+        const cx = x(vi);
+        if(s.dir==="u"){
+          const cy = y(c.low) + 9;
+          ctx.fillStyle = "#0f7a4c";
+          ctx.beginPath();
+          ctx.moveTo(cx-4, cy); ctx.lineTo(cx+4, cy); ctx.lineTo(cx, cy-7); ctx.closePath(); ctx.fill();
+          ctx.fillText(String(s.count), cx, cy+16);
+        } else {
+          const cy = y(c.high) - 9;
+          ctx.fillStyle = "#b23b2e";
+          ctx.beginPath();
+          ctx.moveTo(cx-4, cy); ctx.lineTo(cx+4, cy); ctx.lineTo(cx, cy+7); ctx.closePath(); ctx.fill();
+          ctx.fillText(String(s.count), cx, cy-11);
+        }
+      });
+      ctx.textAlign = "left";
+    }
+
+    // indicator legend (top-left, over the plot) — only for active overlays
+    ctx.font="10px IBM Plex Mono";
+    let legendX = left+4;
+    if(ind.ema20){ ctx.fillStyle="#a8791f"; ctx.fillText("EMA20", legendX, top+10); legendX += 50; }
+    if(ind.ema50){ ctx.fillStyle="#2c5aa0"; ctx.fillText("EMA50", legendX, top+10); legendX += 50; }
+    if(ind.vwap){ ctx.fillStyle="#7a3fa0"; ctx.fillText("VWAP", legendX, top+10); }
+  }
+
+  // Re-draws the chart from the last-known data (no refetch) — used when a
+  // chip is toggled so the change is instant instead of waiting for the
+  // next poll cycle.
+  function redrawChart(){
+    if(lastChartArgs) renderChart(lastChartArgs.candles, lastChartArgs.indicators, lastChartArgs.obs, lastChartArgs.fvgs, lastChartArgs.streaks);
+  }
+  function initChartIndicatorToggles(){
+    document.querySelectorAll("#chartIndBar .chartind-chip").forEach(btn=>{
+      const key = btn.dataset.ind;
+      btn.classList.toggle("active", !!state.chartIndicators[key]);
+      btn.onclick = ()=>{
+        state.chartIndicators[key] = !state.chartIndicators[key];
+        btn.classList.toggle("active", state.chartIndicators[key]);
+        redrawChart();
+      };
+    });
+  }
+
+
+  function renderTrend(structure, indicators){
+    const el = document.getElementById("trendBody");
+    if(!state.dataOk && state.symbol!=="CL"){ el.innerHTML='<div class="empty">Waiting on data…</div>'; return; }
+    if(state.symbol==="CL"){ el.innerHTML='<div class="empty">Not available without a live feed for CL.</div>'; return; }
+    const emaTrendBias = (indicators.ema20last!=null && indicators.ema50last!=null)
+      ? (indicators.ema20last>indicators.ema50last ? "bullish" : "bearish") : "neutral";
+    el.innerHTML = `
+      <div style="margin-bottom:8px;">
+        <span class="biaspill ${structure.bias}">${structure.bias.toUpperCase()}</span>
+        <span style="font-size:13px;margin-left:8px;">${structure.label}</span>
+      </div>
+      <div class="kv"><span class="k">EMA20 vs EMA50</span><span class="v">${indicators.ema20last!=null?fmt(indicators.ema20last):'—'} / ${indicators.ema50last!=null?fmt(indicators.ema50last):'—'} (${emaTrendBias})</span></div>
+      <div class="kv"><span class="k">EMA200 (macro)</span><span class="v">${indicators.ema200last!=null?fmt(indicators.ema200last):'not enough candles'}</span></div>
+    `;
+  }
+
+  function renderSMC(obs, fvgs, liq){
+    const el = document.getElementById("smcBody");
+    if(!state.dataOk && state.symbol!=="CL"){ el.innerHTML='<div class="empty">Waiting on data…</div>'; return; }
+    if(state.symbol==="CL"){ el.innerHTML='<div class="empty">Not available without a live feed for CL.</div>'; return; }
+    let html = "";
+    html += `<div style="font-size:11px;color:var(--ink-soft);margin-bottom:4px;">ORDER BLOCKS (most recent first)</div>`;
+    if(obs.length===0) html += `<div class="body empty" style="padding:0 0 8px;">No clear displacement order block in the recent range.</div>`;
+    else {
+      html += `<div class="taglist">` + obs.map(o=>`
+        <div class="tag"><span class="side ${o.type==='bullish'?'bull':'bear'}">${o.type.toUpperCase()}</span>
+        <span class="rng">${fmt(o.low)} – ${fmt(o.high)}</span></div>`).join("") + `</div>`;
+    }
+    html += `<div style="font-size:11px;color:var(--ink-soft);margin:10px 0 4px;">FAIR VALUE GAPS</div>`;
+    if(fvgs.length===0) html += `<div class="body empty" style="padding:0;">No unfilled imbalance detected.</div>`;
+    else {
+      html += `<div class="taglist">` + fvgs.map(f=>`
+        <div class="tag"><span class="side ${f.type==='bullish'?'bull':'bear'}">${f.type.toUpperCase()}</span>
+        <span class="rng">${fmt(f.bottom)} – ${fmt(f.top)}</span></div>`).join("") + `</div>`;
+    }
+    html += `<div style="font-size:11px;color:var(--ink-soft);margin:10px 0 4px;">LIQUIDITY POOLS (equal highs/lows)</div>`;
+    const eqh = liq.eqHighs, eql = liq.eqLows;
+    if(eqh.length===0 && eql.length===0) html += `<div class="body empty" style="padding:0;">No equal-high/low liquidity cluster nearby.</div>`;
+    else {
+      html += `<div class="taglist">`
+        + eqh.map(p=>`<div class="tag"><span class="side bear">SELL-SIDE ABOVE</span><span class="rng">${fmt(p.price)}${p.touches>2?` ×${p.touches}`:''}</span></div>`).join("")
+        + eql.map(p=>`<div class="tag"><span class="side bull">BUY-SIDE BELOW</span><span class="rng">${fmt(p.price)}${p.touches>2?` ×${p.touches}`:''}</span></div>`).join("")
+        + `</div>`;
+    }
+    el.innerHTML = html;
+  }
+
+  function renderLevels(highs, lows, zones){
+    const el = document.getElementById("levelsBody");
+    if(!state.dataOk && state.symbol!=="CL"){ el.innerHTML='<div class="empty">Waiting on data…</div>'; return; }
+    if(state.symbol==="CL"){ el.innerHTML='<div class="empty">Not available without a live feed for CL.</div>'; return; }
+    const resistances = [...highs].slice(-4).reverse();
+    const supports = [...lows].slice(-4).reverse();
+    let html = "";
+    const sessionCached = dailyLevelsCache[state.symbol];
+    const session = sessionCached && sessionCached.levels;
+    html += `<div style="font-size:11px;color:var(--ink-soft);margin-bottom:4px;">SESSION LEVELS</div>`;
+    if(session){
+      html += `<div class="kv"><span class="k">Daily open</span><span class="v">${fmt(session.dailyOpen)}</span></div>`;
+      html += `<div class="kv"><span class="k">Prev day high / low</span><span class="v">${session.prevDayHigh!=null?fmt(session.prevDayHigh):'—'} / ${session.prevDayLow!=null?fmt(session.prevDayLow):'—'}</span></div>`;
+      html += `<div class="kv"><span class="k">Weekly open${session.weeklyOpenApprox?' (approx.)':''}</span><span class="v">${fmt(session.weeklyOpen)}</span></div>`;
+    } else {
+      html += `<div class="body empty" style="padding:0 0 8px;">${sessionCached ? 'Not available for this symbol (no daily kline feed).' : 'Loading…'}</div>`;
+    }
+    html += `<div style="font-size:11px;color:var(--ink-soft);margin:10px 0 4px;">NEAREST RESISTANCE (swing highs)</div>`;
+    html += `<div class="taglist">` + (resistances.length? resistances.map(h=>`<div class="tag"><span class="side bear">R</span><span class="rng">${fmt(h.price)}</span></div>`).join("") : `<div class="body empty" style="padding:0;">Not enough swings yet.</div>`) + `</div>`;
+    html += `<div style="font-size:11px;color:var(--ink-soft);margin:10px 0 4px;">NEAREST SUPPORT (swing lows)</div>`;
+    html += `<div class="taglist">` + (supports.length? supports.map(l=>`<div class="tag"><span class="side bull">S</span><span class="rng">${fmt(l.price)}</span></div>`).join("") : `<div class="body empty" style="padding:0;">Not enough swings yet.</div>`) + `</div>`;
+    html += `<div style="font-size:11px;color:var(--ink-soft);margin:10px 0 4px;">DEMAND ZONES (high-volume swing lows)</div>`;
+    html += `<div class="taglist">` + (zones.demand.length? zones.demand.map(z=>`<div class="tag"><span class="side bull">DEMAND</span><span class="rng">${fmt(z.price)}</span></div>`).join("") : `<div class="body empty" style="padding:0;">No standout demand candle in range.</div>`) + `</div>`;
+    html += `<div style="font-size:11px;color:var(--ink-soft);margin:10px 0 4px;">SUPPLY ZONES (high-volume swing highs)</div>`;
+    html += `<div class="taglist">` + (zones.supply.length? zones.supply.map(z=>`<div class="tag"><span class="side bear">SUPPLY</span><span class="rng">${fmt(z.price)}</span></div>`).join("") : `<div class="body empty" style="padding:0;">No standout supply candle in range.</div>`) + `</div>`;
+    el.innerHTML = html;
+  }
+
+  function renderIndicators(indicators){
+    const el = document.getElementById("indBody");
+    if(!state.dataOk && state.symbol!=="CL"){ el.innerHTML='<div class="empty">Waiting on data…</div>'; return; }
+    if(state.symbol==="CL"){ el.innerHTML='<div class="empty">Not available without a live feed for CL.</div>'; return; }
+    const rsiV = indicators.rsiLast;
+    const rsiLabel = rsiV==null ? "—" : rsiV>70?"overbought":rsiV<30?"oversold":"neutral";
+    const macdBias = (indicators.macdLast!=null && indicators.macdSignalLast!=null)
+      ? (indicators.macdLast>indicators.macdSignalLast?"bullish cross":"bearish cross") : "—";
+    el.innerHTML = `
+      <div class="kv"><span class="k">RSI (14)</span><span class="v">${rsiV!=null?rsiV.toFixed(1):'—'} — ${rsiLabel}</span></div>
+      <div class="kv"><span class="k">MACD line / signal</span><span class="v">${indicators.macdLast!=null?fmt(indicators.macdLast,4):'—'} / ${indicators.macdSignalLast!=null?fmt(indicators.macdSignalLast,4):'—'}</span></div>
+      <div class="kv"><span class="k">MACD state</span><span class="v">${macdBias}</span></div>
+      <div class="kv"><span class="k">ATR (14, ${state.timeframe})</span><span class="v">${indicators.atrLast!=null?fmt(indicators.atrLast):'—'}</span></div>
+      <div class="kv"><span class="k">VWAP${indicators.vwapAnchoredToDayStart===false?' (session, partial history)':' (session)'}</span><span class="v">${indicators.vwapLast!=null?fmt(indicators.vwapLast):'—'}</span></div>
+    `;
+  }
+
+  function renderVolume(candles){
+    const el = document.getElementById("volBody");
+    if(!state.dataOk && state.symbol!=="CL"){ el.innerHTML='<div class="empty">Waiting on data…</div>'; return; }
+    if(state.symbol==="CL"){ el.innerHTML='<div class="empty">Not available without a live feed for CL.</div>'; return; }
+    if(!candles.length || candles.every(c=>c.volume===0)){
+      el.innerHTML = `<div class="empty">No volume field available from this data source.</div>`; return;
+    }
+    const last = candles[candles.length-1].volume;
+    const avg20 = candles.slice(-20).reduce((a,c)=>a+c.volume,0)/Math.min(20,candles.length);
+    const ratio = avg20? last/avg20 : null;
+    const spike = ratio!=null && ratio>1.5;
+    el.innerHTML = `
+      <div class="kv"><span class="k">Latest candle volume</span><span class="v">${fmt(last,2)}</span></div>
+      <div class="kv"><span class="k">20-candle average</span><span class="v">${fmt(avg20,2)}</span></div>
+      <div class="kv"><span class="k">Ratio vs average</span><span class="v">${ratio!=null?ratio.toFixed(2)+'x':'—'} ${spike?'— spike':''}</span></div>
+    `;
+  }
+
+  // Aggregates raw price levels into buckets of size `step`. Bids round down
+  // to the bucket floor, asks round up to the bucket ceiling (matching how
+  // exchange UIs group order books), then quantities within a bucket sum.
+  function groupDepth(levels, step, side){
+    const map = new Map();
+    for(const [price, qty] of levels){
+      const bucket = side==="bid" ? Math.floor(price/step)*step : Math.ceil(price/step)*step;
+      const key = bucket.toFixed(8);
+      map.set(key, (map.get(key)||0) + qty);
+    }
+    const arr = Array.from(map.entries()).map(([k,v])=>[parseFloat(k), v]);
+    arr.sort((a,b)=> side==="bid" ? b[0]-a[0] : a[0]-b[0]);
+    return arr;
+  }
+
+  function renderBook(){
+    const el = document.getElementById("bookBody");
+    if(state.symbol==="CL"){ el.innerHTML='<div class="empty">No order book — CL has no live feed here.</div>'; return; }
+    if(!state.depth){ el.innerHTML='<div class="empty">No live order book for this symbol/source.</div>'; return; }
+
+    const step = state.bookGroup;
+    const rawBids = state.depth.bids.map(b=>[+b[0],+b[1]]);
+    const rawAsks = state.depth.asks.map(a=>[+a[0],+a[1]]);
+    const bids = groupDepth(rawBids, step, "bid").slice(0,8);
+    const asks = groupDepth(rawAsks, step, "ask").slice(0,8);
+
+    const bidVol = bids.reduce((a,b)=>a+b[1],0), askVol = asks.reduce((a,b)=>a+b[1],0);
+    const total = bidVol+askVol || 1;
+    const bidPct = bidVol/total*100, askPct = askVol/total*100;
+    const maxQty = Math.max(...bids.map(b=>b[1]), ...asks.map(a=>a[1]), 0.0001);
+
+    const groupBtnsHtml = GROUP_SIZES.map(g=>
+      `<button class="groupbtn${g===step?' active':''}" data-g="${g}">${g}</button>`
+    ).join("");
+
+    el.innerHTML = `
+      <div class="groupbar">${groupBtnsHtml}</div>
+      <div class="kv"><span class="k">Bid vs ask depth (top 8 levels, grouped ${step})</span><span class="v">${bidPct.toFixed(1)}% / ${askPct.toFixed(1)}%</span></div>
+      <div class="obrow"><div class="bid" style="width:${bidPct}%"></div><div class="ask" style="width:${askPct}%"></div></div>
+      <div class="depthcols" style="margin-top:10px;">
+        <div><h4>BIDS</h4><div class="depthside">${bids.map(b=>`<div class="depthrow bid"><div class="bar" style="width:${b[1]/maxQty*100}%"></div><span>${fmt(b[0])}</span><span>${fmt(b[1],4)}</span></div>`).join("")}</div></div>
+        <div><h4>ASKS</h4><div class="depthside">${asks.map(a=>`<div class="depthrow ask"><div class="bar" style="width:${a[1]/maxQty*100}%"></div><span>${fmt(a[0])}</span><span>${fmt(a[1],4)}</span></div>`).join("")}</div></div>
+      </div>
+    `;
+
+    el.querySelectorAll(".groupbtn").forEach(btn=>{
+      btn.onclick = ()=>{
+        state.bookGroup = parseFloat(btn.dataset.g);
+        renderBook(); // re-render this panel only — no need to refetch data
+      };
+    });
+  }
+
+  // Recent trades from the live tape, filtered to a user-editable $ value
+  // cutoff (default $10,000). Always shows at least 5 rows: if fewer than
+  // 5 trades cleared the threshold, the biggest remaining trades below it
+  // are added (dimmed) to fill the list rather than leaving it sparse.
+  const MIN_TRADE_ROWS = 5;
+  const MAX_TRADE_ROWS_SHOWN = 20;
+  function wireTradeValueInput(){
+    const input = document.getElementById("tradeValueInput");
+    if(!input) return;
+    input.onchange = ()=>{
+      const v = parseFloat(input.value);
+      state.tradeValueThreshold = (!isNaN(v) && v>=0) ? v : 0;
+      renderRecentTrades();
+      savePersisted();
+    };
+  }
+  function renderRecentTrades(){
+    const el = document.getElementById("tradesBody");
+    // This panel re-renders on every incoming tick (throttled) — if the
+    // user is actively editing the threshold, don't blow the input away
+    // out from under them. The onchange handler below still fires and
+    // re-renders normally once they blur/submit.
+    if(document.activeElement && document.activeElement.id==="tradeValueInput") return;
+    const cfg = SYMBOLS[state.symbol];
+    const filterHtml = `<div class="tradesfilter">Min value $<input id="tradeValueInput" type="number" step="1000" min="0" value="${state.tradeValueThreshold}"></div>`;
+    if(cfg.source==="manual"){
+      el.innerHTML = filterHtml + '<div class="empty">No trade tape — CL has no live feed here.</div>';
+      wireTradeValueInput();
+      return;
+    }
+    if(tickWSStatus==="unavailable"){
+      el.innerHTML = filterHtml + '<div class="empty">Live trade feed isn\'t available for this symbol.</div>';
+      wireTradeValueInput();
+      return;
+    }
+    const buffer = tradeTapeFor(state.symbol);
+    if(buffer.length===0){
+      el.innerHTML = filterHtml + '<div class="empty">Waiting for trades…</div>';
+      wireTradeValueInput();
+      return;
+    }
+
+    const threshold = state.tradeValueThreshold;
+    const byTimeDesc = buffer.slice().sort((a,b)=>b.time-a.time);
+    const qualifying = byTimeDesc.filter(t=>t.value>=threshold);
+    let rows = qualifying.slice();
+    let usedFiller = false;
+    if(rows.length<MIN_TRADE_ROWS){
+      usedFiller = true;
+      const already = new Set(qualifying);
+      const filler = byTimeDesc.filter(t=>!already.has(t))
+        .sort((a,b)=>b.value-a.value)
+        .slice(0, MIN_TRADE_ROWS-rows.length);
+      rows = rows.concat(filler);
+    }
+    rows = rows.slice(0, MAX_TRADE_ROWS_SHOWN);
+
+    const rowsHtml = rows.map(t=>{
+      const below = t.value<threshold;
+      const time = new Date(t.time).toLocaleTimeString(undefined,{hour12:false});
+      return `<tr class="${below?'trade-filler':''}">
+        <td class="mono">${time}</td>
+        <td class="${t.side==='buy'?'trades-buy':'trades-sell'}">${t.side.toUpperCase()}</td>
+        <td class="mono">${fmt(t.price)}</td>
+        <td class="mono">${fmt(t.qty,4)}</td>
+        <td class="mono">$${fmt(t.value,0)}</td>
+      </tr>`;
+    }).join("");
+
+    const fillerNote = usedFiller
+      ? `<div class="kv" style="margin-top:6px;"><span class="k" style="font-size:11px;font-style:italic;">Fewer than ${MIN_TRADE_ROWS} trades cleared $${fmt(threshold,0)} recently — smaller trades shown dimmed to fill the list.</span></div>`
+      : "";
+
+    el.innerHTML = `
+      ${filterHtml}
+      <table class="brokertable">
+        <thead><tr><th>Time</th><th>Side</th><th>Price</th><th>Qty</th><th>Value</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      ${fillerNote}
+    `;
+    wireTradeValueInput();
+  }
+
+  // Alerts are one-shot (see checkAlerts) and only ever evaluated for
+  // whichever symbol is currently on screen, since that's the only one with
+  // a live price feed at any given time.
+  function renderAlerts(){
+    const el = document.getElementById("alertsBody");
+    // Same focus-preserving guard as renderRecentTrades — this panel gets
+    // re-rendered on every poll cycle, so don't blow away the input while
+    // the user is mid-keystroke entering a new alert price.
+    if(document.activeElement && document.activeElement.id==="alertPriceInput") return;
+    const cfg = SYMBOLS[state.symbol];
+    const priceNow = currentPrice();
+    const arr = (state.alerts[state.symbol] || []).slice().sort((a,b)=>a.price-b.price);
+    const recentHtml = recentlyFiredAlerts.length
+      ? `<div class="kv" style="margin-bottom:8px;"><span class="k" style="font-style:italic;font-size:11px;">${recentlyFiredAlerts.slice(-3).map(f=>`🔔 ${f.label} crossed ${fmt(f.price)} at ${f.when}`).join(" · ")}</span></div>`
+      : "";
+    const rowsHtml = arr.length
+      ? arr.map(a=>{
+          const dir = (priceNow!=null && priceNow<a.price) ? "price below — waiting for a break above" : "price above — waiting for a break below";
+          return `<div class="kv"><span class="k">${fmt(a.price)} <span style="color:var(--ink-faint);font-size:10.5px;">(${dir})</span></span><span class="v"><button data-id="${a.id}" class="alertRemoveBtn">✕</button></span></div>`;
+        }).join("")
+      : `<div class="empty">No alerts set for ${cfg.label}.</div>`;
+    el.innerHTML = `
+      ${recentHtml}
+      <div class="tradesfilter">Alert at $<input id="alertPriceInput" type="number" step="any" placeholder="${priceNow!=null?fmt(priceNow):'price'}"><button id="alertAddBtn" style="margin-left:6px;">Add</button></div>
+      ${rowsHtml}
+    `;
+    const addBtn = document.getElementById("alertAddBtn");
+    if(addBtn) addBtn.onclick = ()=>{
+      const input = document.getElementById("alertPriceInput");
+      const v = parseFloat(input.value);
+      if(isNaN(v) || v<=0) return;
+      if(!state.alerts[state.symbol]) state.alerts[state.symbol] = [];
+      state.alerts[state.symbol].push({ id: Date.now()+"_"+Math.random().toString(36).slice(2), price:v });
+      savePersisted();
+      renderAlerts();
+    };
+    el.querySelectorAll(".alertRemoveBtn").forEach(btn=>{
+      btn.onclick = ()=>{
+        state.alerts[state.symbol] = (state.alerts[state.symbol]||[]).filter(a=>a.id!==btn.dataset.id);
+        savePersisted();
+        renderAlerts();
+      };
+    });
+  }
+
+  function parseExpiryToDate(str){
+    const months = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+    const day = parseInt(str.slice(0,2),10);
+    const mon = months[str.slice(2,5)];
+    const yr = 2000+parseInt(str.slice(5,7),10);
+    if(isNaN(day) || mon==null || isNaN(yr)) return new Date(8640000000000000);
+    return new Date(Date.UTC(yr, mon, day));
+  }
+
+  function renderOptions(){
+    const el = document.getElementById("optBody");
+    const cfg0 = SYMBOLS[state.symbol];
+    const optionCurrency = cfg0.optionCurrency || state.symbol;
+    if(!OPTION_CURRENCIES.includes(optionCurrency)){ el.innerHTML=`<div class="empty">Live option-chain data is only wired up for ${OPTION_CURRENCIES.join("/")} here (via Deribit). Other assets don't have a comparable free public option book.</div>`; return; }
+    if(!state.options || state.options.length===0){ el.innerHTML='<div class="empty">Option chain unavailable right now.</div>'; return; }
+
+    let callVol=0, putVol=0;
+    state.options.forEach(o=>{
+      if(o.instrument_name.endsWith("-C")) callVol += o.volume||0;
+      if(o.instrument_name.endsWith("-P")) putVol += o.volume||0;
+    });
+    const pcr = callVol>0 ? (putVol/callVol) : null;
+
+    // group by expiry, pick the nearest one that hasn't passed
+    const byExpiry = {};
+    state.options.forEach(o=>{
+      const parts = o.instrument_name.split("-");
+      if(parts.length<4) return;
+      (byExpiry[parts[1]] = byExpiry[parts[1]]||[]).push(o);
+    });
+    const expiries = Object.keys(byExpiry).map(e=>({e, d:parseExpiryToDate(e)})).sort((a,b)=>a.d-b.d);
+    const now = new Date();
+    const nearest = expiries.find(x=>x.d>=now) || expiries[0];
+    const chain = nearest ? byExpiry[nearest.e] : [];
+
+    const strikeMap = {};
+    chain.forEach(o=>{
+      const parts = o.instrument_name.split("-");
+      const strike = parseFloat(parts[2]);
+      const isCall = parts[3]==="C";
+      if(!strikeMap[strike]) strikeMap[strike] = {call:null, put:null};
+      strikeMap[strike][isCall?"call":"put"] = {oi:o.open_interest||0, vol:o.volume||0};
+    });
+    const strikes = Object.keys(strikeMap).map(Number).sort((a,b)=>a-b);
+    const spot = currentPrice();
+    let atmIdx = 0, best = Infinity;
+    strikes.forEach((s,i)=>{ if(spot!=null){ const d=Math.abs(s-spot); if(d<best){best=d; atmIdx=i;} } });
+    const lo = Math.max(0, atmIdx-3), hi = Math.min(strikes.length-1, atmIdx+3);
+    const rows = strikes.slice(lo, hi+1);
+
+    const rowsHtml = rows.map(s=>{
+      const d = strikeMap[s];
+      const isAtm = s===strikes[atmIdx];
+      return `<tr class="${isAtm?'atmrow':''}">
+        <td>${d.call?fmt(d.call.oi,0):'—'}</td><td>${d.call?fmt(d.call.vol,0):'—'}</td>
+        <td class="strikecell">${fmt(s,0)}</td>
+        <td>${d.put?fmt(d.put.vol,0):'—'}</td><td>${d.put?fmt(d.put.oi,0):'—'}</td>
+      </tr>`;
+    }).join("");
+
+    el.innerHTML = `
+      <div class="kv"><span class="k">Nearest expiry shown</span><span class="v">${nearest?nearest.e:'—'}</span></div>
+      <div class="kv"><span class="k">Put/Call volume ratio (all expiries)</span><span class="v">${pcr!=null?pcr.toFixed(2):'—'}</span></div>
+      <div class="kv"><span class="k">Read</span><span class="v">${pcr==null?'—':pcr>1?'put-heavy / hedging demand':'call-heavy / upside demand'}</span></div>
+      <table class="opttable">
+        <thead><tr><th>Call OI</th><th>Call Vol</th><th>Strike</th><th>Put Vol</th><th>Put OI</th></tr></thead>
+        <tbody>${rows.length? rowsHtml : '<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:10px;">No strikes found for the nearest expiry.</td></tr>'}</tbody>
+      </table>
+      <div style="font-size:10.5px;color:var(--ink-soft);margin-top:6px;">Gold row = strike nearest current spot (ATM). 3 strikes shown above and below.</div>
+    `;
+  }
+
+  // Draft values for the trade-entry inputs, kept outside the DOM so a poll
+  // refresh (every 12s) can rebuild the panel without erasing what the user
+  // is mid-typing. Cleared on submit / symbol switch, see enterTrade() and
+  // switchSymbol().
+  let tradeDraft = { qty: "0.01", entry: "" };
+
+  // Forecast table: for each hypothetical price in [min, max] step `step`,
+  // shows what total gross P&L (and equity) would be if every open position
+  // on the current symbol were still open at that price. Also computes each
+  // position's isolated liquidation price (entry ± margin/qty, i.e. a 100%
+  // loss of that trade's own margin) from Margin = qty*entry/leverage, so
+  // liqPrice = entry*(1 ∓ 1/leverage) — fees are not part of this since they
+  // already came out of balance at entry, not out of margin.
+  function renderForecast(soft){
+    const el = document.getElementById("forecastBody");
+    const cfg = SYMBOLS[state.symbol];
+    const price = currentPrice();
+    const openList = state.positions.filter(p=>p.symbol===state.symbol);
+
+    // Same reasoning as renderTrade(): a periodic poll rebuild shouldn't
+    // yank focus or snap the value back mid-edit while the user is typing
+    // a new range/step.
+    if(soft){
+      const ae = document.activeElement;
+      if(ae && el.contains(ae) && (ae.id==="fcMin" || ae.id==="fcMax" || ae.id==="fcStep")){
+        return;
+      }
+    }
+
+    if(!openList.length){
+      el.innerHTML = `<div class="empty">No open paper position on ${cfg.label} to forecast. Enter a trade above and this fills in.</div>`;
+      return;
+    }
+
+    const f = forecastState();
+    const step = (f.step && f.step>0) ? f.step : (cfg.stepDefault || 50);
+    // Auto-derive a sensible default window around the current price the
+    // first time there's nothing set yet for this symbol; stays put after
+    // that until the user edits it. The window scales with the symbol's
+    // step so BTC/gold/SOL/crude each get a proportionate range instead of
+    // one fixed +/-400 window.
+    let min = f.min, max = f.max;
+    if((min==null || max==null) && price!=null){
+      min = Math.round((price-step*8)/step)*step;
+      max = Math.round((price+step*8)/step)*step;
+      f.min = min; f.max = max;
+      savePersisted();
+    }
+    min = min!=null ? min : 0;
+    max = max!=null ? max : (min+step*10);
+
+    // Margin is just held by the broker while the trade is open and released
+    // (unchanged) when it closes — it isn't a stop-out threshold, so P&L
+    // below is uncapped, price-only movement, nothing tied to margin.
+    // Each open position keeps the P&L formula of the broker it was opened
+    // under (pos.broker), via posGrossPnL, so this stays correct even if
+    // you've since switched the active broker.
+    const rows = [];
+    for(let p1=min; p1<=max+1e-9; p1+=step){
+      const p1r = Math.round(p1*1e6)/1e6; // trim float drift from repeated += step
+      let total = 0;
+      openList.forEach(pos=>{ total += posGrossPnL(pos, p1r); });
+      rows.push({ price:p1r, total });
+    }
+
+    const rowsHtml = rows.map(r=>{
+      const isCurrent = price!=null && Math.abs(r.price-price) < step/2;
+      return `<tr class="${isCurrent?'atmrow':''}">
+        <td class="strikecell">${fmt(r.price,2)}${isCurrent?' <span style="font-size:9px;color:var(--ink-soft);">(now)</span>':''}</td>
+        <td style="color:${r.total>=0?'var(--green)':'var(--red)'}">${r.total>=0?'+':''}${fmt(r.total,2)}</td>
+        <td style="color:${(state.balance+r.total)>=0?'var(--green)':'var(--red)'}">${fmt(state.balance+r.total,2)}</td>
+      </tr>`;
+    }).join("");
+
+    el.innerHTML = `
+      <div class="tradebox">
+        <div><label>Range min</label><input id="fcMin" type="number" step="any" value="${min}"/></div>
+        <div><label>Range max</label><input id="fcMax" type="number" step="any" value="${max}"/></div>
+        <div class="fullrow"><label>Step</label><input id="fcStep" type="number" step="any" min="0.0001" value="${step}"/></div>
+      </div>
+      <table class="opttable" style="margin-top:8px;">
+        <thead><tr><th>Price</th><th>P&amp;L (gross)</th><th>Equity</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div style="font-size:10.5px;color:var(--ink-soft);margin-top:6px;">
+        P&amp;L is price movement only (fees already deducted from balance at entry). Margin is held by the broker while this trade is open and released unchanged on close — it's collateral, not a stop-out level, so it isn't capping the numbers above.
+      </div>
+    `;
+
+    const applyRange = ()=>{
+      const mn = parseFloat(document.getElementById("fcMin").value);
+      const mx = parseFloat(document.getElementById("fcMax").value);
+      const st = parseFloat(document.getElementById("fcStep").value);
+      if(!isNaN(mn)) f.min = mn;
+      if(!isNaN(mx)) f.max = mx;
+      if(!isNaN(st) && st>0) f.step = st;
+      savePersisted();
+      renderForecast();
+    };
+    document.getElementById("fcMin").onchange = applyRange;
+    document.getElementById("fcMax").onchange = applyRange;
+    document.getElementById("fcStep").onchange = applyRange;
+  }
+
+  function renderTrade(soft){
+    const el = document.getElementById("tradeBody");
+    const cfg = SYMBOLS[state.symbol];
+    const price = currentPrice();
+
+    // During a periodic poll refresh ("soft"), if the user is actively
+    // typing qty/entry for a new trade, don't rebuild the panel at all —
+    // a full innerHTML rebuild replaces the input's DOM node, which even
+    // with focus/selection restored below can still interrupt typing
+    // (especially on mobile, where refocusing doesn't reliably keep the
+    // on-screen keyboard open). Everything else (open positions, P&L,
+    // price) will simply catch up on the next render triggered by a real
+    // user action (enter/close trade, symbol switch, etc.) or the poll
+    // after they've moved on.
+    if(soft){
+      const ae = document.activeElement;
+      if(ae && el.contains(ae) && (ae.id==="qtyInput" || ae.id==="entryInput")){
+        return;
+      }
+    }
+
+    // Preserve focus + cursor position across the innerHTML rebuild below,
+    // so typing isn't interrupted by the periodic refresh.
+    const activeEl = document.activeElement;
+    const activeId = (activeEl && el.contains(activeEl)) ? activeEl.id : null;
+    const selStart = activeId && typeof activeEl.selectionStart === "number" ? activeEl.selectionStart : null;
+    const selEnd = activeId && typeof activeEl.selectionEnd === "number" ? activeEl.selectionEnd : null;
+
+    let manualHtml = "";
+    if(state.symbol==="CL"){
+      manualHtml = `<div class="manualrow">
+        <input id="manualPriceInput" type="number" step="0.01" placeholder="Current CL price, e.g. 71.40" value="${state.manualPrice||''}"/>
+        <button id="manualPriceBtn">Set price</button>
+      </div>`;
+    }
+
+    const openList = state.positions.filter(p=>p.symbol===state.symbol);
+    let unrealized = 0, marginInUse = 0, feesPaidSymbol = 0;
+    const openHtml = openList.map(p=>{
+      const b = BROKERS[p.broker || "dana"];
+      const units = p.qty * (p.contractSize||1);
+      const gross = posGrossPnL(p, price);
+      const fee = p.fee || 0;
+      // Running return is price-only (gross) — the fee already hit balance
+      // at entry, so it isn't subtracted again here.
+      if(gross!=null) unrealized += gross;
+      marginInUse += p.margin || 0;
+      feesPaidSymbol += fee;
+      const unitsNote = (b.usesContractSize && (p.contractSize||1)!==1) ? ` (${fmt(units,2)} units)` : '';
+      return `<div class="postab">
+        <div class="row1"><span>${p.side.toUpperCase()} ${cfg.label} · ${fmt(p.qty,4)} lot${unitsNote} · ${b.label}</span>
+          <span class="pnl" style="color:${gross>=0?'var(--green)':'var(--red)'}">${gross!=null?(gross>=0?'+':'')+fmt(gross):'—'}</span></div>
+        <div class="row2"><span>entry ${fmt(p.entry)}</span><span>mkt ${price!=null?fmt(price):'—'}</span></div>
+        <div class="row2"><span>margin ${fmt(p.margin,2)} @ ${p.marginLeverage||p.leverage||state.leverage}x</span><span>fee -${fmt(fee,2)}</span></div>
+        <button class="closebtn" data-id="${p.id}">Close position</button>
+      </div>`;
+    }).join("");
+
+    const closedList = state.closed.filter(p=>p.symbol===state.symbol).slice(-8).reverse();
+    let realized = state.closed.filter(p=>p.symbol===state.symbol).reduce((a,p)=>a+p.pnl,0);
+    feesPaidSymbol += state.closed.filter(p=>p.symbol===state.symbol).reduce((a,p)=>a+(p.fee||0)+(p.feeExit||0),0);
+    const closedHtml = closedList.map(p=>{
+      const b = BROKERS[p.broker || "dana"];
+      const unitsNote = (b.usesContractSize && (p.contractSize||1)!==1) ? ` (${fmt(p.qty*(p.contractSize||1),2)} units)` : '';
+      return `
+      <div class="postab" style="opacity:.75;">
+        <div class="row1"><span>${p.side.toUpperCase()} ${cfg.label} · ${fmt(p.qty,4)} lot${unitsNote} · ${b.label} (closed)</span>
+        <span class="pnl" style="color:${p.pnl>=0?'var(--green)':'var(--red)'}">${p.pnl>=0?'+':''}${fmt(p.pnl)}</span></div>
+        <div class="row2"><span>entry ${fmt(p.entry)}</span><span>exit ${fmt(p.exit)}</span></div>
+        <div class="row2"><span>margin ${fmt(p.margin,2)} @ ${p.marginLeverage||p.leverage||state.leverage}x</span><span>fee -${fmt((p.fee||0)+(p.feeExit||0),2)}</span></div>
+      </div>`;
+    }).join("");
+
+    // Account-wide totals across every symbol (not just the one currently
+    // viewed): margin still tied up in open positions, and all fees ever paid.
+    const totalMarginInUse = state.positions.reduce((a,p)=>a+(p.margin||0),0);
+    const totalFeesPaid = state.positions.reduce((a,p)=>a+(p.fee||0),0)
+                         + state.closed.reduce((a,p)=>a+(p.fee||0)+(p.feeExit||0),0);
+    // Equity = cash balance (already net of every fee + every realized gross
+    // P&L) plus the mark-to-market P&L of everything still open, everywhere.
+    const totalUnrealizedAll = state.positions.reduce((a,p)=>{
+      const cp = p.symbol===state.symbol ? price : lastKnownPrice(p.symbol);
+      const g = posGrossPnL(p, cp);
+      return a + (g||0);
+    },0);
+    const equity = state.balance + totalUnrealizedAll;
+
+    const activeBroker = BROKERS[state.broker];
+    el.innerHTML = `
+      ${manualHtml}
+      <div class="tradebox">
+        <div class="fullrow"><label>Broker</label><input type="text" value="${activeBroker.label}" disabled/></div>
+      </div>
+      <div class="tradebox">
+        <div><label>Start balance</label><input id="startBalanceInput" type="number" step="any" min="0" value="${state.startBalance}"/></div>
+        <div><label>Balance (running)</label><input type="text" value="${fmt(state.balance,2)}" disabled/></div>
+        <div><label>Quantity (lots)</label><input id="qtyInput" type="number" step="any" placeholder="e.g. ${activeBroker.defaultLot}" value="${tradeDraft.qty}"/></div>
+        <div><label>Entry (defaults to market)</label><input id="entryInput" type="number" step="any" placeholder="${price!=null?fmt(price):'market'}" value="${tradeDraft.entry}"/></div>
+        ${state.broker==="dana"
+          ? `<div class="fullrow"><label>Leverage (trade value / margin)</label><input id="leverageInput" type="number" step="1" min="1" value="${state.leverage}"/></div>`
+          : `<div class="fullrow"><label>Leverage (fixed by Shark, per instrument)</label><input type="text" value="${sharkLeverage(state.symbol)}x — ${cfg.sharkClass} class" disabled/></div>`}
+      </div>
+      <div style="font-size:11px;color:var(--ink-soft);margin:-4px 0 10px;">${state.broker==="dana"
+        ? `Fee: $${activeBroker.feeEntryPerLot} per lot on entry, free on exit. Margin = (qty × contract size × entry) / leverage${cfg.contractSize!==1?` — 1 lot ${cfg.label} = ${cfg.contractSize} units`:''}.`
+        : `Fee: ${(activeBroker.feePct*100).toFixed(3)}% of trade value, charged on both entry and exit. Margin = (qty × price) / ${sharkLeverage(state.symbol)}x. P&amp;L = price change × lot size (no contract-size multiplier).`}</div>
+      <div class="btnrow">
+        <button class="btn long" id="btnLong">Enter Long</button>
+        <button class="btn short" id="btnShort">Enter Short</button>
+      </div>
+      ${openList.length? `<div style="font-size:11px;color:var(--ink-soft);margin-bottom:4px;">OPEN POSITIONS</div>${openHtml}` : `<div class="empty" style="margin-bottom:8px;">No open paper position on ${cfg.label}.</div>`}
+      <div class="summarybar"><span>Equity (balance + all open P&amp;L)</span><span class="v ${equity>=0?'pos':'neg'}">${fmt(equity,2)}</span></div>
+      <div class="summarybar"><span>Account margin in use (all symbols)</span><span class="v">${fmt(totalMarginInUse,2)}</span></div>
+      <div class="summarybar"><span>Account fees paid (all symbols)</span><span class="v">${fmt(totalFeesPaid,2)}</span></div>
+      <div class="summarybar"><span>Margin in use (${cfg.label})</span><span class="v">${fmt(marginInUse,2)}</span></div>
+      <div class="summarybar"><span>Fees paid (${cfg.label})</span><span class="v">${fmt(feesPaidSymbol,2)}</span></div>
+      <div class="summarybar"><span>Unrealized P&amp;L (${cfg.label}, ex-fees)</span><span class="v ${unrealized>=0?'pos':'neg'}">${unrealized>=0?'+':''}${fmt(unrealized)}</span></div>
+      <div class="summarybar"><span>Realized P&amp;L (${cfg.label}, ex-fees)</span><span class="v ${realized>=0?'pos':'neg'}">${realized>=0?'+':''}${fmt(realized)}</span></div>
+      ${closedList.length? `<div style="font-size:11px;color:var(--ink-soft);margin:10px 0 4px;">TRADE HISTORY</div>${closedHtml}` : ""}
+    `;
+
+    document.getElementById("startBalanceInput").onchange = e=>{
+      const v = parseFloat(e.target.value);
+      if(!isNaN(v) && v>=0){
+        // Moving the start-balance slider shifts running balance by the same
+        // delta, so past fees/P&L already applied aren't lost or duplicated.
+        const delta = v - state.startBalance;
+        state.startBalance = v;
+        state.balance += delta;
+        savePersisted();
+        renderTrade();
+      }
+    };
+
+    if(state.symbol==="CL"){
+      document.getElementById("manualPriceBtn").onclick = ()=>{
+        const v = parseFloat(document.getElementById("manualPriceInput").value);
+        if(!isNaN(v)){ state.manualPrice = v; renderAll(); }
+      };
+    }
+    document.getElementById("qtyInput").oninput = e => { tradeDraft.qty = e.target.value; };
+    document.getElementById("entryInput").oninput = e => { tradeDraft.entry = e.target.value; };
+    const leverageEl = document.getElementById("leverageInput");
+    if(leverageEl){
+      leverageEl.onchange = ()=>{
+        const v = parseFloat(leverageEl.value);
+        if(!isNaN(v) && v>0){ state.leverage = v; savePersisted(); }
+      };
+    }
+    document.getElementById("btnLong").onclick = ()=>enterTrade("long");
+    document.getElementById("btnShort").onclick = ()=>enterTrade("short");
+    el.querySelectorAll(".closebtn").forEach(btn=>{
+      btn.onclick = ()=>closeTrade(btn.dataset.id);
+    });
+
+    if(activeId){
+      const restored = document.getElementById(activeId);
+      if(restored){
+        restored.focus();
+        if(selStart!=null && restored.setSelectionRange){
+          try{ restored.setSelectionRange(selStart, selEnd); }catch(e){ /* ignore */ }
+        }
+      }
+    }
+  }
+
+  function enterTrade(side){
+    const qty = parseFloat(document.getElementById("qtyInput").value);
+    const entryInputVal = parseFloat(document.getElementById("entryInput").value);
+    const leverageEl = document.getElementById("leverageInput");
+    const leverage = leverageEl ? (parseFloat(leverageEl.value) || state.leverage) : state.leverage;
+    const price = currentPrice();
+    const entry = !isNaN(entryInputVal) ? entryInputVal : price;
+    if(isNaN(qty) || qty<=0 || entry==null || isNaN(entry)){ return; }
+    const broker = state.broker;
+    if(broker==="dana") state.leverage = leverage;
+    const contractSize = SYMBOLS[state.symbol].contractSize || 1;
+    const marginLeverage = broker==="dana" ? leverage : sharkLeverage(state.symbol);
+    const fee = brokerFeeEntry(qty, entry, broker);
+    const margin = brokerMargin(qty, contractSize, entry, state.symbol, broker);
+    // Fee is charged against balance immediately on entry (as on a real
+    // exchange). Running P&L below is price-only from this point on — it
+    // does not re-subtract the fee, since it already hit the balance here.
+    state.balance -= fee;
+    state.positions.push({
+      id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
+      symbol: state.symbol, side, entry, qty, contractSize,
+      broker, marginLeverage, leverage: marginLeverage, fee, margin, openTime: Date.now()
+    });
+    tradeDraft = { qty: String(BROKERS[broker].defaultLot), entry: "" };
+    savePersisted();
+    renderTrade();
+  }
+  function closeTrade(id){
+    const idx = state.positions.findIndex(p=>p.id===id);
+    if(idx===-1) return;
+    const p = state.positions[idx];
+    const price = currentPrice();
+    const gross = posGrossPnL(p, price) || 0;
+    // Exit fee follows the broker the position was opened under (Dana:
+    // free; Shark: same % rate as entry, applied to exit-time trade value).
+    const feeExit = price!=null ? brokerFeeExit(p.qty, price, p.broker) : 0;
+    // Realized P&L is gross (price movement only) — the entry fee was
+    // already deducted from balance when this trade was opened; the exit
+    // fee (if any) comes out now, at close.
+    state.balance += gross - feeExit;
+    state.closed.push({...p, exit:price, pnl:gross, feeExit, closeTime:Date.now()});
+    state.positions.splice(idx,1);
+    savePersisted();
+    renderTrade();
+  }
+
+  // ---------- orchestration ----------
+  // Session-anchored VWAP (volume-weighted average price), anchored to the
+  // start of the current UTC day. If the loaded candle history doesn't
+  // reach back that far (common on very short timeframes given the 200-
+  // candle fetch limit), it anchors to the oldest candle available instead
+  // — still useful as a rolling reference, just labeled accordingly by the
+  // caller.
+  function vwap(candles){
+    if(!candles || candles.length===0) return { arr:[], last:null, anchoredToDayStart:false };
+    const dayStart = Math.floor(candles[candles.length-1].time/86400000)*86400000;
+    let anchorIdx = candles.findIndex(c=>c.time>=dayStart);
+    if(anchorIdx===-1) anchorIdx = 0;
+    const arr = new Array(candles.length).fill(null);
+    let cumPV = 0, cumVol = 0;
+    for(let i=anchorIdx;i<candles.length;i++){
+      const c = candles[i];
+      const tp = (c.high+c.low+c.close)/3;
+      const vol = c.volume||0;
+      cumPV += tp*vol; cumVol += vol;
+      arr[i] = cumVol>0 ? cumPV/cumVol : tp;
+    }
+    return { arr, last: arr[arr.length-1], anchoredToDayStart: anchorIdx>0 || candles[0].time<=dayStart };
+  }
+
+  function computeAll(){
+    const candles = state.candles;
+    const closes = candles.map(c=>c.close);
+    const ema20 = ema(closes,20), ema50 = ema(closes,50), ema200 = ema(closes,200);
+    const rsiArr = rsi(closes,14);
+    const macdR = macd(closes);
+    const atrArr = atr(candles,14);
+    const vwapR = vwap(candles);
+    const indicators = {
+      ema20, ema50, ema200,
+      ema20last: lastNonNull(ema20), ema50last: lastNonNull(ema50), ema200last: lastNonNull(ema200),
+      rsiLast: lastNonNull(rsiArr),
+      macdLast: lastNonNull(macdR.line), macdSignalLast: lastNonNull(macdR.signal),
+      atrLast: lastNonNull(atrArr),
+      vwap: vwapR.arr, vwapLast: vwapR.last, vwapAnchoredToDayStart: vwapR.anchoredToDayStart
+    };
+    const {highs, lows} = findSwings(candles, 3);
+    const structure = classifyStructure(highs, lows);
+    const obs = findOrderBlocks(candles);
+    const fvgs = findFVGs(candles);
+    const liq = findLiquidity(highs, lows);
+    const zones = findZones(candles, highs, lows);
+    return {indicators, highs, lows, structure, obs, fvgs, liq, zones};
+  }
+
+  function renderAll(soft){
+    renderBroker();
+    renderSymbolBar();
+    renderTimeframeBar();
+    renderChartTitle();
+    renderPriceBar();
+    renderPatternBar();
+    renderNotices();
+
+    if(state.symbol==="CL"){
+      renderChart([], {ema20:[],ema50:[]}, [], []);
+      renderTrend({}, {});
+      renderSMC([],[],{eqHighs:[],eqLows:[]});
+      renderLevels([],[],{demand:[],supply:[]});
+      renderIndicators({});
+      renderVolume([]);
+      renderBook();
+      renderRecentTrades();
+      renderAlerts();
+      renderOptions();
+      renderTrade(soft);
+      renderForecast(soft);
+      return;
+    }
+    if(!state.dataOk || state.candles.length<10){
+      renderChart([], {ema20:[],ema50:[]}, [], []);
+      renderTrend({label:"—",bias:"neutral"}, {});
+      renderSMC([],[],{eqHighs:[],eqLows:[]});
+      renderLevels([],[],{demand:[],supply:[]});
+      renderIndicators({});
+      renderVolume([]);
+      renderBook();
+      renderRecentTrades();
+      renderAlerts();
+      renderOptions();
+      renderTrade(soft);
+      renderForecast(soft);
+      return;
+    }
+    const computed = computeAll();
+    const streaks = bigStreaksForChart(state.symbol, state.candles);
+    renderChart(state.candles, computed.indicators, computed.obs, computed.fvgs, streaks);
+    renderTrend(computed.structure, computed.indicators);
+    renderSMC(computed.obs, computed.fvgs, computed.liq);
+    renderLevels(computed.highs, computed.lows, computed.zones);
+    renderIndicators(computed.indicators);
+    renderVolume(state.candles);
+    renderBook();
+    renderRecentTrades();
+    renderAlerts();
+    renderOptions();
+    renderTrade(soft);
+    renderForecast(soft);
+  }
+
+  function setStatus(mode, text){
+    const el = document.getElementById("status");
+    el.className = "status " + mode;
+    document.getElementById("statusText").textContent = text;
+  }
+
+  async function refresh(){
+    setStatus("", "updating…");
+    await loadData();
+    if(state.dataOk || state.symbol==="CL"){
+      setStatus("live", "live — updates every 5s");
+    } else {
+      setStatus("err", state.lastError || "data unavailable");
+    }
+    renderAll(true); // soft: don't yank focus if the user is mid-typing a trade
+  }
+
+  function switchSymbol(sym){
+    state.symbol = sym;
+    state.candles = []; state.depth=null; state.ticker=null; state.dataOk=false;
+    tradeDraft.entry = ""; // last symbol's entry price doesn't carry over
+    // forecast range/step is now stored per symbol (forecastState()), so no
+    // reset needed here — a symbol visited for the first time auto-derives
+    // its own range, and a symbol visited before keeps what it had.
+    renderAll();
+    refresh();
+    openTickStream(sym);
+    if(isPanelOpen("coinAnalysisPanel")) loadCoinAnalysis();
+  }
+
+  let pollTimer = null;
+  async function init(){
+    initMarketTable();
+    initSentiment();
+    initInfoPanels();
+    initChartIndicatorToggles();
+    await loadPersisted();
+    renderAll();
+    await refresh();
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(refresh, POLL_MS);
+    setInterval(updateCandleCountdown, 1000);
+    window.addEventListener("resize", ()=>renderAll());
+    window.addEventListener("beforeunload", closeTickStream);
+    openTickStream(state.symbol);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
